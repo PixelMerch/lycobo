@@ -39,7 +39,7 @@ export function ConfirmDialog({
         if (!open) onCancel();
       }}
     >
-      <Modal.Backdrop className="confirm-dialog__backdrop">
+      <Modal.Backdrop>
         <Modal.Container>
           <Modal.Dialog className="confirm-dialog" data-tone={tone}>
             <Modal.Header>

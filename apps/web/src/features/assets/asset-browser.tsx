@@ -1,7 +1,6 @@
 import { Button, EmptyState } from "@heroui/react";
 import type { AssetTool, ImageAsset } from "@lycoboai/contracts";
 import {
-  IconMovie,
   IconPhoto,
   IconPhotoSearch,
   IconPhotoX,
@@ -45,7 +44,7 @@ function useWidth() {
 
 type Empty = { icon: TablerIcon; title: string };
 
-/** 空列表的说明跟着筛选走：时间范围、收藏、视频、上传、某个功能，各说各的。 */
+/** 根据时间范围、收藏和来源显示空列表说明。 */
 function emptyState(filters: AssetLibraryFilters, locale: Locale): Empty {
   const t = assetsMessages[locale];
   const tool =
@@ -55,7 +54,6 @@ function emptyState(filters: AssetLibraryFilters, locale: Locale): Empty {
   if (filters.time !== "all") return { icon: IconPhotoSearch, title: t.noMatches };
   if (filters.favorite)
     return { icon: IconStar, title: tool ? t.noToolFavorites(tool) : t.noFavorites };
-  if (filters.type === "video") return { icon: IconMovie, title: t.noVideos };
   if (filters.source === "uploads") return { icon: IconPhoto, title: t.noUploads };
   if (tool) return { icon: IconPhoto, title: t.noToolAssets(tool) };
   if (filters.source === "generated") return { icon: IconPhoto, title: t.noGenerated };
@@ -135,7 +133,8 @@ export function AssetBrowser({
   // 缩略图加载失败的素材不能下载：不出现在全选和批量下载里。
   const [unavailable, setUnavailable] = useState<ReadonlySet<string>>(() => new Set());
   const { failure, authenticationRequired } = useAssetStatus(session, query);
-  const assets = query.data?.pages.flatMap((page) => page.data) ?? [];
+  const assets =
+    query.data?.pages.flatMap((page) => page.data.filter((asset) => asset.type === "image")) ?? [];
   const downloadable = assets.filter((asset) => !unavailable.has(asset.id));
   const markUnavailable = (asset: ImageAsset) =>
     setUnavailable((current) => (current.has(asset.id) ? current : new Set(current).add(asset.id)));
@@ -191,7 +190,7 @@ export function AssetBrowser({
 type AssetQuery = ReturnType<typeof useAssetLibrary>;
 
 function useAssetStatus(session: ReturnType<typeof useImageSession>, query: AssetQuery) {
-  // The list waits for the image session, so a failed session is the list's failure too.
+  // 列表依赖图片会话，先显示会话错误。
   const initialQueryFailure = query.isError && !query.data ? query.error : null;
   const failure = session.isError ? session.error : initialQueryFailure;
   const authenticationRequired =

@@ -1,4 +1,3 @@
-import type { ReactNode, SyntheticEvent } from "react";
 import { useLocation } from "react-router";
 import { useAppNavigate } from "../../i18n/use-localized-navigation";
 import { useEnterpriseSession } from "./auth-client";
@@ -22,40 +21,4 @@ export function useRequireLogin() {
     open();
     return false;
   };
-}
-
-/** 登录前拦截创作区的指针、键盘、粘贴与文件拖入，保留原有草稿。 */
-export function LoginRequiredInteraction({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className: string;
-}) {
-  const session = useEnterpriseSession();
-  const open = useOpenLogin();
-  const block = (event: SyntheticEvent) => {
-    if (session.data) return;
-    event.preventDefault();
-    event.stopPropagation();
-    open();
-  };
-  return (
-    <div
-      className={className}
-      onPointerDownCapture={block}
-      onClickCapture={block}
-      onKeyDownCapture={(event) => {
-        if (event.key !== "Tab" && event.key !== "Shift" && event.key !== "Escape") block(event);
-      }}
-      onBeforeInputCapture={block}
-      onPasteCapture={block}
-      onDropCapture={block}
-      onDragOverCapture={(event) => {
-        if (!session.data) event.preventDefault();
-      }}
-    >
-      {children}
-    </div>
-  );
 }

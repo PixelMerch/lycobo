@@ -94,7 +94,7 @@
   border: 0;
   outline: none;
   box-shadow: none;
-  caret-color: var(--accent);
+  caret-color: var(--studio-accent);
 }
 .home-composer .home-prompt .reference-rich-editor.textarea {
   height: auto;
@@ -113,7 +113,7 @@
   gap: 6px;
   padding: 2px 6px 2px 2px;
   border-radius: 6px;
-  color: #a8ff00;
+  color: var(--studio-accent);
   background: var(--fill-medium);
   font-size: var(--text-xs);
   line-height: 18px;
@@ -128,14 +128,23 @@
   min-width: 0;
   position: relative;
 }
+.prompt-editor > textarea {
+  caret-color: var(--studio-accent);
+}
 .prompt-field .prompt-editor [data-auto-grow] {
   min-height: 100px;
   resize: none;
   overflow: hidden;
 }
 .prompt-editor[data-optimizing] :is(textarea, .reference-rich-editor.textarea) {
-  box-shadow: inset 0 0 0 1px #a8ff0059;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
   caret-color: transparent;
+}
+.unified-workspace .prompt-field .prompt-editor {
+  border-radius: var(--field-radius);
+}
+.unified-workspace .prompt-field :is(textarea, .reference-rich-editor) {
+  cursor: text;
 }
 .prompt-field .prompt-editor[data-count] :is(textarea, .reference-rich-editor.textarea),
 .home-composer .home-prompt .prompt-editor[data-optimizable] .textarea {
@@ -172,7 +181,7 @@
   color: #808080;
   background: transparent;
 }
-/* Brand lime marks the paid AI action; it is the only coloured control inside the field. */
+/* 提示词优化用主题绿文字和图标，按钮底板透明。 */
 .prompt-optimize {
   position: absolute;
   bottom: 6px;
@@ -189,12 +198,18 @@
   height: 24px;
   padding: 0 8px;
   border-radius: 999px;
-  color: var(--accent);
+  color: var(--studio-accent);
   background: transparent;
   line-height: var(--leading-xs);
 }
-.prompt-optimize-button.button:is(:hover, :active, [data-hovered="true"], [data-pressed="true"]) {
-  color: var(--accent);
+.prompt-optimize-button.button:is(
+  :hover,
+  :active,
+  [data-hovered="true"],
+  [data-pressed="true"],
+  [data-focus-visible="true"]
+) {
+  color: var(--studio-accent);
   background: transparent;
 }
 .prompt-optimize[data-confirming="true"] {
@@ -259,22 +274,29 @@
   position: relative;
   display: inline-flex;
 }
-.prompt-optimize-label {
-  background: var(--app-primary-gradient);
-  background-clip: text;
-  color: transparent;
+.unified-workspace .prompt-field :is(.prompt-count, .prompt-clear.button:not(:disabled)) {
+  color: var(--muted);
+}
+.unified-workspace
+  .prompt-field
+  .prompt-clear.button:not(:disabled):is(
+    :hover,
+    [data-hovered="true"],
+    [data-focus-visible="true"]
+  ) {
+  color: var(--foreground);
+  background: var(--control-hover-fill);
 }
 .prompt-optimize-button.button:is(:hover, [data-hovered="true"])
   > :is(.prompt-optimize-wand, .prompt-optimize-label) {
   filter: brightness(1.12);
 }
 @media (forced-colors: active) {
-  .prompt-optimize-label {
-    background: none;
-    color: ButtonText;
-  }
-  .prompt-optimize-wand > .ui-icon {
-    stroke: ButtonText;
+  .unified-workspace
+    .prompt-field
+    .prompt-editor:has(> :is(textarea, .reference-rich-editor):focus) {
+    outline: var(--field-border-width) solid Highlight;
+    outline-offset: calc(-1 * var(--field-border-width));
   }
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -293,7 +315,7 @@
     pointer-events: none;
     content: "";
     clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
-    background: var(--app-primary-gradient);
+    background: currentColor;
     animation: prompt-wand-spark 2.4s 70ms ease-out infinite both;
   }
   .prompt-editor:has(> :is(textarea, .reference-rich-editor):focus) .prompt-optimize-wand::after {
@@ -430,7 +452,7 @@
 }
 
 .reference-at {
-  color: #a8ff00;
+  color: var(--studio-accent);
 }
 .reference-mention-popover.popover {
   box-shadow: var(--shadow-md);

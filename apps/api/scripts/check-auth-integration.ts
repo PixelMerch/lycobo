@@ -15,6 +15,7 @@ import postgres from "postgres";
 import { createApp } from "../src/app";
 import { hashPassword } from "../src/features/auth/password";
 import { enterpriseAuth } from "../src/features/auth/service";
+import { passwordLoginFixture, verifyPasswordLock } from "./verify-password-lock";
 import { verifySocialAuth } from "./verify-social-auth";
 
 if (process.env.ALLOW_LOCAL_INTEGRATION !== "true")
@@ -82,16 +83,21 @@ try {
       ),
     );
     const origin = "http://localhost:5173";
-    const auth = enterpriseAuth(authDb, {
-      secret: crypto.randomUUID() + crypto.randomUUID(),
-      origins: [origin],
-      secureCookie: false,
-      oauth: {
-        origin: "https://abcdefghijklmnopqrst.supabase.co",
-        key: "sb_publishable_fixture",
-        providers: ["google", "apple"],
+    const auth = enterpriseAuth(
+      authDb,
+      {
+        secret: crypto.randomUUID() + crypto.randomUUID(),
+        origins: [origin],
+        secureCookie: false,
+        passwordTurnstile: { siteKey: "fixture-site-key", secret: "fixture-secret" },
+        oauth: {
+          origin: "https://abcdefghijklmnopqrst.supabase.co",
+          key: "sb_publishable_fixture",
+          providers: ["google", "apple"],
+        },
       },
-    });
+      async (_secret, token) => token.startsWith("fixture-token-"),
+    );
     const store = imageStore(directory);
     await store.ready();
     const app = createApp(
@@ -110,12 +116,8 @@ try {
       undefined,
       { repository: realtime, auth },
     );
-    const login = () =>
-      app.request("/api/v1/auth/enterprise/login", {
-        method: "POST",
-        headers: { Origin: origin, "Content-Type": "application/json" },
-        body: JSON.stringify({ account: "FIXTURE-ACCOUNT", password }),
-      });
+    const login = passwordLoginFixture(app, origin, password);
+    await verifyPasswordLock(sql, login);
     const response = await login();
     assert.equal(response.status, 200);
     const result = enterpriseLoginResponseSchema.parse(unwrapApiData(await response.json()));

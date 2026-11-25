@@ -1,11 +1,13 @@
 /* Each ecommerce tool shows its own history in the shared workspace. */
 .unified-workspace {
   position: relative;
+  --tool-soft: #ffffffb3;
   --workspace-toolbar-height: 68px;
   --workspace-view-switch-height: 0px;
   grid-template-rows: var(--workspace-toolbar-height) auto;
 }
 .unified-workspace > .composer-panel {
+  --accent-soft: color-mix(in srgb, var(--brand) 16%, transparent);
   gap: 12px;
 }
 .unified-workspace .composer-scroll {
@@ -28,20 +30,6 @@
   :is(.reference-picker, .prompt-field, .model-field, .parameter-group) {
   background: transparent;
 }
-/* 工作区只保留品牌青柠，不再按功能分配多种强调色。 */
-.unified-workspace {
-  --tool-accent: #a8ff00;
-  --tool-soft: #ffffffb3;
-}
-.workspace-tool-symbol {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-  color: inherit;
-}
 /* The panel opens with the tool's example photo; it bleeds to the panel's rounded top edge. */
 .workspace-composer-hero {
   --composer-hero-height: 148px;
@@ -59,37 +47,30 @@
   background: var(--surface);
   /* No transform: sticky position must remain exact while scrolling. */
 }
-.workspace-composer-hero-image,
+.workspace-composer-hero-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.workspace-composer-hero > .workspace-composer-hero-image,
 .workspace-composer-hero-collage,
 .workspace-composer-hero::after {
   opacity: calc(1 - var(--hero-collapse));
 }
-.workspace-composer-hero-image {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+.workspace-composer-hero > .workspace-composer-hero-image,
 .workspace-composer-hero-collage {
   position: absolute;
   inset: 0;
   z-index: -2;
+}
+.workspace-composer-hero-collage {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
   grid-template-rows: repeat(2, minmax(0, 1fr));
-  gap: 0;
+  gap: 2px;
 }
-.workspace-composer-hero-collage img {
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  min-width: 0;
-  display: block;
-  object-fit: cover;
-}
-.workspace-composer-hero-collage img:first-child {
+.workspace-composer-hero-collage .workspace-composer-hero-image:first-child {
   grid-row: 1 / -1;
 }
 .workspace-composer-hero::after {
@@ -97,7 +78,7 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  /* 头图多为浅色床品，压暗加深到文字所在的下半部分，白字与说明在浅色图上也清楚。 */
+  /* 用底部渐变保证白色标题和说明在示例图上易读。 */
   background: linear-gradient(
     180deg,
     rgb(0 0 0 / 0%) 18%,
@@ -137,9 +118,28 @@
     top: calc(var(--header-height) + 48px - var(--composer-hero-height));
   }
 }
-/* The tool switcher is one dock: icon tile and name per tool. The current
- * tool sits on a pill that slides between tools; hovering lifts the tile in the tool's accent
- * while help belongs to the composer banner. Geometry never changes. */
+
+.workspace-composer-hero[data-tool="create"]::after {
+  /* 在文字底部补一层暗色，保留跑鞋的高光。 */
+  background: linear-gradient(0deg, rgb(7 18 31 / 50%), transparent 32%);
+}
+.workspace-composer-hero[data-tool="create"] .workspace-composer-hero-image {
+  object-position: center top;
+}
+@media (max-width: 767px) {
+  .workspace-composer-hero[data-tool="create"] {
+    --composer-hero-height: 160px;
+  }
+  .workspace-composer-hero:is(
+    [data-tool="replica"],
+    [data-tool="variation"],
+    [data-tool="textile"]
+  ) {
+    --composer-hero-height: 148px;
+  }
+}
+
+/* 一级工具类别和直接入口共用一组尺寸与悬停样式。 */
 .workspace-tool-bar {
   display: flex;
   align-items: center;
@@ -158,91 +158,228 @@
 .workspace-tool-bar::-webkit-scrollbar {
   display: none;
 }
-.workspace-tool-shortcut.button {
+.workspace-tool-shortcut:is(.button, .workspace-tool-group) {
   position: relative;
   isolation: isolate;
+  display: flex;
   flex-shrink: 0;
+  align-items: center;
   justify-content: flex-start;
-  height: 56px;
-  min-height: 56px;
+  height: 50px;
+  min-height: 50px;
   padding: 8px 16px 8px 8px;
   gap: 10px;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--field-radius);
   text-align: left;
   color: var(--muted);
   background: transparent;
   white-space: nowrap;
-  transition:
-    background-color 180ms ease,
-    color 180ms ease;
+  transform: none;
+  transition: color 150ms ease;
 }
-.workspace-tool-shortcut.button[data-hovered="true"] {
-  color: var(--foreground);
-}
-.workspace-tool-shortcut.button[aria-current="page"] {
-  color: #fff;
-}
-/* 高亮在按钮内居中，工具坞的行高和点击区域保持稳定。 */
-.workspace-tool-shortcut.button::before,
-.workspace-tool-indicator {
+.workspace-tool-shortcut::before,
+.workspace-tool-rail-ripple {
   position: absolute;
-  inset: 0;
   z-index: -1;
-  height: 50px;
-  margin-block: auto;
+  inset-inline: 0;
+  inset-block-start: 50%;
+  height: 40px;
+  width: 100%;
+  max-width: 100%;
+  margin-inline: auto;
   border-radius: inherit;
+  transform: translateY(-50%);
   pointer-events: none;
+  transition: background-color 150ms ease;
 }
-.workspace-tool-shortcut.button[data-hovered="true"]:not([aria-current="page"])::before {
-  background: var(--interaction-hover);
+.workspace-tool-shortcut::before {
   content: "";
 }
-.workspace-tool-indicator {
-  background: linear-gradient(180deg, #ffffff17 0%, #ffffff0d 100%);
-  box-shadow: none;
+.workspace-tool-rail-ripple {
+  border: 1px solid var(--field-border-focus);
+  opacity: 0;
 }
-.workspace-tool-shortcut .workspace-tool-symbol {
-  width: 40px;
+.workspace-tool-shortcut:is(.button, .workspace-tool-group):is(
+  [data-current="true"],
+  [data-hovered="true"],
+  [data-focus-visible="true"],
+  [aria-expanded="true"],
+  :focus-visible
+) {
+  color: var(--foreground);
+  background: transparent;
+  transform: none;
+}
+.workspace-tool-shortcut:is(
+  [data-hovered="true"],
+  [data-focus-visible="true"],
+  [aria-expanded="true"],
+  :focus-visible
+)::before {
+  background-color: var(--fill-medium);
+}
+.workspace-tool-shortcut:is(.button, .workspace-tool-group)[data-current="true"] {
+  color: var(--control-selected-foreground);
+}
+.workspace-tool-shortcut[data-current="true"]::before {
+  background-color: var(--workspace-tool-selected-fill);
+}
+.workspace-tool-chevron {
+  display: inline-flex;
+  flex: none;
+  margin-inline-start: auto;
+}
+.workspace-tool-chevron > .ui-icon {
+  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.workspace-tool-group[aria-expanded="true"] .workspace-tool-chevron > .ui-icon {
+  transform: rotate(180deg);
+}
+/* 保持页面和各栏的滚动位置，只让打开的工具菜单内部滚动。 */
+html:has(.workspace-tool-group[aria-expanded="true"]),
+body:has(.workspace-tool-group[aria-expanded="true"])
+  .unified-workspace
+  :is(.composer-scroll, .results-panel, .history-rail-list, .variation-plan-body) {
+  overflow: hidden;
+}
+body:has(.workspace-tool-group[aria-expanded="true"]) > .lycobo-page-scrollbar {
+  visibility: hidden;
+}
+:root .workspace-tool-submenu.dropdown__popover {
+  width: min(620px, calc(100vw - 32px));
+  padding: 10px;
+  border: 0;
+}
+:root .workspace-tool-submenu[data-single-section].dropdown__popover {
+  width: min(320px, calc(100vw - 32px));
+}
+.workspace-tool-submenu .dropdown__menu {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-height: min(560px, 68dvh);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.workspace-tool-submenu .menu-section {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+}
+.workspace-tool-submenu[data-single-section] .dropdown__menu {
+  grid-template-columns: minmax(0, 1fr);
+}
+.workspace-tool-submenu .workspace-tool-submenu-close {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: 4px;
+  inset-inline-end: 6px;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--control-pill-radius);
+}
+.workspace-tool-section-label {
+  grid-column: 1 / -1;
+  min-height: 38px;
+  padding: 8px 12px 2px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+:root .workspace-tool-submenu .workspace-tool-menu-item {
+  gap: 8px;
+  align-items: center;
+  padding: 0 12px;
+  background: transparent;
+  font-size: 14px;
+  font-weight: var(--weight-medium);
+  line-height: 20px;
+}
+:root .workspace-tool-submenu .workspace-tool-menu-item:has(.workspace-tool-description) {
+  padding-block: 8px;
+}
+:root .workspace-tool-submenu .workspace-tool-menu-item::before {
   height: 40px;
-  border-radius: 12px;
-  background: transparent;
-  color: #ffffffb3;
-  transition:
-    transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    background-color 180ms ease,
-    color 180ms ease,
-    box-shadow 240ms ease;
+  border-radius: var(--radius);
+  background-color: transparent;
+  transition: background-color 150ms ease;
 }
-.workspace-tool-shortcut .workspace-tool-symbol > .ui-icon {
-  transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+:root .workspace-tool-submenu .workspace-tool-menu-item:has(.workspace-tool-description)::before {
+  inset-block: 0;
+  height: auto;
+  transform: none;
 }
-.workspace-tool-shortcut.button:is([data-hovered="true"], [aria-current="page"])
-  .workspace-tool-symbol {
-  background: transparent;
-  color: #fff;
+.workspace-tool-menu-item[data-current="true"] .workspace-tool-menu-copy > span:first-child {
+  color: var(--control-selected-foreground);
+  font-weight: var(--weight-semibold);
 }
-@media (prefers-reduced-motion: no-preference) {
-  .workspace-tool-shortcut.button[data-hovered="true"] .workspace-tool-symbol {
-    transform: none;
-  }
-  .workspace-tool-shortcut.button[data-hovered="true"] .workspace-tool-symbol > .ui-icon {
-    transform: none;
-  }
-  .workspace-tool-shortcut.button[data-pressed="true"] .workspace-tool-symbol {
-    transform: scale(0.92);
-    transition-duration: 90ms;
+:root
+  .workspace-tool-submenu
+  .workspace-tool-menu-item:is(
+    :hover,
+    [data-hovered="true"],
+    [data-focus-visible="true"],
+    :focus-visible
+  )::before {
+  background-color: var(--site-header-menu-hover-fill);
+}
+:root .workspace-tool-submenu .workspace-tool-menu-item[data-current="true"]::before {
+  background-color: var(--fill-medium);
+}
+.workspace-tool-menu-item:is(
+    :hover,
+    [data-hovered="true"],
+    [data-focus-visible="true"],
+    :focus-visible
+  )
+  .workspace-tool-menu-copy
+  > span:first-child {
+  color: var(--foreground);
+}
+.workspace-tool-preview-thumb {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 72px;
+  height: 50px;
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--fill-medium);
+}
+.workspace-tool-preview-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.workspace-tool-menu-item[data-tool="create"] .workspace-tool-preview-thumb img {
+  object-position: right center;
+}
+.workspace-tool-menu-copy {
+  display: grid;
+  min-width: 0;
+}
+.workspace-tool-description {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 16px;
+}
+@media (max-width: 767px) {
+  .workspace-tool-submenu .dropdown__menu {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 .workspace-tool-label {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  flex: 1;
   min-width: 0;
-}
-.workspace-tool-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: var(--text-base);
   line-height: var(--leading-base);
+  font-weight: var(--weight-medium);
+}
+.workspace-tool-shortcut[data-current="true"] .workspace-tool-label {
+  color: var(--foreground);
   font-weight: var(--weight-semibold);
 }
 
@@ -252,16 +389,18 @@
     .workspace-tool-bar {
       gap: 4px;
     }
-    .workspace-tool-shortcut.button {
+    .workspace-tool-shortcut:is(.button, .workspace-tool-group) {
       gap: 8px;
       padding-right: 8px;
     }
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .workspace-tool-shortcut.button,
-  .workspace-tool-shortcut .workspace-tool-symbol,
-  .workspace-tool-shortcut .workspace-tool-symbol > .ui-icon {
+  .workspace-tool-shortcut:is(.button, .workspace-tool-group),
+  .workspace-tool-shortcut::before,
+  .workspace-tool-rail-ripple,
+  .workspace-tool-chevron > .ui-icon,
+  :root .workspace-tool-submenu .workspace-tool-menu-item::before {
     transition: none;
   }
 }

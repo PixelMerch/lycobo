@@ -1,0 +1,87 @@
+.reference-mention-list {
+  position: relative;
+  isolation: isolate;
+}
+.reference-mention-list .list-box-item {
+  --menu-row-hover-fill: transparent;
+}
+.reference-mention-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-width: 0;
+}
+.reference-mention-highlight {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--fill-selected);
+  pointer-events: none;
+}
+
+@supports (animation-timing-function: linear(0, 1)) {
+  .reference-mention-popover.popover {
+    --mention-start-clip: inset(0 0 100% round 16px);
+    --mention-shift: -6px;
+  }
+  .reference-mention-popover.popover[data-placement="top"] {
+    --mention-start-clip: inset(100% 0 0 round 16px);
+    --mention-shift: 6px;
+  }
+  .reference-mention-popover.popover[data-entering="true"] {
+    animation:
+      reference-mention-reveal var(--mention-soft-spring),
+      reference-mention-fade var(--mention-fade-spring);
+  }
+  .reference-mention-popover.popover[data-exiting="true"] {
+    animation: reference-mention-dismiss var(--mention-fade-spring);
+    pointer-events: none;
+  }
+  .reference-prompt-chip[data-mention-inserted] {
+    transform-origin: 50% 60%;
+    animation: reference-mention-insert var(--mention-pop-spring);
+  }
+}
+
+@keyframes reference-mention-reveal {
+  from {
+    clip-path: var(--mention-start-clip);
+  }
+  to {
+    clip-path: inset(0 round 16px);
+  }
+}
+@keyframes reference-mention-fade {
+  from {
+    opacity: 0;
+    transform: translateY(var(--mention-shift));
+  }
+}
+@keyframes reference-mention-dismiss {
+  to {
+    opacity: 0;
+    transform: translateY(var(--mention-shift));
+  }
+}
+@keyframes reference-mention-insert {
+  from {
+    scale: 0.6;
+  }
+  to {
+    scale: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reference-mention-popover.popover:is([data-entering="true"], [data-exiting="true"]),
+  .reference-prompt-chip[data-mention-inserted] {
+    animation: none;
+  }
+}
+@media (forced-colors: active) {
+  .reference-mention-list .list-box-item[data-focus-visible="true"] {
+    outline: 1px solid Highlight;
+    outline-offset: -1px;
+  }
+}

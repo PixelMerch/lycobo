@@ -18,7 +18,7 @@ test("a disabled service keeps references without claiming the model cannot edit
   await page.goto("/commerce/create");
   await page
     .getByLabel("添加参考图片", { exact: true })
-    .setInputFiles("apps/web/public/studio/bedroom.webp");
+    .setInputFiles(".github/ci/browser/fixtures/studio/bedroom.webp");
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   await expect(page.getByText("生图服务尚未启用", { exact: true })).toBeVisible();
   await expect(

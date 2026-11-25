@@ -313,7 +313,10 @@ test("uploaded draft references preview in the shared viewer and stay deletable"
   await page.goto("/commerce/create");
   await page
     .getByLabel("添加参考图片", { exact: true })
-    .setInputFiles(["apps/web/public/studio/bedroom.webp", "apps/web/public/studio/lavender.webp"]);
+    .setInputFiles([
+      ".github/ci/browser/fixtures/studio/bedroom.webp",
+      ".github/ci/browser/fixtures/studio/lavender.webp",
+    ]);
   const tiles = page.locator(".reference-tile");
   await expect(tiles).toHaveCount(2);
   const opener = page.getByRole("button", { name: "查看参考图片：图片1", exact: true });

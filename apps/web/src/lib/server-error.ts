@@ -6,12 +6,13 @@ import { serverErrorMessages } from "./server-error-messages";
 export type ServerFailure = { message: string; error: { code: string } };
 
 /**
- * 服务端错误的提示文字。服务端只返回中文原文：中文界面原样显示，
- * 英文界面按错误代码换成英文说明，未知代码用通用说明。
+ * 积分不足统一按错误码本地化，兼容旧服务端文案；其他中文错误保留原文，
+ * 英文按错误码显示，未知代码使用通用说明。
  */
 export function serverErrorMessage(failure: ServerFailure) {
-  if (currentLocale() === "zh-CN") return failure.message;
   const t = currentMessages(serverErrorMessages);
+  if (failure.error.code === "INSUFFICIENT_CREDITS") return t.codes.INSUFFICIENT_CREDITS;
+  if (currentLocale() === "zh-CN") return failure.message;
   const codes: Record<string, string> = t.codes;
   return codes[failure.error.code] ?? t.fallback;
 }

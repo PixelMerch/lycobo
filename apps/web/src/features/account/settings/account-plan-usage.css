@@ -1,4 +1,4 @@
-/* 套餐与用量：当前套餐、积分余额两行（左侧标题与数值、右侧操作），下方为积分用量。 */
+/* 积分与账单展示可用余额、充值和收支记录。 */
 .plan-usage {
   display: flex;
   flex-direction: column;
@@ -43,7 +43,6 @@
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
 }
-/* 升级用品牌青柠渐变胶囊，充值积分用中性玻璃胶囊。 */
 .plan-usage-row .button {
   flex: none;
   height: 40px;
@@ -54,14 +53,6 @@
   font-size: var(--text-base);
   line-height: 20px;
   font-weight: var(--weight-medium);
-}
-.plan-usage-row .plan-usage-upgrade.button {
-  background: var(--app-primary-gradient);
-  color: var(--accent-foreground);
-}
-.plan-usage-row .plan-usage-upgrade.button:is(:hover, [data-hovered="true"]) {
-  box-shadow: var(--accent-glow);
-  filter: brightness(1.04);
 }
 .plan-usage-row .plan-usage-recharge.button {
   background: #ffffff14;

@@ -1,11 +1,11 @@
 import { Modal } from "@heroui/react";
 import type { AssetTool } from "@lycoboai/contracts";
-import { LayoutGroup, motion } from "motion/react";
+import { motion } from "motion/react";
 import { useState } from "react";
 import { DialogClose } from "../../components/overlays/dialog-close";
-import { useCenteredDialogMotion } from "../../components/overlays/use-centered-dialog-motion";
+import { useCenteredDialogEntrance } from "../../components/overlays/use-centered-dialog-entrance";
 import "../../styles/fullscreen-dialog.css";
-import { HomeInspirationGallery } from "../home/home-inspiration-gallery";
+import { HomeInspirationGallery } from "../inspiration/home-inspiration-gallery";
 import { AssetBrowser } from "./asset-browser";
 import { toolAssetFilters } from "./asset-library-client";
 import { type AssetLibraryTab, AssetLibraryTabs } from "./asset-library-tabs";
@@ -19,21 +19,23 @@ import { assetsMessages } from "./assets-messages";
  */
 export function LibraryDialog({
   tool,
+  initialTab = "mine",
   onClose,
 }: {
   tool?: AssetTool | undefined;
+  initialTab?: AssetLibraryTab;
   onClose: () => void;
 }) {
   const [filters, setFilters] = useState(() => toolAssetFilters(tool));
-  const [tab, setTab] = useState<AssetLibraryTab>("mine");
+  const [tab, setTab] = useState<AssetLibraryTab>(initialTab);
   const [selecting, setSelecting] = useState(false);
   const t = useMessages(assetsMessages);
-  const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
+  const surfaceMotion = useCenteredDialogEntrance();
   return (
     <Modal
       isOpen
       onOpenChange={(open) => {
-        if (!open) requestClose();
+        if (!open) onClose();
       }}
     >
       <Modal.Backdrop
@@ -42,27 +44,25 @@ export function LibraryDialog({
       >
         <Modal.Container size="full" className="fullscreen-dialog__container">
           <Modal.Dialog className="library-dialog" aria-label={t.libraryTitle}>
-            <motion.div className="library-shell" data-dialog-phase={phase} {...surfaceMotion}>
+            <motion.div className="library-shell" {...surfaceMotion}>
               <AssetLibraryTabs
                 tab={tab}
+                floatingScrollbar
                 onTabChange={setTab}
-                lead={<DialogClose fullScreen label={t.closeLibrary} className="library-close" />}
+                endAction={
+                  <DialogClose fullScreen label={t.closeLibrary} className="library-close" />
+                }
                 mine={
                   <AssetBrowser
                     filters={filters}
                     currentTool={tool}
                     headingLevel={3}
                     onChange={setFilters}
-                    onViewHistory={requestClose}
+                    onViewHistory={onClose}
                     onSelectingChange={setSelecting}
                   />
                 }
-                inspiration={
-                  // 首页作品墙也在页面上时，分类选中动画各走各的，不在两面墙之间飞过去。
-                  <LayoutGroup id="asset-library-inspiration">
-                    <HomeInspirationGallery library onApplied={requestClose} />
-                  </LayoutGroup>
-                }
+                inspiration={<HomeInspirationGallery onApplied={onClose} />}
               />
             </motion.div>
           </Modal.Dialog>

@@ -185,11 +185,13 @@
   margin-top: auto;
 }
 .generation-submit.button {
+  --app-primary-gradient: var(--studio-accent-gradient);
+  --generate-button-height: 44px;
   width: 100%;
-  height: 44px;
-  min-height: 44px;
+  height: var(--generate-button-height);
+  min-height: var(--generate-button-height);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--control-pill-radius);
   padding-inline: var(--control-padding-lg);
   gap: 8px;
   background: var(--app-primary-gradient);
@@ -214,9 +216,6 @@
 }
 .credit-coin {
   display: block;
-}
-.generation-submit.button:is(:disabled, [data-disabled="true"]) .credit-coin {
-  opacity: 0.5;
 }
 /* 提交中保持原本亮度：HeroUI 会把进行中的按钮当作 aria-disabled 降低不透明度，这里恢复。 */
 .generation-submit.button:is([data-submitting="true"], [data-pending="true"]) {

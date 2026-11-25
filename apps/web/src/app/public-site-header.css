@@ -1,0 +1,167 @@
+/* 公共页面共用顶栏布局。 */
+.topbar.public-site-header {
+  gap: 16px;
+}
+/* 阅读区滚动到吸顶导航后方时，实色底板遮住正文与目录。 */
+.studio-app:has(.legal-page) > .topbar.public-site-header {
+  background: #000;
+}
+.topbar.public-site-header[data-landing-header] {
+  position: fixed;
+  inset-inline: 0;
+}
+.topbar.public-site-header[data-scrolled="true"] {
+  height: var(--header-height);
+  margin-bottom: 0;
+}
+.topbar.public-site-header[data-scrolled="true"]::before {
+  background: var(--site-header-scroll-background);
+  -webkit-backdrop-filter: var(--site-header-scroll-blur);
+  backdrop-filter: var(--site-header-scroll-blur);
+  box-shadow: none;
+}
+.public-site-brand-art {
+  position: relative;
+  display: block;
+  height: 100%;
+}
+.public-site-brand-art > :is(img, canvas) {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.public-site-brand-art > canvas {
+  visibility: hidden;
+  transform-origin: left center;
+  /* Rive 自带字形的基础偏移，只补齐起点和静态字标的差值。 */
+  transform: translateX(
+    calc(var(--site-brand-wordmark-offset) * (1 - var(--site-brand-progress, 0)))
+  );
+  scale: calc(
+    var(--site-brand-wordmark-scale) +
+    (1 - var(--site-brand-wordmark-scale)) *
+    var(--site-brand-progress, 0)
+  );
+}
+.public-site-brand-art[data-rive-ready] > img {
+  visibility: hidden;
+}
+.public-site-brand-art[data-rive-ready] > canvas {
+  visibility: visible;
+}
+.public-site-wordmark {
+  opacity: clamp(0, calc(1 - var(--site-brand-progress, 0) / 0.65), 1);
+}
+.public-site-header[data-landing-header] .public-site-wordmark {
+  translate: calc(-8px * var(--site-brand-progress, 0));
+}
+.public-site-symbol {
+  clip-path: inset(0 77% 0 0);
+  transform-origin: 11.7% 47.4%;
+  opacity: clamp(0, calc((var(--site-brand-progress, 0) - 0.35) / 0.65), 1);
+  transform: translateX(calc(41.5% * var(--site-brand-progress, 0)))
+    rotate(calc(-45deg * var(--site-brand-progress, 0)));
+}
+@media (prefers-reduced-motion: reduce) {
+  .public-site-header[data-landing-header] .public-site-wordmark {
+    translate: none;
+  }
+  .public-site-symbol {
+    transform: translateX(41.5%);
+  }
+}
+.public-site-desktop-nav .nav-row {
+  padding-inline: 12px;
+}
+.public-site-header
+  .public-site-desktop-nav
+  .nav-row:is(:hover, [data-hovered="true"], [aria-expanded="true"], :focus-visible) {
+  background-color: var(--site-header-nav-hover-fill);
+}
+.public-site-section.button {
+  font-weight: 500;
+}
+@media (max-width: 1159px) {
+  .public-site-header:is([data-landing-header], .studio-app:has(.legal-page) > *) .mobile-menu {
+    display: inline-flex;
+    flex: none;
+  }
+  .public-site-header:is([data-landing-header], .studio-app:has(.legal-page) > *)
+    .public-site-desktop-nav {
+    display: none;
+  }
+}
+.public-site-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-inline-start: auto;
+}
+.public-site-start.link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  height: var(--control-height-md);
+  padding-inline: var(--control-padding-md);
+  border-radius: 999px;
+  background: #f2f2f2;
+  color: var(--studio-canvas);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+.topbar.public-site-header:is(
+  [data-landing-header],
+  .studio-app:has(:is(.inspiration-library, .legal-page)) > *
+) {
+  padding-inline: var(--public-site-header-gutter);
+  .public-site-brand-art {
+    --site-brand-wordmark-offset: 0%;
+  }
+  .public-site-start.link {
+    border-radius: var(--control-radius);
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .public-site-start.link:hover {
+    background: #d4d4d4;
+    text-decoration: none;
+  }
+}
+.public-site-mobile-nav .nav-row {
+  white-space: normal;
+}
+.public-site-mobile-nav .disclosure__trigger {
+  justify-content: space-between;
+}
+@media (max-width: 1023px) {
+  .topbar.public-site-header {
+    gap: 6px;
+  }
+  .public-site-header .mobile-menu {
+    display: inline-flex;
+    flex: none;
+  }
+  .public-site-header .public-site-desktop-nav {
+    display: none;
+  }
+}
+@media (max-width: 1279px) {
+  .public-site-header[data-signed-in="true"] .mobile-menu {
+    display: inline-flex;
+    flex: none;
+  }
+  .public-site-header[data-signed-in="true"] .public-site-desktop-nav {
+    display: none;
+  }
+}
+@media (max-width: 767px) {
+  .public-site-actions {
+    gap: 4px;
+  }
+  .public-site-header .landing-account-controls .account-header {
+    display: flex;
+  }
+}

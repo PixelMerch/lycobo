@@ -66,7 +66,7 @@ Node 官方没有规定项目结构，这是社区的常见做法。`features` �
 - 每个业务导出一个返回 `Hono` 实例的函数，在 `app.ts` 用 `app.route()` 挂载。
 - 依赖通过函数参数传入，比如 `videoService(deps)`。不在模块顶层创建数据库或存储客户端，import 时不发网络请求。
 - 外部输入先当作 `unknown`，用 Zod 校验后再使用。
-- JSON 响应的外层结构由 `createApp` 统一处理，路由不要再包一层，见[返回规范](api-response.md)。
+- JSON 响应的外层结构由 `createApp` 统一处理，路由不要再包一层，见 [API 响应](#api-响应)。
 - 不要为几行纯函数加依赖注入层或类继承。
 
 ## 新增业务功能
@@ -161,6 +161,24 @@ const body: unknown = await c.req.json();
 - 没有反向依赖。
 - 注释写的是用途和原因，没有复述代码。
 - 不直观的逻辑，以及扣费、幂等、权限、重试、超时相关的代码都写了原因。
+
+## API 响应
+
+`createApp` 统一封装 JSON，业务路由直接返回 payload 或结构化错误。图片下载保留二进制，HEAD 保留无正文响应。保留 HTTP 状态码与 Set-Cookie、Retry-After 和安全响应头，因正文变化失效的 Content-Length、ETag 清除。
+
+```json
+{
+  "request_id": "06a4ddc8-f532-46ec-9e55-3779947aba2b",
+  "code": 0,
+  "message": "成功",
+  "data": {},
+  "error": {}
+}
+```
+
+- `request_id` 由服务端生成，与响应头 `X-Request-Id` 一致。业务码由 `packages/contracts/src/api/api-response.ts` 定义，成功为 0，失败为稳定非零码。失败时返回安全短消息、空 `data` 及 `error.code` 的符号标识。
+- 业务数据及分页等字段完整放在 `data`。查询到失败任务仍为查询成功，任务状态由 `data` 表达。首次提交使用 HTTP 202，幂等重放使用 200。退出登录返回 HTTP 200 和空 `data`。
+- Web 在 `apps/web/src/lib/api-response.ts` 拆包，再用领域 schema 校验。排障用 `X-Request-Id` 关联日志，记录方法、脱敏路径、状态和业务码。日志不带正文、动态标识、凭据、提示词、素材或签名地址。网络错误和无效响应按现有幂等流程确认，不因此重投付费任务。
 
 ## 参考资料
 

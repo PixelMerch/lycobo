@@ -1,7 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 
 // 界面同时提供简体中文与英文：中文文字只能写在 *-messages.ts 文案目录里，目录的英文版不能混入中文。
 const han = /\p{Script=Han}/u;

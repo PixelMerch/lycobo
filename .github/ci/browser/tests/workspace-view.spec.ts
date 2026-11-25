@@ -65,7 +65,7 @@ test("desktop keeps the tools in a left rail beside the settings panel and stack
   const composer = await page.locator(".composer-panel").boundingBox();
   if (!dock || !composer) throw new Error("Workspace geometry missing");
   // 168px 竖排工具栏在最左侧，参数栏排在它右侧 12px 处；两者顶边与“生成记录”标题文字对齐。
-  expect(dock.width).toBe(168);
+  expect(dock.width).toBe(200);
   expect(dock.y).toBe(composer.y);
   const title = await page.getByRole("heading", { name: "生成记录", exact: true }).boundingBox();
   expect(Math.abs(composer.y - (title?.y ?? 0))).toBeLessThan(1);
@@ -99,34 +99,65 @@ test("desktop keeps the tools in a left rail beside the settings panel and stack
   expect(compact?.height).toBeCloseTo(240, 0);
 });
 
+test("workspace shortcuts open the same library on the requested tab", async ({ page }) => {
+  await mockImageApi(page);
+  await page.goto("/zh-CN/dashboard/commerce/create");
+  const draft = page.getByLabel("提示词", { exact: true });
+  await draft.fill("保留在工作区的草稿");
+  const sidebar = page.locator("#workspace-tool-navigation");
+  await expect(sidebar.getByRole("button", { name: "自由画布", exact: true })).toHaveCount(0);
+  const inspiration = sidebar.getByRole("button", { name: "灵感库", exact: true });
+  const assets = sidebar.getByRole("button", { name: "素材库", exact: true });
+  const dialog = page.getByRole("dialog", { name: "素材库", exact: true });
+  await inspiration.click();
+  await expect(dialog.getByRole("tab", { name: "灵感库", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page).toHaveURL(/\/zh-CN\/dashboard\/commerce\/create$/);
+  await dialog.getByRole("button", { name: "关闭素材库", exact: true }).click();
+  await expect(inspiration).toBeFocused();
+  await assets.click();
+  await expect(dialog.getByRole("tab", { name: "我的素材", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await dialog.getByRole("button", { name: "关闭素材库", exact: true }).click();
+  await expect(assets).toBeFocused();
+  await expect(draft).toHaveValue("保留在工作区的草稿");
+});
+
 test("the tool rail collapses to icons while the settings panel stays", async ({ page }) => {
   await workspaceFixture(page);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/commerce/create");
   const composer = page.locator(".composer-panel");
   const dock = page.locator(".workspace-tool-dock");
-  const names = page.locator(".workspace-tool-dock .workspace-tool-name");
+  const names = page.locator(".workspace-tool-dock .workspace-tool-label");
   const tools = page.getByRole("navigation", { name: "电商创作工具" });
   await expect(names.first()).toBeVisible();
   expect((await tools.getByRole("button").first().boundingBox())?.y).toBe(
     (await composer.boundingBox())?.y,
   );
   await page.getByRole("button", { name: "收起工具栏", exact: true }).click();
-  // 收起后工具栏只剩 64px 宽的图标，参数栏照常显示；按钮名和悬停提示仍是工具名。
+  // 收起后工具栏只剩 64px 宽的图标，按钮保留类别名，参数栏照常显示。
   await expect.poll(async () => (await dock.boundingBox())?.width).toBe(64);
   await expect(names.first()).toBeHidden();
   await expect(composer).toBeVisible();
   const expand = page.getByRole("button", { name: "展开工具栏", exact: true });
   await expect(expand).toHaveAttribute("aria-expanded", "false");
   await expect(expand).toBeFocused();
-  await tools.getByRole("button", { name: "家纺裂变", exact: true }).hover();
-  await expect(page.getByRole("tooltip").filter({ hasText: "家纺裂变" })).toBeVisible();
+  await tools.getByRole("button", { name: "家纺裂变", exact: true }).click();
+  const submenu = page.getByRole("menu", { name: "家纺裂变", exact: true });
+  await expect(submenu.getByRole("menuitem", { name: "家纺套图", exact: true })).toBeVisible();
+  await expect(page.locator(".workspace-tool-submenu")).toHaveAttribute("data-placement", "right");
+  await page.keyboard.press("Escape");
   // 刷新后保持收起，再点一次恢复名称。
   await page.reload();
   await expect.poll(async () => (await dock.boundingBox())?.width).toBe(64);
   await page.getByRole("button", { name: "展开工具栏", exact: true }).click();
   await expect(names.first()).toBeVisible();
-  await expect.poll(async () => (await dock.boundingBox())?.width).toBe(168);
+  await expect.poll(async () => (await dock.boundingBox())?.width).toBe(200);
 });
 
 test("an image that cannot load shows a placeholder without preview, download or favorite", async ({

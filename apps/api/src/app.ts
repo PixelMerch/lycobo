@@ -115,6 +115,7 @@ function requestSizeLimit(maxSize: number) {
   });
 }
 
+/** 组装 API 路由、统一响应和可注入的业务服务。 */
 export function createApp(
   reportError?: ErrorReporter,
   images?: ImageApiDependencies,
@@ -151,11 +152,11 @@ export function createApp(
       stage: "foundation",
       generationEnabled: false,
       authenticationEnabled: false,
-      enterprisePasswordLoginEnabled: !!auth,
+      enterprisePasswordLoginEnabled: !!auth?.config.passwordTurnstile,
     };
     return c.json(capabilities);
   });
-  // Validate the shared contract now; accepting paid work requires auth, storage and an outbox.
+  // 先验证共享契约，收费任务还需要鉴权、存储和持久化出队记录。
   app.post(
     "/api/v1/tasks",
     zValidator<

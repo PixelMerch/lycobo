@@ -17,7 +17,7 @@ export function useTextileGeneration() {
   const draft = useTextileSetDraft();
   const session = useImageSession();
   const models = useImageModels();
-  const generation = useGenerateImage();
+  const generation = useGenerateImage({ successFeedback: "button" });
   const pending = usePendingSubmission(session.data);
   const ownPending =
     pending && !!session.data && pendingSubmissionSource(session.data) === "textile-set";
@@ -26,7 +26,7 @@ export function useTextileGeneration() {
   const configured =
     supportsReferences(capabilities, 1 + draft.detailImages.length) &&
     resolutions.includes(draft.resolution);
-  useErrorToast(generation.error?.message ?? models.error?.message);
+  useErrorToast(generation.feedbackError?.message ?? models.error?.message);
   return {
     resolutions,
     pending: ownPending,
@@ -36,7 +36,7 @@ export function useTextileGeneration() {
       !generation.isPending &&
       (ownPending || (!pending && configured && !!draft.mainImage && draft.views.length > 0)),
     unavailable: session.isSuccess && models.isSuccess && !configured,
-    submit: () => {
+    submit: async () => {
       const references = [draft.mainImage, ...draft.detailImages].filter((image) => image !== null);
       const input: Draft = {
         prompt: textilePromptMarker,
@@ -47,7 +47,7 @@ export function useTextileGeneration() {
         references,
       };
       revealNewestHistory();
-      generation.mutate(
+      await generation.mutateAsync(
         {
           model: "gpt-image-2.6",
           draft: input,
@@ -66,6 +66,7 @@ export function useTextileGeneration() {
           },
         },
       );
+      return true;
     },
   };
 }

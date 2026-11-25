@@ -21,7 +21,7 @@
   color: #c8c8c8;
 }
 .account-entry-mark:is([data-kind="refund"], [data-kind="recharge"], [data-kind="checkin"]) {
-  background: #a8ff0014;
+  background: color-mix(in srgb, var(--brand) 8%, transparent);
   color: var(--accent);
 }
 .account-entry-mark[data-kind="opening"] {

@@ -1,5 +1,5 @@
 /* 浮层共用毛玻璃，业务样式只负责布局。
- * 例外：会员全屏页和全屏图片浏览使用实色底。 */
+ * 例外：充值弹框和全屏图片浏览使用实色底。 */
 :root
   :is(
     .modal__dialog,
@@ -11,15 +11,20 @@
     .tooltip,
     .alert-dialog,
     .toast
-  ):not(.membership-dialog, .browse-image-dialog, .account-news-popover),
-:root .login-panel {
+  ):not(.credit-recharge-dialog, .browse-image-dialog, .account-news-popover) {
   background: var(--glass-fill), var(--glass-tint);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
 }
-/* 通知、账户与顶部栏入口沿用素材库来源菜单的深色毛玻璃。 */
+/* 工作区工具菜单与提示词的图片引用面板共用顶栏菜单材质。 */
+:root :is(.workspace-tool-submenu.dropdown__popover, .reference-mention-popover.popover) {
+  --glass-tint: var(--site-header-menu-background);
+  --glass-fill: linear-gradient(transparent, transparent);
+  --glass-blur: var(--site-header-menu-blur);
+}
+/* 通知、账户、普通确认弹框、灵感详情与顶部栏入口共用深色毛玻璃。 */
 :root
   :is(
     .choice-menu,
@@ -28,9 +33,18 @@
     .account-news-tooltip,
     .credits-menu,
     .account-menu,
-    .account-settings-dialog
+    .account-settings-dialog,
+    .confirm-dialog,
+    .home-inspiration-detail
   ) {
   --glass-tint: var(--glass-dark-tint);
+}
+@supports (backdrop-filter: blur(1px)) {
+  @media not (prefers-reduced-transparency: reduce) {
+    :root :is(.home-inspiration-detail, .confirm-dialog) {
+      --glass-tint: color-mix(in srgb, var(--glass-dark-tint) 92%, transparent);
+    }
+  }
 }
 :root .header-menu.dropdown__popover {
   border: 0;
@@ -50,13 +64,9 @@
     --glass-tint: var(--glass-fallback);
     --glass-dark-tint: var(--glass-fallback);
   }
-  :root .login-panel {
-    --glass-tint: var(--glass-fallback);
-  }
 }
 @media (prefers-reduced-transparency: reduce) {
-  :root,
-  :root .login-panel {
+  :root {
     --glass-fill: linear-gradient(transparent, transparent);
     --glass-tint: var(--glass-fallback);
     --glass-dark-tint: var(--glass-fallback);

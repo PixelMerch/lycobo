@@ -372,7 +372,7 @@ body:has(.textile-views-popover) :is(.composer-scroll, .results-panel, .history-
 }
 @media (min-width: 1024px) {
   .textile-views-anchor {
-    --textile-tool-rail: calc(var(--workspace-tool-rail-width, 168px) + 12px);
+    --textile-tool-rail: calc(var(--workspace-tool-rail-width, 200px) + 12px);
     /* 桌面参数栏顶边与“生成记录”标题文字对齐，浮层顶边跟着它。 */
     top: calc(var(--header-height) + var(--content-padding) + var(--workspace-column-top, 14px));
   }

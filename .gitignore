@@ -11,7 +11,7 @@ coverage/
 playwright-report/
 test-results/
 *.log
-# Legacy design exports stay excluded; current reference evidence belongs in docs/design.
+# Local design exports stay out of Git.
 /design/
 
 # Local design iteration memory

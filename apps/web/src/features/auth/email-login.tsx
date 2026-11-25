@@ -4,7 +4,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { currentMessages, useMessages } from "../../i18n/messages";
 import { useEmailCodeLogin } from "./auth-client";
 import { authMessages } from "./auth-messages";
-import { useEmailTurnstile } from "./use-email-turnstile";
+import { useLoginTurnstile } from "./use-login-turnstile";
 
 async function sendCode(email: string, captchaToken: string) {
   const t = currentMessages(authMessages);
@@ -61,7 +61,7 @@ export function EmailLogin({
   const codeInput = useRef<HTMLInputElement>(null);
   const verify = useEmailCodeLogin();
   const cooldown = useResendCooldown();
-  const { container, challenge } = useEmailTurnstile(siteKey);
+  const { container, challenge } = useLoginTurnstile(siteKey, "email_login");
   const pending = sending || verify.isPending;
   // 主按钮只为自己的操作转圈：发码前是“发送验证码”，收到码后是“验证并登录”；重新发送在自己的按钮上转圈。
   const submitPending = sentEmail ? verify.isPending : sending;
@@ -156,7 +156,7 @@ export function EmailLogin({
           </InputGroup>
         </TextField>
       )}
-      <div ref={container} className="login-email-challenge" />
+      <div ref={container} className="login-challenge" />
       <EmailSubmitButton
         codeStep={Boolean(sentEmail)}
         pending={submitPending}

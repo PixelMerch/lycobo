@@ -1,5 +1,5 @@
 import { Alert, Button, Tooltip } from "@heroui/react";
-import { imageUnitCredits } from "@lycoboai/contracts";
+import { imageUnitCredits, publicImageResolutions } from "@lycoboai/contracts";
 import { IconArrowBarToUp, IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { ReferencePrompt } from "../../components/reference-prompt/reference-prompt";
@@ -10,7 +10,7 @@ import { useErrorToast } from "../../lib/error-toast";
 import { WorkspaceComposerTitle } from "../workspace/workspace-tool-symbol";
 import { GenerateButton } from "./composer/generate-button";
 import { ParameterGroup } from "./composer/parameter-group";
-import { HomeRatioPicker } from "./composer/ratio-picker";
+import { AspectRatioField } from "./composer/ratio-picker";
 import {
   ImageApiError,
   useGenerateImage,
@@ -27,7 +27,7 @@ import { qualityLabel } from "./quality-label";
 import { qualityMessages } from "./quality-messages";
 import { hasPromptDescription } from "./references/prompt-description";
 import { ReferencePicker } from "./references/reference-picker";
-import { submissionReferenceRoles } from "./references/reference-roles";
+import { referencesMessages } from "./references/references-messages";
 import {
   type Draft,
   defaultDraft,
@@ -37,7 +37,6 @@ import {
 } from "./studio-state";
 
 const promptLimit = 5000;
-const resolutions = ["1.5K", "2K", "4K"] as const;
 
 /** 主图制作工作台：按当前模型读写草稿。 */
 export function WorkspacePage() {
@@ -47,16 +46,17 @@ export function WorkspacePage() {
 function Workspace({ model }: { model: ModelId }) {
   const locale = useLocale();
   const t = useMessages(generationMessages);
+  const referenceText = useMessages(referencesMessages);
   const draft = useStudioStore((s) => s.drafts[model] ?? defaultDraft);
   const updateDraft = useStudioStore((s) => s.updateDraft);
   const visitModel = useStudioStore((s) => s.visitModel);
   const inputId = useRef<HTMLTextAreaElement>(null);
   const session = useImageSession();
   const modelQuery = useImageModels();
-  const generate = useGenerateImage();
+  const generate = useGenerateImage({ successFeedback: "button" });
   const [showMore, setShowMore] = useState(false);
   useErrorToast(modelQuery.isError ? imageErrorMessage(modelQuery.error) : null);
-  const submissionError = generate.isError ? imageErrorMessage(generate.error) : null;
+  const submissionError = generate.feedbackError ? imageErrorMessage(generate.feedbackError) : null;
   useErrorToast(session.isError ? imageErrorMessage(session.error) : submissionError);
   const capabilities = modelCapabilities(modelQuery.data, model, "create");
   const enabledResolutions = capabilities?.enabledResolutions ?? [];
@@ -78,7 +78,13 @@ function Workspace({ model }: { model: ModelId }) {
     <section className="composer-panel" aria-label={t.composer}>
       <section className="composer-scroll" aria-label={t.parameters}>
         <WorkspaceComposerTitle />
-        <ReferencePicker compact withRoles model={model} references={draft.references} />
+        <ReferencePicker
+          compact
+          label={referenceText.addReference}
+          addLabel={referenceText.addReference}
+          model={model}
+          references={draft.references}
+        />
         <ReferencePrompt
           className="prompt-field"
           label={t.prompt}
@@ -96,22 +102,16 @@ function Workspace({ model }: { model: ModelId }) {
           showCount
           autoGrow
         />
-        <section className="parameter-group ratio-group" aria-label={t.aspectRatio}>
-          <div className="ratio-heading">
-            <h2>{t.aspectRatio}</h2>
-            <span className="ratio-current">{draft.ratio}</span>
-          </div>
-          <HomeRatioPicker
-            value={draft.ratio}
-            onChange={(ratio) => updateDraft(model, { ratio })}
-          />
-        </section>
+        <AspectRatioField
+          label={t.aspectRatio}
+          value={draft.ratio}
+          onChange={(ratio) => updateDraft(model, { ratio })}
+        />
         <ParameterGroup
           label={t.resolution}
-          values={resolutions}
+          values={publicImageResolutions}
           value={draft.resolution}
-          selectionId="resolution"
-          disabledValues={resolutions.filter(
+          disabledValues={publicImageResolutions.filter(
             (value) => !enabledResolutions.some((enabled) => enabled === value),
           )}
           onChange={(resolution) => updateDraft(model, { resolution })}
@@ -120,7 +120,6 @@ function Workspace({ model }: { model: ModelId }) {
           label={t.imageCount}
           values={["1", "2", "3", "4"]}
           value={draft.count}
-          selectionId="count"
           onChange={(count) => updateDraft(model, { count })}
         />
         {showMore && (
@@ -128,7 +127,6 @@ function Workspace({ model }: { model: ModelId }) {
             label={qualityMessages[locale].title}
             values={qualityLevels}
             value={draft.quality}
-            selectionId="quality"
             optionLabel={(level) => qualityLabel(locale, level)}
             onChange={(value) => updateDraft(model, { quality: value })}
           />
@@ -168,39 +166,19 @@ function useWorkspaceSubmission(
   pending: boolean,
 ) {
   const updateDraft = useStudioStore((state) => state.updateDraft);
-  const [submissionPhase, setSubmissionPhase] = useState<"idle" | "submitting" | "settled">("idle");
-  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(
-    () => () => {
-      if (settleTimer.current) clearTimeout(settleTimer.current);
-    },
-    [],
-  );
-  const submit = () => {
-    setSubmissionPhase("submitting");
+  return async () => {
     revealNewestHistory();
-    generate.mutate(
-      // 标了原图或风格时一并提交角色，服务端据此告诉模型每张参考图的用途。
-      { model, draft, referenceRoles: submissionReferenceRoles(draft.references) },
+    await generate.mutateAsync(
+      { model, draft },
       {
         onSuccess: () => {
-          const cleared = !pending && useStudioStore.getState().drafts[model] === draft;
-          if (cleared) {
+          if (!pending && useStudioStore.getState().drafts[model] === draft)
             updateDraft(model, { prompt: "", references: [] });
-            setSubmissionPhase("settled");
-            if (settleTimer.current) clearTimeout(settleTimer.current);
-            settleTimer.current = setTimeout(() => {
-              setSubmissionPhase("idle");
-            }, 600);
-          } else {
-            setSubmissionPhase("idle");
-          }
         },
-        onError: () => setSubmissionPhase("idle"),
       },
     );
+    return true;
   };
-  return { submit, activeSubmission: submissionPhase !== "idle" || generate.isPending };
 }
 
 function WorkspaceGeneration({
@@ -218,7 +196,8 @@ function WorkspaceGeneration({
   pending: boolean;
   canGenerate: boolean;
 }) {
-  const { submit, activeSubmission } = useWorkspaceSubmission(model, draft, generate, pending);
+  const submit = useWorkspaceSubmission(model, draft, generate, pending);
+  const activeSubmission = generate.isPending;
   const updateDraft = useStudioStore((state) => state.updateDraft);
   const setActiveModel = useStudioStore((state) => state.setActiveModel);
   const capabilities = modelCapabilities(modelQuery.data, model, "create");

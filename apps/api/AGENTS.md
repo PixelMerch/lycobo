@@ -1,7 +1,7 @@
 # API rules
 
 Root AGENTS.md applies. Read docs/node-ts-best-practices.md and the relevant feature document
-from docs/ai-workflow.md; DESIGN.md is needed only when the task affects UI behavior or appearance.
+from docs/README.md.
 Keep createApp separate from the listening server for tests.
 Use Hono app.request tests for request validation, ownership and error behavior.
 No network effects at import time. No production fixture success endpoints.

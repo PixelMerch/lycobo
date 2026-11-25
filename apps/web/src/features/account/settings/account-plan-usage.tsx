@@ -18,7 +18,7 @@ function pressedElement(target: Element) {
   return target instanceof HTMLElement ? target : null;
 }
 
-/** 套餐与用量的一行：左侧标题与数值，右侧操作。 */
+/** 在余额旁展示充值操作和图片用量估算。 */
 function PlanRow({
   label,
   value,
@@ -42,7 +42,7 @@ function PlanRow({
   );
 }
 
-/** 套餐与用量：会员等级与升级、企业共享积分与充值，下方为积分明细和充值订单。 */
+/** 展示积分余额、充值入口、积分明细和充值订单。 */
 export function AccountPlanUsage() {
   const t = useMessages(accountSettingsMessages);
   const wallet = useWallet();
@@ -54,18 +54,6 @@ export function AccountPlanUsage() {
     balance === undefined ? "" : t.imagesLeft(formatCredits(imagesFor(balance, unit)));
   return (
     <div className="plan-usage">
-      <PlanRow
-        label={t.currentPlan}
-        value={t.freePlan}
-        action={
-          <Button
-            className="plan-usage-upgrade"
-            onPress={(event) => open("membership", pressedElement(event.target))}
-          >
-            {t.upgrade}
-          </Button>
-        }
-      />
       <PlanRow
         label={t.balance}
         value={

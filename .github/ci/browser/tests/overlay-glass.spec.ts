@@ -35,7 +35,7 @@ for (const mobile of [false, true]) {
     );
     await expect(menu).toHaveCSS("backdrop-filter", "blur(40px)");
     await expect(menu).toHaveCSS("border-top-width", "0px");
-    const action = menu.getByRole("menuitem", { name: "开通会员", exact: true });
+    const action = menu.getByRole("menuitem", { name: "充值积分", exact: true });
     await expect(action).toHaveCSS("height", "44px");
     await expect(page.getByRole("menu")).toHaveCSS("outline-style", "none");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
@@ -138,8 +138,11 @@ test("language, avatar and account settings share the source menu tint", async (
   await page.keyboard.press("Escape");
   await expect(language).toBeHidden();
 
-  await page.locator(".account-header .account-trigger").click();
+  const avatar = page.locator(".account-header .account-trigger");
   const account = page.locator(".account-menu");
+  await avatar.hover();
+  await expect(account).toBeHidden();
+  await avatar.click();
   await glass(account);
   await expect(account).toHaveCSS("background-color", "rgba(18, 18, 18, 0.84)");
   await account.getByRole("button", { name: "设置", exact: true }).click();

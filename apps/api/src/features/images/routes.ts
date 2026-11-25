@@ -1,4 +1,3 @@
-import { imageUnitCredits } from "@lycoboai/contracts";
 import { ImageRepositoryError, VariationError, WalletError } from "@lycoboai/db";
 import { type Context, Hono } from "hono";
 import { enterprisePrincipal } from "../auth/principal";
@@ -29,7 +28,7 @@ function repositoryFailure(code: string): { status: 400 | 403 | 404 | 409; messa
     case "MODEL_CAPABILITY_UNVERIFIED":
       return { status: 400, message: "当前模型渠道未启用或不支持所选参数，请刷新模型配置" };
     case "INSUFFICIENT_CREDITS":
-      return { status: 409, message: `企业金币余额不足，每张图片需要 ${imageUnitCredits} 币` };
+      return { status: 409, message: "积分不足，请充值后重试" };
     case "STATE_CONFLICT":
       return { status: 409, message: "任务正在生成或状态已更新，请稍后重试" };
     default:

@@ -9,7 +9,6 @@ import {
   IconX,
   type TablerIcon,
 } from "@tabler/icons-react";
-import { useDialogDismiss } from "../../../components/overlays/use-dialog-dismiss";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
@@ -90,7 +89,7 @@ function SectionContent({
 
 /**
  * 账户设置：宽屏左侧为身份、分区与退出登录，右侧显示选中的分区；手机改为顶部页签。
- * 充值与会员订阅叠在它上面打开，尚未开放的账户服务如实显示，不模拟成功。
+ * 充值页叠在账户设置上面，关闭后回到原来的分区。
  */
 export function AccountSettingsDialog({
   section,
@@ -103,7 +102,6 @@ export function AccountSettingsDialog({
   const selectSection = useAccountOverlays((state) => state.selectSection);
   const t = useMessages(accountSettingsMessages);
   const wide = useWideViewport();
-  const dismiss = useDialogDismiss(onClose);
   if (!account) return null;
   const sections = settingsSections.filter((id) => {
     if (id === "security" && account.loginMethod === "social") return false;
@@ -111,12 +109,12 @@ export function AccountSettingsDialog({
   });
   return (
     <Modal
-      isOpen={dismiss.isOpen}
+      isOpen
       onOpenChange={(open) => {
-        if (!open) dismiss.requestClose();
+        if (!open) onClose();
       }}
     >
-      <Modal.Backdrop onAnimationEnd={dismiss.onAnimationEnd} className="account-backdrop">
+      <Modal.Backdrop className="account-backdrop">
         <Modal.Container>
           <Modal.Dialog className="account-dialog account-center-dialog account-settings-dialog">
             <Modal.Header>

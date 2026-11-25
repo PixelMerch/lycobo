@@ -27,12 +27,14 @@
   --field-border-focus: #ffffff66;
   --field-border-width: 1px;
   --muted: #a8a8a8;
-  --accent: #a8ff00;
-  --accent-foreground: #142000;
-  --accent-soft: #a8ff001f;
-  --accent-soft-foreground: #a8ff00;
-  --focus: #a8ff00;
-  --link: #a8ff00;
+  --brand: #a855f7;
+  --brand-light: color-mix(in srgb, var(--brand) 72%, white);
+  --accent: var(--brand);
+  --accent-foreground: var(--surface);
+  --accent-soft: color-mix(in srgb, var(--brand) 12%, transparent);
+  --accent-soft-foreground: var(--brand-light);
+  --focus: var(--brand);
+  --link: var(--brand-light);
   --border: #ffffff14;
   --separator: #ffffff0f;
   --backdrop: #00000099;
@@ -58,7 +60,7 @@
   --weight-semibold: 600;
   --text-display: 40px;
   --leading-display: 48px;
-  --app-primary-gradient: linear-gradient(120deg, #a8ff00 0%, #54e6a5 100%);
+  --app-primary-gradient: linear-gradient(120deg, var(--brand), var(--brand-light));
   --shell-inline-inset: 12px;
   --header-height: 64px;
   --workspace-history-width: 88px;
@@ -87,17 +89,18 @@
   --control-hover-fill: var(--fill-medium);
   --control-pressed-fill: var(--fill-strong);
   --control-selected-fill: var(--fill-selected);
+  --control-selected-foreground: var(--foreground);
   --interaction-hover: var(--fill-faint);
   --interaction-active: var(--fill-medium);
   /*
    * 精致感基础修复（用户 2026-11-10）：圆角只用 4／6／8／12／16／18／20／24／28px、胶囊与圆形，
-   * 6px 与 18px 只用于嵌套推导（外圆角 = 内圆角 + 内边距）；阴影只用下面三档，主按钮悬停统一一圈淡青柠光。
+   * 6px 与 18px 只用于嵌套推导（外圆角 = 内圆角 + 内边距）；阴影只用下面三档，主按钮悬停统一一圈淡紫光。
    * scripts/check-ui-conventions.mjs 会拦截新的离群圆角、偏色灰与文字透明度。
    */
   --shadow-sm: 0 2px 8px #00000066;
   --shadow-md: 0 12px 32px #00000059;
   --shadow-lg: 0 24px 64px #00000073;
-  --accent-glow: 0 0 16px #a8ff0020;
+  --accent-glow: 0 0 16px var(--accent-soft);
   --dismiss-target: 44px;
   --dismiss-disc: 33px;
   --dismiss-foreground: #ffffff;
@@ -117,6 +120,8 @@
   --control-padding-lg: 16px;
   --control-gap: 6px;
   --control-radius: 8px;
+  --control-pill-radius: 999px;
+  --choice-menu-inset: 6px;
   /*
    * 所有浮层共用的毛玻璃（用户 2026-11-10 要求统一为顶部栏积分菜单同款）：
    * 8% 白底、40px 背景模糊、无描边、右下柔和投影。--glass-edge 仍是浮层内部细分隔线的颜色。
@@ -124,8 +129,6 @@
   --glass-tint: transparent;
   --glass-dark-tint: rgb(18 18 18 / 84%);
   --image-preview-background: #000;
-  --dialog-close-duration: 480ms;
-  --dialog-close-ease: cubic-bezier(0.45, 0, 0.55, 1);
   --glass-fill: linear-gradient(#ffffff14, #ffffff14);
   --glass-border: transparent;
   --glass-edge: #ffffff1f;
@@ -134,6 +137,13 @@
   --glass-fallback: #1c1f1b;
   --glass-card: #ffffff08;
   --glass-card-edge: #ffffff0f;
+}
+:root:has(.studio-app:is([data-workspace-site-header], [data-public-site-header])) {
+  --background: var(--studio-canvas);
+  --brand: var(--foreground);
+  --brand-light: var(--foreground);
+  --accent-foreground: var(--studio-canvas);
+  --app-primary-gradient: var(--studio-primary-action);
 }
 * {
   box-sizing: border-box;

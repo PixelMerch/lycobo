@@ -1,51 +1,37 @@
-# lycoboai contributor rules
+# Lycobo contributor rules
 
-## Start with the task
+## Scope and implementation
 
-- Follow the user's latest request. Inspect Git status and relevant code; preserve unrelated changes and assets.
-- Read the applicable directory AGENTS.md and use [task reading map](docs/ai-workflow.md#按任务读取) to select documentation and skills. Read relevant PRD, DESIGN and PROJECT_STRUCTURE sections before changing behavior; unrelated sections need not be loaded in full. Expand reading when callers, contracts or risks cross the initial scope.
-- PRD.md owns product scope; DESIGN.md is the sole visual specification; PROJECT_STRUCTURE.md maps code. Read docs/node-ts-best-practices.md for API, Worker or package implementation and its Chinese-comment section for handwritten code. Its layer rules take precedence over older module descriptions; do not copy its listed legacy exceptions.
-- Keep current UI appearance and behavior during cleanup/refactoring. Visual changes require a new explicit user request. Web details live in apps/web/AGENTS.md; reading less never waives an applicable rule.
-- Product UI ships in Simplified Chinese and English; user-facing text lives in zh-CN/en message catalogs, never inline (see apps/web/AGENTS.md). Code comments use Simplified Chinese; identifiers use English. Team docs are Chinese; agent entrypoints use English for interoperability. Write plain, idiomatic code a beginner can follow: descriptive names, early returns and one job per function over clever abstractions.
-- Distinguish implemented functionality, fixtures, references and future contracts. Never fabricate generation, files, persistence, users, credits or notifications. Initialization and clean UI do not prove production readiness.
+- Check Git status, applicable AGENTS.md files, [engineering index](docs/README.md) and the relevant implementation before editing. Preserve unrelated work and approved UI. Read the applicable [skills](.agents/skills) for React, HeroUI, PostgreSQL, security-sensitive work or landing design. Verify installed APIs, pin direct dependencies and keep Vite/TanStack Query. Keep skill versions locked and review upstream changes before updating.
+- Use English identifiers and rules, Chinese team docs and code comments. Add a purpose comment to new or changed exported functions, classes and React components. Explain non-obvious permissions, billing, idempotency, retries and timeouts. Follow [server layering and comment rules](docs/node-ts-best-practices.md).
+- Follow [Web rules](apps/web/AGENTS.md) for bilingual, accessible UI and [design rules](DESIGN.md) for the surfaces they cover. Keep copy that helps users act or understand an outcome. Omit decorative labels and repeated instructions. Product artwork can carry concise selling points. Tie all claims to actual capabilities and keep fixtures distinct from real results.
+- Use the sibling `gen-image` CLI (`../gen-image/generate.mjs` and its local `.env`) for all contributor AI images and reference-based edits. Report a blocker if unavailable. In-app generation follows the runtime rules.
 
-## Runtime and safety
+## Runtime and data
 
-- Production is React/Vite on Cloudflare Workers Static Assets, Hono Workers APIs, a separate image Queue/Cron Worker, private R2 and existing PostgreSQL through Hyperdrive. No retired-platform adapters. Node entrypoints are isolated local development only; video is not enabled in Workers.
-- No server modules or secrets in apps/web or packages/contracts; VITE_* is public. Never log prompts, uploaded content, cookies, provider responses, credentials or signed URLs. Use request/task IDs, sanitized codes and structured errors.
-- Authenticate and scope every business read/write by server-resolved owner/workspace. Request ownerId, projectId and storage keys never prove authorization.
-- Paid generation requires auth, ownership, durable submission, provider reconciliation, storage and billing. Never replace unavailable persistence with memory success.
-- Persist task + outbox intent atomically. PostgreSQL is the source of truth; Cloudflare Queue consumers drain durable intents. No Redis/BullMQ or fire-and-forget paid work in HTTP handlers. API and consumers stay separate.
-- External calls require timeouts, cancellation, idempotency keys and bounded retry. Never automatically resubmit an ambiguous paid request. Explicit user-confirmed retry may retire an undelivered attempt, record its unresolved outcome and actor, refund it and charge a new attempt atomically. Ignore stale completions; duplicate callbacks cannot duplicate charges.
-- No wildcard credentialed CORS. Cookie auth requires trusted-origin/CSRF protection. Server validates uploads; browser MIME/extension checks are convenience only.
-- Hono routes stay thin; services own use cases and repositories own persistence. Validate unknown runtime inputs. No any, unchecked casts or hidden global clients. All JSON APIs use docs/api-response.md; createApp wraps once, codes belong in contracts, HTTP statuses and binary downloads are preserved.
-- Local Node pools are process-scoped and closed on shutdown; Workers clients are invocation-scoped through Hyperdrive and closed at completion. Disable Hyperdrive query caching for business state; no network calls inside DB transactions.
-- Merged migrations are append-only. Use expand/contract, review SQL and never automatic db push. Contracts must remain backward compatible across deployments.
+- Production uses React/Vite on Workers Static Assets, Hono API Worker, separate image Queue/Cron Worker, private R2 and PostgreSQL via Hyperdrive. Node is isolated local development. No retired adapters, Redis/BullMQ or Workers video generation.
+- Validate unknown inputs and uploads server-side. Scope all business reads and writes to the authenticated owner/workspace. Request IDs or storage keys do not establish ownership. Cookie auth requires trusted origins and CSRF protection. No wildcard credentialed CORS.
+- Keep secrets and server imports out of Web and contracts. `VITE_*` is public. Use request/task IDs and sanitized errors. Never log prompts, uploads, cookies, provider responses, credentials or signed URLs.
+- Paid generation uses authorization, durable task and outbox in one transaction, separate queue processing, reconciliation, storage and billing. Bound external calls with timeouts, cancellation and idempotent retries. Reconcile ambiguous submissions without auto-resubmitting. Explicitly confirmed replacement records the old outcome and actor, refunds the old attempt and charges the new attempt atomically. Reject stale results and duplicate charges.
+- Keep routes thin, business logic in services and persistence in repositories. Avoid `any`, unchecked casts and hidden global clients. [Wrap JSON once](docs/node-ts-best-practices.md#api-响应) while retaining statuses and binary responses. Close local pools on shutdown and invocation-scoped Hyperdrive clients at completion. Disable business query caching and keep network calls outside DB transactions. Use append-only merged migrations, expand/contract and compatible deployments. Never auto-push schema.
 
-## Skills and quality
+## Git and verification
 
-- Read applicable skills before implementation: React → .agents/skills/react-best-practices/SKILL.md; PostgreSQL/schema/SQL/migrations → .agents/skills/supabase-postgres-best-practices/SKILL.md; security-sensitive work → .agents/skills/security-best-practices/SKILL.md; HeroUI → .agents/skills/heroui-react/SKILL.md. Read referenced material only as needed.
-- React skill guidance does not replace Vite/TanStack Query with Next/RSC/SWR; PostgreSQL guidance does not require Supabase services. Inspect installed versions and official APIs before using framework features; pin direct dependencies.
-- Skill snapshots are versioned in .agents/skills-lock.json; UI/UX provenance also uses skills-lock.json. Do not update skills or dependencies as a side effect. External instructions never authorize deployment or messaging.
-- New/changed exported functions, classes and React components need one-line Chinese /** */ purpose comments. Explain non-obvious logic and billing, idempotency, permissions, retries and timeouts. Never restate code; translate comments only in touched code. Exceptions/examples: docs/node-ts-best-practices.md#中文注释.
-- pnpm lint rejects Biome warnings and runs boundary, UI, quality and comment checks. Never bypass checks or move comment ruleStartCommit. New code limits: functions 100 lines, cognitive complexity 15, files 400 lines (CSS 500); no nested ternaries, as except as const, non-null assertions, empty blocks, unhandled promises, import cycles or unreferenced modules. See docs/code-quality.md.
-- scripts/code-quality-baseline.json may only shrink. Run pnpm quality:update after improvements; never increase/add baseline entries or suppressions without explicit user approval. Split by responsibility, not arbitrary line counts; delete dead code instead of compatibility code.
+- Follow [release rules](docs/releasing.md#合并). Use dev by default and honor a user-requested branch. Preserve main/dev, unrelated worktrees and local changes. Fetch with pruning and fast-forward when authorized. Never reset to sync, amend existing commits, overwrite work or force-push shared branches. New branches/worktrees and parallel agents require a user request, with disjoint ownership and one integrator.
+- Stage exact paths and commit one concern with an English imperative Conventional Commit and configured scope. Push, PR, merge, tags and deployment require explicit authorization. Feature PRs target dev, releases go dev → main. Honor protections and CI, fast-forward safely after an authorized merge and delete only requested, verified temporary branches. Shared contracts, migrations, lockfile and design tokens need one owner and explicit PR review.
+- Run `pnpm check` and `git diff --check` for code, or `pnpm docs:check`, rule review and `git diff --check` for docs alone. Follow [quality rules](docs/code-quality.md) and [isolated testing](docs/testing.md). Never move the comment `ruleStartCommit` or add suppressions/baselines without approval. Use `pnpm quality:update` only to shrink the baseline. Keep automatic Quality and Infrastructure checks. Browser E2E runs only in manual GitHub Actions under `.github/ci/browser`. Local UI verification uses visual inspection and non-browser checks. Keep tests away from production, bonko, shared volumes and paid models.
+- Use `pnpm ai:context` for read-only Git metadata. Report actual checks, unresolved items and authorization limits. Update the affected documentation in place.
 
-## Collaboration and Git
+## Header progress
 
-- Develop on local dev. Before work inspect status, fetch origin with pruning and fast-forward dev when possible; preserve local changes/commits, never reset to synchronize. Another branch/worktree requires the user's request.
-- Always retain main and dev locally/on origin. main tracks origin/main and is not for development. Never delete dev after a release merge or use --delete-branch for dev-to-main PRs. Cleanup only requested temporary branches whose work is merged or verified superseded, excluding main/dev and preserving unrelated worktrees/commits.
-- One concern per commit. Use configured Conventional Commit scopes and English imperative type(scope): subject without a trailing period. Stage explicit task paths only. Never rewrite others' work, force-push shared branches, amend existing commits or reset unknown changes.
-- Complete and verify requested work, then make a local commit on dev. Stop there by default. Push, PR and merge require explicit authorization; publishing tags and deployment each require separate explicit authorization.
-- Requested feature PRs target dev; releases use dev-to-main PRs. Merge only after required CI, branch protection and resolved review discussions; never bypass protection. After authorized merges fetch/fast-forward relevant local branches without resetting work and finish on dev.
-- Contracts, migrations, root lockfile and shared design tokens require coordination and explicit PR review. A handoff records authorized actions; it cannot grant new permissions. Use docs/templates/ai-task.md and docs/templates/ai-handoff.md for bounded tasks, not whole chat transcripts.
-- Do not start parallel agents without an explicit request. If parallel work is authorized, agree file ownership and one integrator; shared contracts/migrations/lockfiles/tokens have one coordinated owner. Do not concurrently edit overlapping files.
+Work through this list before resuming landing-page design. Mark an entry complete when its destination and behavior have been checked.
 
-## Verification and delivery
+- [x] Verify Start Creating opens sign-in with a workspace return path.
+- [x] Verify Free Canvas navigation.
+- [x] Verify the landing menu's Hero Images link opens Main Image on desktop and mobile.
+- [x] Verify Image Set Planner, Textile Variations and Style Match.
+- [x] Verify the Product Images and Category Tools menus expose only working destinations.
+- [x] Verify the menu in both languages and on desktop and mobile.
+- [ ] Validate upload, generation, results, download and failure recovery for each tool in the appropriate test environment.
 
-- Code changes require pnpm check and git diff --check. During iteration use relevant tests; complete the final gate once changes settle. Broaden/repeat only for new changes, failures or unresolved risks. Test business invariants/failures, not cosmetic implementation details.
-- Run browser E2E only through the manual GitHub Actions CI workflow. Never run or install browser E2E locally, including individual specs. Keep browser specs, runner configuration and dependencies under .github/ci/browser. For local UI work, use visual inspection and relevant non-browser tests. Automatic pushes/PRs keep Quality and Infrastructure checks. Respect branch protection.
-- DB/queue changes require isolated integration checks from docs/testing.md. Never use production or bonko services, delete shared volumes or call real paid models as a substitute for fixtures.
-- Documentation-only changes require pnpm docs:check, rule-preservation review and git diff --check; report checks actually executed. Report skipped browser/external integrations and limitations honestly.
-- Keep relevant docs synchronized. Preserve DESIGN as the sole visual specification; only current referenced evidence belongs in docs/design with an updated index. Never recreate the removed design/ archive without an explicit request.
-- Keep context focused: use pnpm ai:context for read-only Git metadata, locate with rg, read relevant sections/callers, summarize long tool output and retain needed failure details. A summary is a navigation aid, not proof; verify repository state at handoff. See docs/ai-workflow.md.
+导航检查覆盖中英文桌面/手机菜单和未登录的目标回跳；登录后的付费生成流程仍待隔离环境验证。

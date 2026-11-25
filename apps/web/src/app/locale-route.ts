@@ -36,6 +36,17 @@ export function localizedRedirect(request: Request, target: string) {
   return redirect(localizedPath(target, locale));
 }
 
+/** 旧电商落地页统一跳转到语言首页，保留工具参数与定位片段。 */
+export function redirectCommerceToHome(request: Request) {
+  return redirectPreservingLocation(request, "/");
+}
+
+/** 页面迁移只替换业务路径，保留当前语言、查询参数与定位。 */
+export function redirectPreservingLocation(request: Request, target: string) {
+  const url = new URL(requestPath(request), request.url);
+  return localizedRedirect(request, `${target}${url.search}${url.hash}`);
+}
+
 /** 参数变化时同步语言，但复用同一套路由组件与实时连接。 */
 export function loadRouteLocale({ params, request }: LoaderFunctionArgs) {
   const locale = parseLocale(params.locale);

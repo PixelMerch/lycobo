@@ -4,7 +4,7 @@ import {
   imageGenerationInputSchema,
 } from "../../../../packages/contracts/src/images/image-generation";
 import { textileViews } from "../../../../packages/contracts/src/images/textile-generation";
-import { apiFixture, mockImageEvents } from "./image-api-fixture";
+import { apiFixture, chooseWorkspaceTool, mockImageEvents } from "./image-api-fixture";
 
 const png = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=",
@@ -219,10 +219,7 @@ test("textile angles submit one durable ten-image job and isolate history across
   await page.getByRole("button", { name: "重新编辑", exact: true }).click();
   await expect(page.locator(".textile-selected-view")).toHaveCount(10);
   await expect(page.locator(".reference-tile")).toHaveCount(6);
-  await page
-    .getByRole("navigation", { name: "电商创作工具" })
-    .getByRole("button", { name: "主图制作", exact: true })
-    .click();
+  await chooseWorkspaceTool(page, "主图制作");
   await expect(page.locator(".generation-job")).toHaveCount(0);
 });
 

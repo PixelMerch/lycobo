@@ -1,6 +1,9 @@
 import { Button, Input, ListBox, Tabs, TextField } from "@heroui/react";
+import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { InfiniteLoad } from "../../../components/infinite-load";
+import { MentionHighlight } from "../../../components/reference-prompt/mention-highlight";
+import { mentionSprings } from "../../../components/reference-prompt/mention-motion";
 import { useMessages } from "../../../i18n/messages";
 import { assetContentUrl } from "../asset-delivery-client";
 import { useImageAssets } from "../generation-client";
@@ -39,6 +42,7 @@ export function ReferenceMentionOptions({
 }) {
   const [category, setCategory] = useState("images");
   const [search, setSearch] = useState("");
+  const reduceMotion = useReducedMotion();
   const t = useMessages(referencesMessages);
   const isCurrent = (image: ReferenceImage) =>
     references.some(
@@ -123,22 +127,38 @@ export function ReferenceMentionOptions({
       </TextField>
       <div className="reference-mention-scroll">
         {filtered.length ? (
-          <ListBox
-            aria-label={t.selectable}
-            disabledKeys={disabled}
-            onAction={(key) => {
-              const image = filtered.find((item) => item.id === key);
-              if (image) onSelect([image]);
-            }}
-          >
-            {filtered.map((image) => (
-              <ListBox.Item key={image.id} id={image.id} textValue={image.name}>
-                <img src={image.src} alt="" loading="lazy" />
-                <span>{image.name}</span>
-                {alreadyUsed(image, usedIds) ? <small>{t.alreadyUsed}</small> : null}
-              </ListBox.Item>
-            ))}
-          </ListBox>
+          <div className="reference-mention-list">
+            <MentionHighlight />
+            <ListBox
+              aria-label={t.selectable}
+              disabledKeys={disabled}
+              onAction={(key) => {
+                const image = filtered.find((item) => item.id === key);
+                if (image) onSelect([image]);
+              }}
+            >
+              {filtered.map((image) => (
+                <ListBox.Item key={image.id} id={image.id} textValue={image.name}>
+                  <motion.div
+                    className="reference-mention-row"
+                    layout={reduceMotion ? false : "position"}
+                    initial={reduceMotion ? false : { opacity: 0, scale: 0.92, y: -8 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{
+                      layout: mentionSprings.soft,
+                      y: mentionSprings.soft,
+                      opacity: mentionSprings.fade,
+                      scale: mentionSprings.fade,
+                    }}
+                  >
+                    <img src={image.src} alt="" loading="lazy" />
+                    <span>{image.name}</span>
+                    {alreadyUsed(image, usedIds) ? <small>{t.alreadyUsed}</small> : null}
+                  </motion.div>
+                </ListBox.Item>
+              ))}
+            </ListBox>
+          </div>
         ) : (
           <p className="reference-mention-empty">{!loading && emptyLabel}</p>
         )}

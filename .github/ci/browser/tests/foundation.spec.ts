@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockImageApi } from "./image-api-fixture";
+import { chooseWorkspaceTool, mockImageApi } from "./image-api-fixture";
 
 test("workspace entry opens creation with direct tool navigation", async ({ page }) => {
   await mockImageApi(page);
@@ -12,10 +12,7 @@ test("workspace entry opens creation with direct tool navigation", async ({ page
   await preview.getByRole("link", { name: "进入工作区", exact: true }).last().click();
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(page.getByRole("button", { name: "全部工具", exact: true })).toHaveCount(0);
-  await page
-    .getByRole("navigation", { name: "电商创作工具" })
-    .getByRole("button", { name: "主图制作", exact: true })
-    .click();
+  await chooseWorkspaceTool(page, "主图制作");
   await expect(page.getByLabel(/^(提示词|制作要求)$/, { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "立即生成", exact: true })).toBeDisabled();
 });

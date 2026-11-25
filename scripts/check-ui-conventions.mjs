@@ -1,7 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 
 const nativeControls = new Set(["button", "input", "select", "textarea", "a"]);
 const interactiveRoles = new Set([
@@ -102,7 +102,7 @@ export function inspectStyleSource(source) {
     );
 }
 
-/** Enforce component boundaries; visual values remain governed by DESIGN.md. */
+/** 检查组件边界，视觉数值沿用共享样式与设计变量。 */
 function checkButtonProps(node, attrs, component, file, report) {
   if (attrs.has("onClick")) report(node, "HeroUI 操作组件使用 onPress；切换组件使用 onChange。");
   if (component === "Button" && attrs.has("aria-pressed"))
@@ -122,7 +122,7 @@ function checkButtonStyle(attrs, file, report) {
       if (property.name && geometry.has(property.name.getText(file).replace(/["']/g, "")))
         report(
           property,
-          "按钮几何必须使用全局控制尺寸 token 或 DESIGN.md 中具名例外，不能内联 padding/height/radius。",
+          "按钮几何必须使用全局控制尺寸 token 或 现有具名例外，不能内联 padding/height/radius。",
         );
     }
   }

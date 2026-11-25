@@ -4,7 +4,6 @@ import {
   IconCheck,
   IconDownload,
   IconPhotoOff,
-  IconPlayerPlayFilled,
   IconStar,
   IconStarFilled,
   IconUpload,
@@ -13,10 +12,8 @@ import type { CSSProperties } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { AssetImage } from "../generation/asset-image";
 import { downloadAsset } from "../generation/generation-client";
-import { formatVideoTime } from "../video/player/use-video-playback";
 import { assetToolName } from "./asset-filters";
 import { useAssetFavorite } from "./asset-library-client";
-import "../video/video.css";
 import "./asset-tile.css";
 import type { Locale } from "../../i18n/locale";
 import { useLocale } from "../../i18n/locale-store";
@@ -32,21 +29,15 @@ export type AssetTileSelection = { selecting: boolean; selected: boolean; onSele
 
 type AssetsText = (typeof assetsMessages)[Locale];
 
-/** 卡片上要显示的文字：来源（功能名或“上传”）、可读名称、替代文字与视频规格。 */
+/** 为图片卡片提供来源、可读名称和替代文字。 */
 function describeAsset(asset: ImageAsset, t: AssetsText, locale: Locale) {
   const generatedSource = asset.tool ? assetToolName(asset.tool, locale) : t.generatedFallback;
   const source = asset.kind === "reference" ? t.uploaded : generatedSource;
   const prompt = asset.prompt ? displayPrompt(asset.prompt, locale) : undefined;
-  const video = asset.type === "video";
-  const duration = asset.duration_seconds ? formatVideoTime(asset.duration_seconds) : null;
-  // 图片也带着任务的清晰度，规格只在视频封面上显示。
-  const specs = video ? [asset.resolution, duration] : [];
   return {
     source,
-    video,
     name: prompt ?? asset.public_id ?? source,
-    alt: prompt ?? t.assetAlt(source, video),
-    videoSpecs: specs.filter(Boolean).join(" · "),
+    alt: prompt ?? t.assetAlt(source),
   };
 }
 
@@ -70,34 +61,27 @@ function AssetTileOpen({
 }) {
   const t = useMessages(assetsMessages);
   const cover = (
-    <>
-      <AssetImage
-        assetId={asset.id}
-        thumbnail
-        width={asset.width}
-        height={asset.height}
-        alt={details.alt}
-        loading="lazy"
-        onUnavailable={onUnavailable}
-        fallback={
-          <span className="asset-tile-unavailable">
-            <UiIcon icon={IconPhotoOff} size="illustration" />
-            {t.imageUnavailable}
-          </span>
-        }
-      />
-      {details.video && (
-        <span className="video-cover-play" aria-hidden="true">
-          <UiIcon icon={IconPlayerPlayFilled} size="navigation" />
+    <AssetImage
+      assetId={asset.id}
+      thumbnail
+      width={asset.width}
+      height={asset.height}
+      alt={details.alt}
+      loading="lazy"
+      onUnavailable={onUnavailable}
+      fallback={
+        <span className="asset-tile-unavailable">
+          <UiIcon icon={IconPhotoOff} size="illustration" />
+          {t.imageUnavailable}
         </span>
-      )}
-    </>
+      }
+    />
   );
   if (selection.selecting)
     return (
       <ToggleButton
         className="asset-tile-open"
-        aria-label={t.selectAsset(details.video, details.name)}
+        aria-label={t.selectAsset(details.name)}
         isSelected={selection.selected}
         isDisabled={unavailable}
         onChange={selection.onSelect}
@@ -109,7 +93,7 @@ function AssetTileOpen({
     <Button
       variant="tertiary"
       className="asset-tile-open"
-      aria-label={t.viewAsset(details.video, details.name)}
+      aria-label={t.viewAsset(details.name)}
       onPress={(event) => {
         // 预览挂载时把当前焦点记为关闭后的返回位置，这里先手动聚焦。
         if (event.target instanceof HTMLElement) {
@@ -153,7 +137,6 @@ export function AssetTile({
     <div
       className="asset-tile"
       style={style}
-      data-media-type={asset.type}
       data-favorite={favorite || undefined}
       data-selecting={selection.selecting || undefined}
       data-selected={selection.selected || undefined}
@@ -191,14 +174,11 @@ export function AssetTile({
           {t.uploaded}
         </span>
       )}
-      {details.videoSpecs && <span className="asset-tile-specs">{details.videoSpecs}</span>}
       {!selection.selecting && (
         <>
-          {!details.video && (
-            <span className="asset-tile-foot">
-              <b>{details.source}</b> · {time(asset.created_at, locale)}
-            </span>
-          )}
+          <span className="asset-tile-foot">
+            <b>{details.source}</b> · {time(asset.created_at, locale)}
+          </span>
           {!unavailable && <AssetTileActions asset={asset} favorite={favorite} toggle={toggle} />}
         </>
       )}
@@ -215,9 +195,7 @@ function AssetTileActions({
   favorite: boolean;
   toggle: ReturnType<typeof useAssetFavorite>["toggle"];
 }) {
-  const video = asset.type === "video";
   const t = useMessages(assetsMessages);
-  const favoriteAction = video ? t.favoriteVideo : t.favoriteImage;
   return (
     <div className="asset-tile-actions">
       <Tooltip delay={0}>
@@ -226,7 +204,7 @@ function AssetTileActions({
           size="sm"
           variant="ghost"
           className="asset-tile-action"
-          aria-label={favorite ? t.unfavorite : favoriteAction}
+          aria-label={favorite ? t.unfavorite : t.favoriteImage}
           isSelected={favorite}
           onChange={toggle}
         >
@@ -240,7 +218,7 @@ function AssetTileActions({
           size="sm"
           variant="ghost"
           className="asset-tile-action"
-          aria-label={video ? t.downloadVideo : t.downloadOriginal}
+          aria-label={t.downloadOriginal}
           onPress={() => downloadAsset(asset.id)}
         >
           <UiIcon icon={IconDownload} />

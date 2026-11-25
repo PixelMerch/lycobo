@@ -1,0 +1,346 @@
+:is(.landing-header-controls, .landing-control-popover) {
+  --landing-control-height: 44px;
+  --landing-control-fill-height: var(--control-height-md);
+  --landing-control-fill-radius: var(--control-radius);
+  --landing-control-font-size: 14px;
+  --landing-control-line-height: 20px;
+}
+/* 账户与语言控件用于公共顶栏和工作区顶栏。 */
+.landing-header-controls {
+  --landing-control-gap: 8px;
+  --landing-text-control-padding: 12px;
+  --landing-control-color: #ffffffcc;
+  --landing-control-hover-color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--landing-control-gap);
+  color: var(--landing-control-color);
+}
+.landing-language-control {
+  flex: none;
+}
+.landing-account-controls {
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--landing-control-gap);
+  min-width: 0;
+}
+.header-workspace.link {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: var(--control-gap);
+  white-space: nowrap;
+  text-decoration: none;
+}
+.header-actions .header-workspace.link {
+  height: var(--control-height-md);
+  padding-inline: var(--control-padding-md);
+  border-radius: var(--control-radius);
+  background: var(--site-header-button-fill);
+  color: var(--foreground);
+}
+.header-actions .header-workspace.link:is(:hover, [data-hovered="true"]) {
+  background: var(--site-header-nav-hover-fill);
+}
+@media (max-width: 1319px) {
+  .header-workspace.link {
+    width: var(--control-touch-target);
+  }
+  .header-workspace.link > span {
+    display: none;
+  }
+  .landing-header-controls .header-workspace::before {
+    width: var(--landing-control-fill-height);
+    margin-inline: auto;
+  }
+}
+.header-workspace.link:is(:focus-visible, [data-focus-visible="true"]) {
+  outline: 1px solid currentColor;
+}
+.landing-account-controls .header-credits-divider {
+  background: currentColor;
+  opacity: 0.2;
+}
+.landing-account-controls .avatar[data-avatar-preset],
+.landing-control-popover .avatar[data-avatar-preset] {
+  --avatar-from: #292929;
+  --avatar-to: var(--avatar-from);
+  --avatar-ink: #f5f5f5;
+  font-size: var(--landing-control-font-size);
+}
+.landing-account-controls .account-avatar[data-avatar-preset] {
+  --avatar-from: var(--site-header-button-fill);
+}
+.landing-account-controls .account-avatar[data-avatar-preset] .avatar__fallback {
+  background: transparent;
+}
+.landing-header-controls
+  :is(
+    .language-trigger,
+    .header-credits,
+    .account-trigger,
+    .header-creation-guide.link,
+    .header-workspace
+  ) {
+  height: var(--landing-control-height);
+  min-height: var(--landing-control-height);
+  border-radius: var(--header-account-control-radius, var(--landing-control-fill-radius));
+  background: transparent;
+  color: inherit;
+  font-size: var(--landing-control-font-size);
+  font-weight: 500;
+  line-height: var(--landing-control-line-height);
+  transform: none;
+  transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.landing-header-controls
+  :is(.language-trigger, .header-credits, .header-creation-guide.link, .header-workspace) {
+  position: relative;
+  isolation: isolate;
+}
+.landing-header-controls :is(.language-trigger, .header-workspace) {
+  padding-inline: var(--landing-text-control-padding);
+}
+.landing-header-controls
+  :is(.language-trigger, .header-creation-guide.link, .header-workspace)::before {
+  position: absolute;
+  z-index: -1;
+  inset-inline: 0;
+  inset-block-start: 50%;
+  height: var(--landing-control-fill-height);
+  border-radius: inherit;
+  background: var(--site-header-button-fill);
+  transform: translateY(-50%);
+  transition: background-color 150ms ease;
+  pointer-events: none;
+  content: "";
+}
+.landing-header-controls .header-creation-guide.link {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  width: var(--landing-control-height);
+  min-width: var(--landing-control-height);
+  height: var(--landing-control-height);
+  min-height: var(--landing-control-height);
+}
+.landing-header-controls .header-creation-guide.link::before {
+  width: var(--landing-control-fill-height);
+  margin-inline: auto;
+}
+.landing-account-controls .account-header .account-trigger {
+  width: var(--landing-control-height);
+  min-width: var(--landing-control-height);
+}
+.landing-account-controls .account-trigger .account-avatar {
+  width: var(--landing-control-fill-height);
+  min-width: var(--landing-control-fill-height);
+  height: var(--landing-control-fill-height);
+}
+/* 下拉随吸顶按钮定位，页面滚动时不会被正文带走。 */
+.landing-language-control {
+  position: relative;
+}
+.landing-language-control .language-trigger {
+  justify-content: center;
+  width: auto;
+}
+.landing-language-control .language-trigger > svg:first-child {
+  flex: none;
+}
+.landing-language-control .language-trigger :is(.language-trigger-name, .language-trigger-chevron) {
+  display: inline-flex;
+}
+.landing-language-control .language-trigger-chevron {
+  scale: 0.8;
+  transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.landing-header-controls
+  :is(.language-trigger, .header-creation-guide.link, .header-workspace):is(
+    :hover,
+    [data-hovered="true"],
+    [aria-expanded="true"]
+  ) {
+  background: transparent;
+  color: var(--landing-control-hover-color);
+}
+.landing-header-controls
+  :is(.language-trigger, .header-creation-guide.link, .header-workspace):is(
+    :hover,
+    [data-hovered="true"],
+    [aria-expanded="true"],
+    [data-focus-visible="true"]
+  )::before {
+  background-color: var(--site-header-nav-hover-fill);
+}
+.landing-account-controls
+  .account-trigger:is(
+    :hover,
+    [data-hovered="true"],
+    [data-pressed="true"],
+    [aria-expanded="true"]
+  ) {
+  background: transparent;
+}
+.landing-account-controls
+  .account-trigger:is(
+    :hover,
+    [data-hovered="true"],
+    [aria-expanded="true"],
+    [data-focus-visible="true"]
+  )
+  .account-avatar[data-avatar-preset] {
+  --avatar-from: var(--site-header-nav-hover-fill);
+}
+.landing-header-controls
+  :is(
+    .language-trigger,
+    .header-credits,
+    .account-trigger,
+    .header-creation-guide,
+    .header-workspace
+  )[data-focus-visible="true"] {
+  outline: 1px solid currentColor;
+}
+.landing-language-popover .menu-item__indicator {
+  color: var(--control-selected-foreground);
+}
+:root .landing-control-popover:is(.dropdown__popover, .account-menu) {
+  --glass-tint: var(--site-header-menu-background);
+  --glass-fill: linear-gradient(transparent, transparent);
+  --glass-blur: var(--site-header-menu-blur);
+  border: 0;
+  padding: var(--choice-menu-inset);
+  animation: none;
+  transition: none;
+  scale: none;
+}
+.landing-control-popover .credits-menu-plan {
+  --menu-row-fill: #ffffff0a;
+}
+.landing-control-popover .credits-menu-upgrade {
+  background: #ffffff14;
+  color: #fff;
+  font-size: inherit;
+}
+@media (max-width: 767px) {
+  .landing-header-controls {
+    --landing-control-gap: 4px;
+    --landing-text-control-padding: 6px;
+  }
+  .landing-account-controls .header-credits {
+    gap: 4px;
+  }
+  .landing-language-control {
+    flex-basis: 44px;
+  }
+  .landing-language-control .language-trigger {
+    width: 100%;
+  }
+  .landing-header-controls .language-trigger::before {
+    width: var(--landing-control-fill-height);
+    margin-inline: auto;
+  }
+  .landing-language-control
+    .language-trigger
+    :is(.language-trigger-name, .language-trigger-chevron) {
+    display: none;
+  }
+}
+@media (max-width: 374px) {
+  .landing-header-controls:has(.landing-account-controls) .landing-language-control {
+    flex-basis: 40px;
+  }
+  .landing-header-controls .header-creation-guide.link {
+    display: none;
+  }
+}
+@media (max-width: 399px) {
+  .landing-header-controls:has(.landing-account-controls) .header-creation-guide.link {
+    display: none;
+  }
+}
+
+/* 所有菜单使用同样大小的悬停底板，语言的选中标记仍单独留位。 */
+:root .landing-control-popover :is(.menu-item, .account-menu-row) {
+  --menu-row-hover-fill: var(--site-header-menu-hover-fill);
+  --menu-row-radius: var(--landing-control-fill-radius);
+  height: var(--landing-control-height);
+  align-items: center;
+  padding-inline: var(--control-padding-md);
+  font-size: var(--landing-control-font-size);
+  font-weight: 500;
+  line-height: var(--landing-control-line-height);
+}
+:root .landing-control-popover :is(.menu-item, .account-menu-row)::before {
+  height: var(--landing-control-fill-height);
+  transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+:root .landing-language-popover .menu-item {
+  padding-inline-end: 40px;
+}
+.landing-control-popover :is(.credits-menu-plan, .credits-menu-balance, .account-menu-name) {
+  font-size: var(--landing-control-font-size);
+  line-height: var(--landing-control-line-height);
+}
+.landing-control-popover .credits-menu-balance {
+  min-height: var(--landing-control-height);
+  align-items: center;
+  padding: 0 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-header-controls
+    :is(
+      .language-trigger,
+      .header-credits,
+      .account-trigger,
+      .header-creation-guide,
+      .header-workspace
+    ),
+  .landing-header-controls
+    :is(.language-trigger, .header-creation-guide.link, .header-workspace)::before,
+  .landing-language-control .language-trigger-chevron,
+  :root .landing-control-popover :is(.menu-item, .account-menu-row)::before {
+    transition: none;
+  }
+}
+
+/* 工作区顶栏占据正常页面空间，公共页面共用右侧控件。 */
+.studio-app:is([data-workspace-site-header], [data-public-site-header]) {
+  --header-height: var(--studio-header-height);
+}
+.workspace-site-header {
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: var(--header-height);
+  padding-inline: var(--public-site-header-gutter);
+  background: var(--studio-canvas);
+}
+@media (max-width: 374px) {
+  .workspace-site-header .header-credit-purchase-tag {
+    display: none;
+  }
+}
+.workspace-site-header > .landing-header-controls {
+  min-width: 0;
+}
+@media (max-width: 380px) {
+  .workspace-site-header {
+    gap: 4px;
+  }
+  .workspace-site-header > .landing-header-controls {
+    --landing-control-gap: 3px;
+  }
+}

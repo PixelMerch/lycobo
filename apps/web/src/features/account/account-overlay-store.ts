@@ -1,10 +1,10 @@
 import { create } from "zustand";
 import type { SettingsSection } from "./settings/settings-sections";
 
-type AccountDialog = "recharge" | "membership" | "usage";
+type AccountDialog = "recharge" | "recharge-insufficient" | "usage";
 export type AccountLayer = "settings" | "dialog";
 
-/** 账户设置是底层弹窗；充值、会员订阅与积分明细叠在它上面，每层关闭后把焦点还给各自的入口。 */
+/** 管理账户设置、充值和积分明细的开合与焦点恢复。 */
 export const useAccountOverlays = create<{
   settings: SettingsSection | null;
   dialog: AccountDialog | null;

@@ -1,8 +1,8 @@
-# HeroUI 组件清单（已安装版本）
+# Web 组件与字体
 
 本文件记录 `@heroui/react` 3.2.7 实际导出的组件能力，供实现前查阅。
 规则只有一条：**交互能力在下面的清单里已经存在时，直接组合官方组件，不要自己实现。**
-CSS 仍负责主题与尺寸，见 [DESIGN.md](../DESIGN.md)。
+CSS 负责主题与尺寸，约定见 [Web 规则](../apps/web/AGENTS.md)。
 
 清单由 `apps/web/node_modules/@heroui/react/dist/components` 的实际目录整理，
 不是上游文档的推测。升级 `@heroui/react` 后必须重新核对本文件。
@@ -20,6 +20,8 @@ CSS 仍负责主题与尺寸，见 [DESIGN.md](../DESIGN.md)。
 
 参数互斥选项（分辨率、张数、图片比例）必须用 `ToggleButtonGroup` + `ToggleButton`，
 不要用 `Button` 配 `aria-pressed` 手写单选。
+
+单行参数使用弹簧滑动底板时，在按钮之后追加 [SelectionPill](../apps/web/src/components/selection-pill.tsx)，传入当前选中的 `value`。按钮组负责值和键盘交互，组件统一管理选中底色和弹簧，底板按选中按钮的尺寸与圆角绘制。禁用值隐藏底板。
 
 ## 输入与表单
 
@@ -56,6 +58,8 @@ CSS 仍负责主题与尺寸，见 [DESIGN.md](../DESIGN.md)。
 
 禁止手写焦点陷阱、模态键盘、下拉键盘或自建 dialog。
 
+`Modal`、`AlertDialog` 和 `Drawer` 在关闭时立即移除内容和遮罩。全屏弹窗共用入场动效，关闭回调直接处理卸载或导航。
+
 ## 结构、导航与排版
 
 | 组件                                          | 用途                                                         |
@@ -78,7 +82,7 @@ CSS 仍负责主题与尺寸，见 [DESIGN.md](../DESIGN.md)。
 
 ## 共享图片浏览
 
-`apps/web/src/components/image-viewer/image-viewer.tsx` 导出 `ImageViewer` 与 `ViewerImage`。传入 `images: { src, alt }[]`、`initialIndex` 和 `onClose`，调用方保留缩略图入口并在打开前聚焦它。支持多图切换、左右旋转、按钮／滚轮缩放、放大拖动、Escape 与嵌套弹层焦点返回。历史记录及图片详情参考图通过 ReferenceThumbnails 按需加载此组件。尺寸与视觉遵循 DESIGN.md 的通用图片浏览章节；只改变浏览状态，不写回素材。
+`apps/web/src/components/image-viewer/image-viewer.tsx` 导出 `ImageViewer` 与 `ViewerImage`。传入 `images: { src, alt }[]`、`initialIndex` 和 `onClose`，调用方保留缩略图入口并在打开前聚焦它。支持多图切换、左右旋转、按钮／滚轮缩放、放大拖动、Escape 与嵌套弹层焦点返回。历史记录及图片详情参考图通过 ReferenceThumbnails 按需加载此组件。使用共享图片浏览样式，只改变浏览状态。
 
 ## 状态与数据展示
 
@@ -111,15 +115,47 @@ CSS 仍负责主题与尺寸，见 [DESIGN.md](../DESIGN.md)。
 - HeroUI 未提供的能力（文件选择、图形编辑）才允许使用原生元素，
   并且仍以 HeroUI `Button` 作为可见入口。
 
-## 与 DESIGN.md 的关系
+## 样式来源
 
-包括账户表单的中性焦点、登录深色玻璃和不同关闭规格在内，所有局部视觉规则只在 DESIGN.md 维护。
-DESIGN.md 决定视觉与几何，本文件决定“用什么组件”与“不要自己实现什么”。
-两者冲突时以 DESIGN.md 的视觉规范为准，但不得据此重新手写交互组件。
+账户焦点、登录玻璃和关闭按钮规格沿用既有组件及共享样式。
 
 ## 按钮统一入口与检查
 
-按钮档位、padding、圆角的唯一数值表在 [DESIGN.md 的基础控件规范](../DESIGN.md#3-排版图标与基础控件)；不要在本文件另建一套数值。
+按钮尺寸、内边距和圆角复用共享控件 token。
 使用 Button 的 size="sm" / "md" / "lg" 与 isIconOnly，不以业务主色推断按钮一定需要更大 padding。
 切换使用 ToggleButton／ToggleButtonGroup，导航当前项使用 aria-current。
-审查步骤见 [UI 一致性维护](ui-consistency.md)，pnpm lint 自动运行 AST 组件检查。
+`pnpm lint` 自动运行 AST 组件检查。
+
+## 自托管字体
+
+主站使用阿里巴巴普惠体 3.0，字体文件版本 3.01，来自[官方站点](https://www.alibabafonts.com/)。页面不向字体 CDN 发请求。字标仍是独立的 SVG 路径，不参与正文加载。
+
+### 字重与加载
+
+| 用途                         | 字重 | 官方文件    |
+| ---------------------------- | ---- | ----------- |
+| 正文、说明、用户输入         | 400  | 55 Regular  |
+| 导航、按钮、字段标题         | 500  | 65 Medium   |
+| 区块标题、当前导航、首页标语 | 600  | 75 SemiBold |
+| 少量重点、会员价格           | 700  | 85 Bold     |
+
+每个字重按固定字符分组生成 WOFF2：西文、界面常用字、其余字符。`unicode-range` 控制按需下载，`font-display: swap` 保留加载期间的系统字体。每个字重的切片互不重叠，覆盖对应官方源字体的全部 Unicode 映射；缺字继续使用系统字体回退，不把字体不支持的字符伪装成已覆盖。
+
+字体在 `apps/web/public/fonts/alibaba-puhuiti-3`，声明在 `apps/web/src/styles/fonts`；内容哈希写入 WOFF2 文件名，`_headers` 对这些文件设置一年不可变缓存。CSS 随 Vite 打包并生成版本化文件名，不缓存可变名字的字体声明。没有全量字体或全部切片的 preload，浏览器只请求实际用到的字符和字重。
+
+### 重新生成
+
+生成不是开发启动、CI 或部署的前置步骤；提交的 WOFF2 可以直接构建发布。只有更新字体来源或分组时才重新生成。
+
+1. 建立隔离 Python 环境，按 `scripts/fonts/requirements.txt` 安装固定版本工具。
+2. 从官方源下载 `scripts/fonts/subsets.json` 中的四个 TTF，放到仓库外的同一临时目录。下载链接为 `https://fonts.alibabadesign.com/AlibabaPuHuiTi-3/<不含扩展名的文件名>/<文件名>`；官方资源要求来自 `https://www.alibabafonts.com/` 的 Referer。原始文件不提交到仓库。
+3. 在仓库外备份当前 `manifest.json` 后，运行 `python scripts/fonts/build-subsets.py --source-dir <临时字体目录>`。脚本先验证源文件 SHA256，再验证每个切片不丢字、分组不重叠、总覆盖完整；来源改变时校验失败，不静默采用新版。
+4. 对照新旧 `manifest.json` 检查字符数、文件数和大小，只删除旧 manifest 中已经不再引用的哈希文件。运行 `pnpm exec biome check --write apps/web/src/styles/fonts scripts/fonts/subsets.json` 格式化生成的声明，用浏览器检查中英文及实际字体请求，执行 `pnpm check`。
+
+`subsets.json` 的常用字分组来自当前界面文案频率，其他字符按码点划分。文案变化不会破坏覆盖或要求重新生成；它只可能让浏览器多下载一个已有切片。切片保留源字体版权和排版元数据，来源及授权链接见字体目录的 `NOTICE.txt`。
+
+### 首页落地页
+
+首页由 React 渲染并继承主站的自托管普惠体。功能区标题与说明由 `LandingSectionHeading` 提供入场动画，行动链接由 `LandingActionLink` 复用路由、按钮样式和可选箭头。首屏和结束横幅使用各自的标题排版。
+
+FAQ 使用 HeroUI Accordion 的展开状态和键盘交互。定位首页 FAQ 时将焦点移至标题，减少动态效果时直接显示标题与说明。

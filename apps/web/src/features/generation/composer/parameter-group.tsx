@@ -1,50 +1,45 @@
 import { ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { SelectionHighlight } from "./selection-highlight";
+import { SelectionPill } from "../../../components/selection-pill";
 
-/** 创作参数里的一行单选，图片与视频工具共用；optionLabel 把选项值换成显示名称。 */
-export function ParameterGroup({
+/** 创作参数的单选按钮组，支持禁用选项和自定义显示名称。 */
+export function ParameterGroup<Value extends string>({
   label,
   values,
   value,
   onChange,
-  selectionId,
   disabledValues = [],
   optionLabel = (option) => option,
 }: {
   label: string;
-  values: readonly string[];
-  disabledValues?: readonly string[];
-  value: string;
-  selectionId: string;
-  onChange: (value: string) => void;
-  optionLabel?: (option: string) => string;
+  values: readonly Value[];
+  disabledValues?: readonly Value[];
+  value: Value;
+  onChange: (value: Value) => void;
+  optionLabel?: (option: Value) => string;
 }) {
   return (
     <fieldset className="parameter-group">
       <legend>{label}</legend>
       <ToggleButtonGroup
         aria-label={label}
-        className="parameter-options"
+        className="parameter-options parameter-options-pill"
         disallowEmptySelection
         isDetached
         selectedKeys={[value]}
         selectionMode="single"
         onSelectionChange={(keys) => {
-          const [next] = [...keys];
-          if (next !== undefined) onChange(String(next));
+          const next = values.find((option) => keys.has(option));
+          if (next !== undefined) onChange(next);
         }}
       >
         {values.map((option) => (
           <ToggleButton key={option} id={option} isDisabled={disabledValues.includes(option)}>
-            {option === value && (
-              <SelectionHighlight
-                layoutId={`workspace-${selectionId}-selection`}
-                layoutDependency={value}
-              />
-            )}
             <span>{optionLabel(option)}</span>
           </ToggleButton>
         ))}
+        {values.includes(value) && !disabledValues.includes(value) && (
+          <SelectionPill value={value} />
+        )}
       </ToggleButtonGroup>
     </fieldset>
   );

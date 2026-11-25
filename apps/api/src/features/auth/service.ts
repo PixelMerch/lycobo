@@ -4,6 +4,7 @@ import type { AuthRepository } from "@lycoboai/db";
 import { sign, verify } from "hono/jwt";
 import { z } from "zod";
 import { dummyPasswordHash, hashPassword, verifyPassword } from "./password";
+import { verifyPasswordTurnstile } from "./password-turnstile";
 import { readSupabaseOAuth, type SupabaseOAuthConfig } from "./supabase-oauth";
 
 export type AuthConfig = {
@@ -11,9 +12,10 @@ export type AuthConfig = {
   origins: string[];
   secureCookie: boolean;
   oauth?: SupabaseOAuthConfig;
+  passwordTurnstile?: { siteKey: string; secret: string };
   edgeClientAddress?: string | null;
 };
-/** 读取主站 JWT、可信来源与第三方登录配置。 */
+/** 读取主站 JWT、可信来源、密码登录验证及第三方登录配置。 */
 export function readAuthConfig(env: Record<string, string | undefined>): AuthConfig | undefined {
   if (!env.AUTH_JWT_SECRET) return undefined;
   if (Buffer.byteLength(env.AUTH_JWT_SECRET) < 32)
@@ -36,7 +38,16 @@ export function readAuthConfig(env: Record<string, string | undefined>): AuthCon
   const secureCookie =
     env.NODE_ENV !== "development" || origins.some((origin) => origin.startsWith("https:"));
   const oauth = readSupabaseOAuth(env);
-  return { secret: env.AUTH_JWT_SECRET, origins, secureCookie, ...(oauth && { oauth }) };
+  const prefix = env.NODE_ENV === "development" ? "DEV_" : "";
+  const siteKey = env[`${prefix}AUTH_PASSWORD_TURNSTILE_SITE_KEY`]?.trim();
+  const secret = env[`${prefix}AUTH_PASSWORD_TURNSTILE_SECRET`]?.trim();
+  return {
+    secret: env.AUTH_JWT_SECRET,
+    origins,
+    secureCookie,
+    ...(oauth && { oauth }),
+    ...(siteKey && secret && { passwordTurnstile: { siteKey, secret } }),
+  };
 }
 const claimsSchema = z.object({
   sub: z.uuid(),
@@ -70,8 +81,55 @@ async function readRefreshClaims(token: string, secret: string) {
   }
 }
 
+type LoginPersistence = (id: string, expiresAt: Date, hash: string) => Promise<boolean>;
+
+async function verifyChallenge(
+  repository: AuthRepository,
+  config: AuthConfig,
+  verifyToken: typeof verifyPasswordTurnstile,
+  token: string,
+  origin: string,
+) {
+  if (!config.passwordTurnstile) return false;
+  const verified = await verifyToken(
+    config.passwordTurnstile.secret,
+    token,
+    origin,
+    config.edgeClientAddress,
+  );
+  return verified && repository.claimPasswordChallenge(token);
+}
+
+async function loginWithPassword<T>(
+  repository: AuthRepository,
+  mintSession: (persist: LoginPersistence) => Promise<T | null>,
+  account: string,
+  password: string,
+) {
+  if (!(await repository.allowLogin())) return { error: "RATE_LIMITED" } as const;
+  const credentialFailure = (retryAfter: number) =>
+    retryAfter
+      ? ({ error: "ACCOUNT_LOCKED", retryAfter } as const)
+      : ({ error: "INVALID_CREDENTIALS" } as const);
+  const retryAfter = await repository.passwordLoginRetryAfter(account);
+  if (retryAfter) return credentialFailure(retryAfter);
+  const credential = await repository.credential(account);
+  const valid = await verifyPassword(password, credential?.password_hash ?? dummyPasswordHash);
+  // 未知账号也执行相同的失败和锁定流程，避免通过响应推断账号是否存在。
+  if (!credential || !valid)
+    return credentialFailure(await repository.recordPasswordFailure(account));
+  const session = await mintSession((id, expiresAt, hash) =>
+    repository.createSession(id, credential, expiresAt, hash),
+  );
+  return session ?? credentialFailure(await repository.passwordLoginRetryAfter(account));
+}
+
 /** 企业账号鉴权服务：签发与校验 JWT、刷新、改密、保存个人偏好与撤销会话。 */
-export function enterpriseAuth(repository: AuthRepository, config: AuthConfig) {
+export function enterpriseAuth(
+  repository: AuthRepository,
+  config: AuthConfig,
+  verifyLoginToken = verifyPasswordTurnstile,
+) {
   const mintRefresh = (sessionId: string, expiresAt: Date) =>
     sign(
       {
@@ -116,9 +174,7 @@ export function enterpriseAuth(repository: AuthRepository, config: AuthConfig) {
       user,
     } as const;
   };
-  async function createLoginSession(
-    persist: (id: string, expiresAt: Date, hash: string) => Promise<boolean>,
-  ) {
+  async function createLoginSession(persist: LoginPersistence) {
     const id = randomUUID();
     const expiresAt = new Date((Math.floor(Date.now() / 1000) + refreshTokenLifetime) * 1000);
     const refreshToken = await mintRefresh(id, expiresAt);
@@ -129,16 +185,10 @@ export function enterpriseAuth(repository: AuthRepository, config: AuthConfig) {
   }
   return {
     config,
-    async login(account: string, password: string) {
-      if (!(await repository.allowLogin(account))) return { error: "RATE_LIMITED" } as const;
-      const credential = await repository.credential(account);
-      const valid = await verifyPassword(password, credential?.password_hash ?? dummyPasswordHash);
-      if (!credential || !valid) return { error: "INVALID_CREDENTIALS" } as const;
-      const result = await createLoginSession((id, expiresAt, hash) =>
-        repository.createSession(id, credential, expiresAt, hash),
-      );
-      return result ?? ({ error: "INVALID_CREDENTIALS" } as const);
-    },
+    verifyLoginChallenge: (token: string, origin: string) =>
+      verifyChallenge(repository, config, verifyLoginToken, token, origin),
+    login: (account: string, password: string) =>
+      loginWithPassword(repository, createLoginSession, account, password),
     /** 复用主站会话签发，不将 Supabase 的访问或刷新凭据写入浏览器。 */
     socialLogin: (identity: { externalId: string; email: string | null; nickname?: string }) =>
       createLoginSession((sessionId, expiresAt, refreshHash) =>

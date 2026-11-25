@@ -1,4 +1,4 @@
-import { Spinner } from "@heroui/react";
+import { HashLoader } from "react-spinners";
 import { useMessages } from "../i18n/messages";
 import { componentsMessages } from "./components-messages";
 
@@ -8,18 +8,26 @@ type LoadingStateProps = {
   size?: "sm" | "md" | "lg" | "xl";
 };
 
-/** 整屏加载状态：不透明底色盖住页面内容，加载指示不会叠在导航或卡片上。 */
+const loaderSizes = { sm: 20, md: 24, lg: 30, xl: 40 };
+
+/** 展示主题色加载动画，并为读屏软件提供当前语言的加载状态。 */
 export function LoadingState({ label, className, size = "lg" }: LoadingStateProps) {
   const t = useMessages(componentsMessages);
+  const pixels = loaderSizes[size];
   return (
     <div
       className={className ? `loading-state ${className}` : "loading-state"}
       role="status"
-      aria-busy="true"
-      aria-live="polite"
+      aria-label={label ?? t.loading}
     >
-      <Spinner aria-hidden size={size} />
-      <span className="loading-state-label">{label ?? t.loading}</span>
+      <span className="loading-state-animation" aria-hidden="true">
+        <HashLoader className="loading-state-spinner" color="#A8FF00" size={pixels} />
+      </span>
+      <span
+        className="loading-state-placeholder loading-state-reduced"
+        style={{ fontSize: pixels }}
+        aria-hidden="true"
+      />
     </div>
   );
 }

@@ -1,57 +1,117 @@
-import { Button, Spinner } from "@heroui/react";
-import { CreditCoin } from "../../../components/credit-coin";
+import { Button } from "@heroui/react";
+import { IconSparkle } from "@tabler/icons-react";
+import { useReducedMotion } from "motion/react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
+import { UiIcon } from "../../../components/ui-icon";
+import { useMessages } from "../../../i18n/messages";
+import { generationMessages } from "../generation-messages";
+import { GenerationButtonMotion, type SubmissionPhase } from "./generation-button-motion";
+import "./generate-button.css";
 
-/**
- * 电商工作区各功能共用的生成按钮（用户 2026-11-11 要求四个功能点击后的反馈一致）：点击后立刻进入提交中，
- * 保持青柠渐变、文字前出现旋转加载图标、按钮外圈流光，请求结束前不再响应点击；文字不变，不加省略号。
- * 提交成功由共用的“任务已提交”Toast 提示。
- */
+const minimumLoadingMs = 240;
+const successHoldMs = 2000;
+
+/** 创作工作区的提交按钮，以请求回执驱动反馈并锁住重复点击。 */
 export function GenerateButton({
   label,
   submitting,
   isDisabled,
   submittingLabel,
+  successLabel,
   cost,
   costDescription,
   describedBy,
+  compact = false,
   onPress,
+  onSuccessFeedbackEnd,
 }: {
   label: string;
   submitting: boolean;
-  /** 还不能提交（缺少输入等）；提交中只显示进行中的样子，不显示成禁用的灰色。 */
   isDisabled: boolean;
-  /** 加载图标给读屏用的说明。 */
   submittingLabel: string;
-  /** 按钮里显示的积分；不显示时不传。 */
+  successLabel?: string | undefined;
   cost?: number | undefined;
   costDescription?: string | undefined;
   describedBy?: string | undefined;
-  onPress: () => void;
+  compact?: boolean;
+  /** 收到有效回执时返回 true；跳过提交或请求失败时恢复按钮。 */
+  onPress: () => Promise<boolean>;
+  onSuccessFeedbackEnd?: () => void;
 }) {
+  const t = useMessages(generationMessages);
+  const [phase, setPhase] = useState<SubmissionPhase>("idle");
+  const locked = useRef(false);
+  const reducedMotion = !!useReducedMotion();
+  const state = phase === "idle" && submitting ? "loading" : phase;
+  const feedbackLabel = successLabel ?? t.submitted;
+  const status = { idle: "", loading: submittingLabel, success: feedbackLabel }[state];
+  const defaultCostDescription = cost !== undefined && !describedBy ? t.runCost(cost) : undefined;
+  const finishFeedback = useEffectEvent(() => {
+    locked.current = false;
+    setPhase("idle");
+    onSuccessFeedbackEnd?.();
+  });
+
+  useEffect(() => {
+    if (phase !== "success") return;
+    const timer = setTimeout(finishFeedback, successHoldMs);
+    return () => clearTimeout(timer);
+  }, [phase]);
+
+  async function submit() {
+    // 同一帧里的二次点击可能早于 React 更新按钮状态，先同步上锁。
+    if (locked.current || submitting || isDisabled) return;
+    locked.current = true;
+    setPhase("loading");
+    const startedAt = performance.now();
+    const accepted = await onPress().catch(() => false);
+    if (!accepted) {
+      locked.current = false;
+      setPhase("idle");
+      return;
+    }
+    const remaining = minimumLoadingMs - (performance.now() - startedAt);
+    if (!reducedMotion && remaining > 0) {
+      await new Promise<void>((resolve) => setTimeout(resolve, remaining));
+    }
+    setPhase("success");
+  }
+
   return (
-    <Button
-      variant="primary"
-      size="lg"
-      fullWidth
-      className={`primary-action generation-submit${submitting ? " generation-pending" : ""}`}
-      data-submitting={submitting || undefined}
-      isPending={submitting}
-      isDisabled={isDisabled && !submitting}
-      aria-label={label}
-      aria-description={costDescription}
-      {...(describedBy ? { "aria-describedby": describedBy } : {})}
-      onPress={onPress}
-    >
-      {submitting && (
-        <Spinner size="md" color="current" role="status" aria-label={submittingLabel} />
-      )}
-      {label}
-      {cost !== undefined && (
-        <span className="generate-credit-cost" aria-hidden="true">
-          <CreditCoin />
-          <span>{cost}</span>
-        </span>
-      )}
-    </Button>
+    <>
+      <Button
+        variant="primary"
+        size="lg"
+        fullWidth={!compact}
+        className={`primary-action generation-submit animated-generate${compact ? " animated-generate-compact" : ""}`}
+        data-submit-state={state}
+        isPending={state === "loading"}
+        isDisabled={state === "idle" && isDisabled}
+        {...(state === "success" ? { "aria-disabled": true } : {})}
+        aria-label={state === "success" ? feedbackLabel : label}
+        aria-description={
+          state === "idle" ? (costDescription ?? defaultCostDescription) : undefined
+        }
+        {...(state === "idle" && describedBy ? { "aria-describedby": describedBy } : {})}
+        onPress={submit}
+      >
+        <GenerationButtonMotion
+          phase={state}
+          successLabel={feedbackLabel}
+          reducedMotion={reducedMotion}
+        >
+          {label}
+          {cost !== undefined && (
+            <span className="generate-credit-cost">
+              <UiIcon icon={IconSparkle} />
+              <span>{cost}</span>
+            </span>
+          )}
+        </GenerationButtonMotion>
+      </Button>
+      <span className="sr-only" role="status">
+        {status}
+      </span>
+    </>
   );
 }

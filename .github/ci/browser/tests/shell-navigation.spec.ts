@@ -89,7 +89,6 @@ for (const path of [
   "/commerce/smart-variation",
   "/video",
   "/assets",
-  "/membership",
 ]) {
   test(`signed-out direct route ${path} requires login without mounting business pages`, async ({
     page,

@@ -1,5 +1,6 @@
 import { toast } from "@heroui/react";
 import {
+  type EnterpriseIdentity,
   type ImageJob,
   imageAssetsResponseSchema,
   imageModelsResponseSchema,
@@ -15,12 +16,14 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useRef } from "react";
+import { useAccountOverlays } from "../account/account-overlay-store";
+import { enterpriseSessionKey } from "../auth/auth-client";
 import { refreshWithoutRealtime } from "../realtime/availability";
 import { assetContentUrl } from "./asset-delivery-client";
 
 export { assetContentUrl } from "./asset-delivery-client";
 
-import { imageRequest } from "./image-request";
+import { ImageApiError, imageRequest } from "./image-request";
 import { type ImageSubmission, submitImage } from "./image-submission";
 
 export { ImageApiError, imageRequest } from "./image-request";
@@ -135,16 +138,31 @@ export function useImageAssets({
     getNextPageParam: (last) => (last.data.length === 30 ? last.data.at(-1)?.id : undefined),
   });
 }
-/** 提交生图任务：同一账号同时只允许一个提交，成功后刷新余额与历史。 */
-export function useGenerateImage(enabled = true) {
+function isInsufficientCredits(error: unknown) {
+  return error instanceof ImageApiError && error.businessCode === "INSUFFICIENT_CREDITS";
+}
+
+/** 提交生图任务；服务端确认积分不足时，从当前创作入口打开充值。 */
+export function useGenerateImage({
+  enabled = true,
+  successFeedback = "toast",
+}: {
+  enabled?: boolean;
+  successFeedback?: "toast" | "button";
+} = {}) {
   const session = useImageSession(enabled);
   const client = useQueryClient();
   const locked = useRef(false);
+  const rechargeError = useRef<unknown>(null);
   const mutationKey = ["image-submission", session.data?.organizationId, session.data?.userId];
   const activeRequests = useIsMutating({ mutationKey });
   const mutation = useMutation({
     mutationKey,
     retry: false,
+    onMutate: () => ({
+      opener: document.activeElement instanceof HTMLElement ? document.activeElement : null,
+      pathname: window.location.pathname,
+    }),
     mutationFn: (submission: ImageSubmission) => {
       if (!session.data)
         return Promise.reject(new Error(currentMessages(generationMessages).signInFirst));
@@ -153,8 +171,25 @@ export function useGenerateImage(enabled = true) {
     onSettled: () => {
       locked.current = false;
     },
+    onError: (error, _submission, context) => {
+      if (!context || !isInsufficientCredits(error)) return;
+      const owner = client.getQueryData<EnterpriseIdentity | null>(enterpriseSessionKey);
+      // 异步提交失败时，已换账号或离开创作页的用户无需看到充值弹框。
+      if (
+        !owner ||
+        owner.organizationId !== session.data?.organizationId ||
+        owner.userId !== session.data?.userId ||
+        context.pathname !== window.location.pathname
+      )
+        return;
+      rechargeError.current = error;
+      useAccountOverlays
+        .getState()
+        .open("recharge-insufficient", context.opener?.isConnected ? context.opener : null);
+    },
     onSuccess: () => {
-      toast.success(currentMessages(generationMessages).submissionAccepted);
+      if (successFeedback === "toast")
+        toast.success(currentMessages(generationMessages).submissionAccepted);
       // 账本事件与提交回执属于同一次变更，在线时交由唯一推送通道刷新余额。
       refreshWithoutRealtime(client, "wallet", "wallet-entries");
       void client.invalidateQueries({ queryKey: ["image-tasks"] });
@@ -163,6 +198,7 @@ export function useGenerateImage(enabled = true) {
   });
   return {
     ...mutation,
+    feedbackError: mutation.error === rechargeError.current ? null : mutation.error,
     isPending: mutation.isPending || activeRequests > 0,
     mutate: (...args: Parameters<typeof mutation.mutate>) => {
       if (locked.current || activeRequests > 0) return;

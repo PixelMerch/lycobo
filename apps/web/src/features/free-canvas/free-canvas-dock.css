@@ -1,0 +1,408 @@
+/* 自由画布：浮动创作卡、选中项检查器与底部工具条。 */
+/* 左侧浮动创作卡。 */
+.fc-dock {
+  position: absolute;
+  z-index: 3;
+  top: 68px;
+  bottom: 24px;
+  left: 12px;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  width: 340px;
+  border: 1px solid var(--fc-line);
+  border-radius: 16px;
+  background: #141414f2;
+  box-shadow: 0 24px 64px #00000073;
+  overflow: hidden;
+}
+
+.fc-dock-body {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.fc-prompt {
+  width: 100%;
+  min-height: 104px;
+  padding: 12px;
+  border: 1px solid var(--fc-line);
+  border-radius: 12px;
+  background: #0f0f0f;
+  color: var(--fc-text);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  resize: none;
+}
+
+.fc-prompt::placeholder {
+  color: var(--fc-quiet);
+}
+
+.fc-prompt:focus {
+  border-color: #ffffff33;
+  outline: none;
+}
+
+.fc-dock-group {
+  display: grid;
+  gap: 6px;
+}
+
+.fc-label {
+  color: var(--fc-muted);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.fc-models {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+
+.fc-models .toggle-button {
+  width: 100%;
+  height: 34px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--fc-line);
+  border-radius: 8px;
+  background: transparent;
+  color: #ffffffb3;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.fc-models .toggle-button:is(:hover, [data-hovered="true"]) {
+  background: #ffffff0f;
+  color: #fff;
+}
+
+.fc-models .toggle-button[data-selected="true"] {
+  border-color: #ffffff33;
+  background: #ffffff1f;
+  color: #fff;
+}
+
+.fc-ratios {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+
+.fc-ratios .toggle-button {
+  width: 100%;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  border: 1px solid var(--fc-line);
+  border-radius: 8px;
+  background: transparent;
+  color: #ffffffb3;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  box-shadow: none;
+}
+
+.fc-ratios .toggle-button[data-selected="true"] {
+  border-color: #ffffff33;
+  background: #ffffff1f;
+  color: #fff;
+}
+
+.fc-resolutions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+
+.fc-resolutions .toggle-button {
+  width: 100%;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  border: 1px solid var(--fc-line);
+  border-radius: 8px;
+  background: transparent;
+  color: #ffffffb3;
+  font-size: 11px;
+  box-shadow: none;
+}
+
+.fc-resolutions .toggle-button[data-selected="true"] {
+  border-color: #ffffff33;
+  background: #ffffff1f;
+  color: #fff;
+}
+
+.fc-resolutions .toggle-button[data-disabled="true"] {
+  opacity: 0.4;
+}
+
+.fc-status {
+  color: var(--fc-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.fc-dock-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--fc-line);
+}
+
+.fc-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fc-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.fc-send.button {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--fc-accent);
+  background-image: none;
+  color: var(--accent-foreground);
+  --button-bg: var(--brand);
+  --button-bg-hover: #b8ff2a;
+  --button-bg-pressed: #b8ff2a;
+  --button-fg: var(--accent-foreground);
+}
+
+.fc-send.button:is(:disabled, [data-disabled="true"]) {
+  background: #ffffff1f;
+  color: #ffffff66;
+}
+
+/* 选中项检查器，浮在画布右上。 */
+.fc-inspector {
+  position: absolute;
+  z-index: 3;
+  top: 68px;
+  right: 12px;
+  display: grid;
+  gap: 10px;
+  width: 260px;
+  padding: 14px;
+  border: 1px solid var(--fc-line);
+  border-radius: 16px;
+  background: #141414f2;
+  box-shadow: 0 24px 64px #00000073;
+}
+
+.fc-inspector-title {
+  color: var(--fc-muted);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.fc-inspector-text {
+  width: 100%;
+  min-height: 84px;
+  padding: 10px;
+  border: 1px solid var(--fc-line);
+  border-radius: 8px;
+  background: #0f0f0f;
+  color: var(--fc-text);
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1.6;
+  resize: none;
+}
+
+.fc-inspector-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.fc-inspector-actions .button {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  border: 1px solid var(--fc-line);
+  border-radius: 8px;
+  background: transparent;
+  background-image: none;
+  color: #ffffffb3;
+  --button-bg: transparent;
+  --button-bg-hover: #ffffff0f;
+  --button-bg-pressed: #ffffff0f;
+  --button-fg: #ffffffb3;
+  --button-fg-hover: #ffffff;
+}
+
+/* 底部浮动工具条。 */
+.fc-tools {
+  position: absolute;
+  z-index: 3;
+  bottom: 20px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--fc-line);
+  border-radius: 999px;
+  background: #141414f2;
+  box-shadow: 0 16px 40px #00000059;
+  transform: translateX(-50%);
+}
+
+.fc-tool-group {
+  display: flex;
+  gap: 2px;
+}
+
+.fc-tool-group .toggle-button {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #ffffffb3;
+  box-shadow: none;
+}
+
+.fc-tool-group .toggle-button:is(:hover, [data-hovered="true"]) {
+  background: #ffffff0f;
+  color: #fff;
+}
+
+.fc-tool-group .toggle-button[data-selected="true"] {
+  background: #ffffff1f;
+  color: #fff;
+}
+
+.fc-tool-add.button {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fc-accent);
+  background-image: none;
+  color: var(--accent-foreground);
+  --button-bg: var(--brand);
+  --button-bg-hover: #b8ff2a;
+  --button-bg-pressed: #b8ff2a;
+  --button-fg: var(--accent-foreground);
+}
+
+.fc-tool-divider {
+  width: 1px;
+  height: 20px;
+  margin-inline: 2px;
+  background: var(--fc-line);
+}
+
+@media (max-width: 1024px) {
+  .fc-page {
+    display: grid;
+    grid-template-rows: minmax(0, 58svh) auto;
+    height: auto;
+    min-height: calc(100dvh - var(--header-height, 64px));
+    overflow: visible;
+  }
+
+  .fc-canvas {
+    position: relative;
+    inset: auto;
+    min-height: 58svh;
+  }
+
+  .fc-dock {
+    position: relative;
+    inset: auto;
+    width: auto;
+    margin: 12px;
+    border-radius: 16px;
+    box-shadow: none;
+  }
+
+  .fc-inspector {
+    top: 68px;
+    right: 12px;
+    left: 12px;
+    width: auto;
+  }
+
+  .fc-topbar {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+  }
+
+  .fc-zoom-reset.button {
+    display: none;
+  }
+
+  .fc-hint {
+    left: 20px;
+    bottom: auto;
+    top: 68px;
+  }
+}
+
+@media (max-width: 639px) {
+  .fc-page {
+    --header-height: 60px;
+  }
+
+  .fc-filters {
+    gap: 2px;
+    padding: 3px;
+  }
+
+  .fc-filters .toggle-button {
+    height: 36px;
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: 12px;
+  }
+
+  .fc-upload.button {
+    height: 40px;
+    padding: 0 12px;
+  }
+
+  .fc-zoom {
+    display: none;
+  }
+
+  .fc-dock {
+    margin: 8px;
+  }
+
+  .fc-dock-body {
+    padding: 12px;
+  }
+
+  .fc-tools {
+    bottom: 12px;
+  }
+}

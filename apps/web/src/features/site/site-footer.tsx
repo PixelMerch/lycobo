@@ -1,93 +1,45 @@
-import { Button } from "@heroui/react";
-import { IconCamera, IconCopy, IconLayoutCollage, IconWand } from "@tabler/icons-react";
+import { Link } from "@heroui/react";
 import { RouteLink } from "../../components/router-link";
-import { UiIcon } from "../../components/ui-icon";
+import { useLocale } from "../../i18n/locale-store";
 import { useMessages } from "../../i18n/messages";
-import { useOpenAssetLibrary } from "../assets/asset-library-store";
-import { legalDocumentIds, legalPaths } from "../legal/legal-document";
-import { legalMessages } from "../legal/legal-messages";
-import { workspaceTools } from "../workspace/workspace-state";
-import { workspaceToolMessages } from "../workspace/workspace-tool-messages";
+import { siteSupportEmail } from "./site-contact";
 import { siteFooterMessages } from "./site-footer-messages";
-import { SiteFooterSocials } from "./site-footer-socials";
+import { siteFooterGroups } from "./site-footer-navigation";
 import "./site-footer.css";
 
-const footerToolIcons = {
-  create: IconCamera,
-  textile: IconLayoutCollage,
-  variation: IconWand,
-  replica: IconCopy,
-};
+const wordmark = { src: "/brand/lycobo-footer-wordmark.svg", width: 429, height: 108 };
 
-/** 用品牌社交标识与三组真实入口收尾，首页和法律文本页共用。 */
+/** 首页、灵感库和协议页使用公共页脚布局，站内链接沿用本地化路由。 */
 export function SiteFooter() {
   const t = useMessages(siteFooterMessages);
-  const legal = useMessages(legalMessages);
-  const tools = useMessages(workspaceToolMessages).tools;
-  const openLibrary = useOpenAssetLibrary();
-  const columns = [
-    {
-      label: t.tools,
-      // 视频尚未接入生产运行时，页脚只展示当前可用的图片创作入口。
-      links: workspaceTools
-        .filter((tool) => tool.id !== "video")
-        .map((tool) => ({
-          to: tool.path,
-          label: tools[tool.id].name,
-          icon: footerToolIcons[tool.id],
-        })),
-    },
-    {
-      label: t.space,
-      links: [
-        { to: "/workspace", label: t.links.workspace },
-        // 素材库是弹窗，点它直接打开，不跳转页面。
-        { to: "/assets", label: t.links.assets, opensLibrary: true },
-        { to: "/membership", label: t.links.membership },
-      ],
-    },
-    {
-      label: legal.navigation,
-      links: legalDocumentIds.map((id) => ({ to: legalPaths[id], label: legal.names[id] })),
-    },
-  ];
+  const groups = siteFooterGroups(useLocale());
   return (
     <footer className="site-footer">
       <div className="site-footer-inner">
-        <div className="site-footer-brand">
-          <RouteLink to="/" className="site-footer-logo" aria-label={t.homeLink}>
-            <img src="/brand/lycobo-reveal.svg" alt="Lycobo" width="168" height="45" />
-          </RouteLink>
-          <SiteFooterSocials />
+        <div className="site-footer-identity">
+          <img className="site-footer-brand" {...wordmark} alt="Lycobo" />
+          <p>{t.copyright(new Date().getFullYear())}</p>
+          <Link href={`mailto:${siteSupportEmail}`} className="site-footer-support">
+            {siteSupportEmail}
+          </Link>
         </div>
-        <nav className="site-footer-nav" aria-label={t.navigation}>
-          {columns.map((column) => (
-            <section key={column.label} className="site-footer-column" aria-label={column.label}>
-              <h2 className="site-footer-heading">{column.label}</h2>
-              <ul className="site-footer-links">
-                {column.links.map((link) => (
-                  <li key={link.to}>
-                    {"opensLibrary" in link ? (
-                      <Button
-                        variant="ghost"
-                        className="site-footer-link"
-                        onPress={(event) => openLibrary(event.target)}
-                      >
-                        {link.label}
-                      </Button>
-                    ) : (
-                      <RouteLink to={link.to} className="site-footer-link">
-                        {"icon" in link && <UiIcon icon={link.icon} size="default" />}
-                        {link.label}
-                      </RouteLink>
-                    )}
+        <nav className="site-footer-groups" aria-label={t.navigation}>
+          {groups.map(({ title, links }) => (
+            <div className="site-footer-group" key={title}>
+              <h2>{title}</h2>
+              <ul>
+                {links.map(({ path, label }) => (
+                  <li key={path}>
+                    <RouteLink to={path}>{label}</RouteLink>
                   </li>
                 ))}
               </ul>
-            </section>
+            </div>
           ))}
         </nav>
-        <p className="site-footer-copyright">{t.copyright(new Date().getFullYear())}</p>
+        <div className="site-footer-signature" aria-hidden="true">
+          <img {...wordmark} alt="" />
+        </div>
       </div>
     </footer>
   );

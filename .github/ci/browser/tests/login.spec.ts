@@ -1,8 +1,25 @@
 import { expect, test } from "@playwright/test";
-import { apiFixture, mockImageApi } from "./image-api-fixture";
+import { apiFixture, mockImageApi, mockPasswordTurnstile } from "./image-api-fixture";
 
 test.beforeEach(async ({ page }) => {
   await mockImageApi(page, { signedIn: false });
+  await mockPasswordTurnstile(page);
+});
+
+test("a backdrop click closes login while card clicks and drags keep it open", async ({ page }) => {
+  await page.goto("/zh-CN/login");
+  const login = page.locator(".login-page");
+  const card = login.locator(".login-shell");
+  await card.click({ position: { x: 4, y: 4 } });
+  await expect(login).toBeVisible();
+  await page.mouse.move(8, 8);
+  await page.mouse.down();
+  await page.mouse.move(80, 8);
+  await page.mouse.up();
+  await expect(login).toBeVisible();
+  await page.mouse.click(8, 8);
+  await expect(login).toHaveCount(0);
+  await expect(page).toHaveURL(/\/zh-CN\/?$/);
 });
 
 test("login offers unavailable providers without requests and keeps enterprise fields on a separate face", async ({
@@ -58,6 +75,11 @@ test("enterprise flip hides the other methods, keeps card height and clears pass
   const account = page.getByLabel("企业账号", { exact: true });
   const password = page.getByLabel("密码", { exact: true });
   await expect(account).toBeFocused();
+  await expect(account).toHaveCSS("caret-color", "rgb(168, 255, 0)");
+  await expect(panel.locator(".login-submit")).toHaveCSS(
+    "background-image",
+    /linear-gradient\(110deg, rgb\(168, 255, 0\), rgb\(89, 230, 162\)\)/,
+  );
   await expect(page.getByRole("button", { name: "使用 Google 登录", exact: true })).toHaveCount(0);
   await expect(page.getByLabel("邮箱", { exact: true })).toHaveCount(0);
   expect((await panel.boundingBox())?.height).toBe(height);
@@ -157,6 +179,33 @@ test("pending enterprise login blocks repeat submissions and changing methods", 
   await expect(dialog.getByLabel("密码", { exact: true })).toHaveValue("");
 });
 
+test("enterprise login sends a challenge token and keeps the lock message in the form", async ({
+  page,
+}) => {
+  await page.route("**/api/v1/auth/enterprise/login", (route) => {
+    expect(route.request().postDataJSON()).toMatchObject({
+      captchaToken: "password-fixture-token",
+    });
+    return route.fulfill({
+      status: 429,
+      headers: { "Retry-After": "3600" },
+      json: {
+        request_id: crypto.randomUUID(),
+        code: 20006,
+        message: "密码错误次数过多，账号已锁定 1 小时。请在解锁后重试。",
+        data: {},
+        error: { code: "ACCOUNT_LOCKED" },
+      },
+    });
+  });
+  await page.goto("/zh-CN/login");
+  await page.getByRole("button", { name: "企业账号登录", exact: true }).click();
+  await page.getByLabel("企业账号", { exact: true }).fill("locked-fixture");
+  await page.getByLabel("密码", { exact: true }).fill("password-fixture");
+  await page.getByRole("button", { name: "登录企业账号", exact: true }).click();
+  await expect(page.locator(".login-lock-notice")).toContainText("账号已锁定 1 小时");
+});
+
 test("sending an email code shows a spinner, sends once and confirms with a toast", async ({
   page,
 }) => {
@@ -228,7 +277,7 @@ test("social sign-in spins on the pressed button and confirms success on return"
   );
   await expect(dialog.getByRole("button", { name: "使用 Apple 登录", exact: true })).toBeDisabled();
   fail();
-  await expect(dialog.getByText("第三方登录未完成，请重试。", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("登录未完成，请重试。", { exact: true })).toBeVisible();
   await expect(dialog.getByRole("status", { name: "正在登录" })).toHaveCount(0);
 
   // 服务端完成第三方登录后带 oauth=success 回到登录页：提示“登录成功”再回到原页面。
@@ -358,7 +407,7 @@ test("asset authorization failure requests reauthentication even with a cached i
     route.fulfill({ status: 401, json: apiFixture({}, 401) }),
   );
   await page.goto("/assets");
-  await expect(page).toHaveURL(/\/zh-CN\/login\?returnTo=%2Fzh-CN%2Fassets&reauth=1$/);
+  await expect(page).toHaveURL(/\/zh-CN\/login\?returnTo=%2Fzh-CN%2Fdashboard%2Fassets&reauth=1$/);
   await page.getByRole("button", { name: "企业账号登录", exact: true }).click();
   await expect(page.getByLabel("企业账号", { exact: true })).toBeFocused();
   await expect(page.locator(".asset-browser")).toHaveCount(0);
@@ -368,12 +417,12 @@ test("login return target survives refresh and rejects external destinations", a
   await page.goto("/commerce/create?task=fixture#result");
   await expect(page).toHaveURL(/\/login\?/);
   expect(new URL(page.url()).searchParams.get("returnTo")).toBe(
-    "/zh-CN/commerce/create?task=fixture#result",
+    "/zh-CN/dashboard/commerce/create?task=fixture#result",
   );
   await page.reload();
   await expect(page.getByRole("button", { name: "企业账号登录", exact: true })).toBeVisible();
   expect(new URL(page.url()).searchParams.get("returnTo")).toBe(
-    "/zh-CN/commerce/create?task=fixture#result",
+    "/zh-CN/dashboard/commerce/create?task=fixture#result",
   );
   await page.goto("/login?returnTo=https%3A%2F%2Fexample.com%2F");
   const homeUrl = new URL("/zh-CN", page.url()).href;

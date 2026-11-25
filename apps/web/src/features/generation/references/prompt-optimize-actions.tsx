@@ -1,6 +1,6 @@
 import { Button, Spinner, Tooltip } from "@heroui/react";
 import { IconArrowBackUp, IconWand } from "@tabler/icons-react";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { promptOptimizeCredits } from "./prompt-optimizer-client";
@@ -15,7 +15,6 @@ export function PromptOptimizeActions({
   optimizer: ReturnType<typeof usePromptOptimizer>;
   prompt: string;
 }) {
-  const gradientId = useId();
   const trigger = useRef<HTMLButtonElement>(null);
   const actions = useRef<HTMLDivElement>(null);
   const [confirmingPrompt, setConfirmingPrompt] = useState<string | null>(null);
@@ -101,14 +100,7 @@ export function PromptOptimizeActions({
             onPress={() => setConfirmingPrompt(prompt)}
           >
             <span className="prompt-optimize-wand">
-              <UiIcon icon={IconWand} size="small" color={`url(#${gradientId})`}>
-                <defs>
-                  <linearGradient id={gradientId} x2="100%" y2="55%">
-                    <stop stopColor="var(--accent)" />
-                    <stop offset="100%" stopColor="#54e6a5" />
-                  </linearGradient>
-                </defs>
-              </UiIcon>
+              <UiIcon icon={IconWand} size="small" />
             </span>
             <span className="prompt-optimize-label">{t.optimize}</span>
           </Button>

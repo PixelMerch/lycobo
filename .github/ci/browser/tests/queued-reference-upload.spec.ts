@@ -39,7 +39,7 @@ for (const failure of [false, true]) {
     await page.goto("/commerce/create");
     await page
       .getByLabel("添加参考图片", { exact: true })
-      .setInputFiles("apps/web/public/studio/bedroom.webp");
+      .setInputFiles(".github/ci/browser/fixtures/studio/bedroom.webp");
     // 选图后浏览器要先解码、压缩，缩略图出现才算加进草稿，再点生成才会带上这张图。
     await expect(page.locator(".reference-tile")).toHaveCount(1);
     const prompt = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });

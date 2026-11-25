@@ -6,28 +6,43 @@ async function switchLanguage(page: Page, language: string) {
   await page.getByRole("menuitemradio", { name: language, exact: true }).click();
 }
 
-test("explicit language wins over storage and switching keeps the home draft and query", async ({
+test("the homepage language menu stays anchored while scrolling under the pointer", async ({
+  page,
+}) => {
+  await mockImageApi(page, { signedIn: false });
+  await page.goto("/en");
+  const trigger = page.locator(".language-trigger");
+  const option = page.getByRole("menuitemradio", { name: "English", exact: true });
+  await trigger.hover();
+  await option.hover();
+  await page.mouse.wheel(0, 600);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await expect(option).toBeInViewport();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await page.mouse.move(320, 260);
+  await expect(option).toBeHidden();
+});
+
+test("homepage language follows the URL and switching preserves query, history, and scroll", async ({
   page,
 }) => {
   await mockImageApi(page);
   await page.addInitScript(() => localStorage.setItem("lycobo.locale", "zh-CN"));
-  await page.goto("/en?category=product#inspiration");
+  await page.goto("/en?tool=create#commerce-composer");
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
-  const prompt = page.locator(".home-composer textarea");
-  await prompt.fill("A product photo draft that must survive a language switch");
-  await prompt.evaluate((element) => element.setAttribute("data-locale-draft-probe", "kept"));
-  await expect(page.locator("html")).toHaveAttribute("data-ws-total", /\d+/);
-  const connections = await page.locator("html").getAttribute("data-ws-total");
+  const title = page.locator("#lp-hero-title");
+  await expect(title).toContainText("Product photos");
+  await page.evaluate(() => window.scrollTo({ top: 500, behavior: "instant" }));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(500);
   await switchLanguage(page, "简体中文");
-  await expect(page).toHaveURL(/\/zh-CN\?category=product#inspiration$/);
+  await expect(page).toHaveURL(/\/zh-CN\?tool=create#commerce-composer$/);
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
-  await expect(prompt).toHaveValue("A product photo draft that must survive a language switch");
-  await expect(prompt).toHaveAttribute("data-locale-draft-probe", "kept");
-  await expect(page.locator("html")).toHaveAttribute("data-ws-total", connections ?? "");
-  await expect(page.locator(".site-footer-logo")).toHaveAttribute("href", "/zh-CN");
+  await expect(title).toContainText("让你的商品图");
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(500);
   await page.goBack();
+  await expect(page).toHaveURL(/\/en\?tool=create#commerce-composer$/);
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
-  await expect(prompt).toHaveAttribute("data-locale-draft-probe", "kept");
+  await expect(title).toContainText("Product photos");
 });
 
 test("workspace language switch preserves draft and routes tool navigation in the selected language", async ({
@@ -44,16 +59,15 @@ test("workspace language switch preserves draft and routes tool navigation in th
   await prompt.fill("保留这个商品图草稿");
   await prompt.evaluate((element) => element.setAttribute("data-locale-draft-probe", "kept"));
   await switchLanguage(page, "English");
-  await expect(page).toHaveURL(/\/en\/commerce\/create\?view=fixture#draft$/);
+  await expect(page).toHaveURL(/\/en\/dashboard\/commerce\/create\?view=fixture#draft$/);
   await expect(page.getByRole("textbox", { name: "Prompt", exact: true })).toHaveValue(
     "保留这个商品图草稿",
   );
   await expect(page.locator('[data-locale-draft-probe="kept"]')).toBeVisible();
-  await page
-    .getByRole("navigation", { name: "Main navigation", exact: true })
-    .getByRole("link", { name: "Assets", exact: true })
-    .click();
-  await expect(page).toHaveURL(/\/en\/assets$/);
+  await expect(page.locator(".workspace-site-header .header-workspace")).toHaveAttribute(
+    "href",
+    "/en/dashboard",
+  );
   expect(localizedApiRequests).toEqual([]);
 });
 
@@ -64,7 +78,7 @@ test("unprefixed protected links preserve their query through localized login", 
   await page.goto("/commerce/create?task=fixture#result");
   await expect(page).toHaveURL(/\/zh-CN\/login\?/);
   expect(new URL(page.url()).searchParams.get("returnTo")).toBe(
-    "/zh-CN/commerce/create?task=fixture#result",
+    "/zh-CN/dashboard/commerce/create?task=fixture#result",
   );
   await expect(page.getByRole("heading", { name: "登录 Lycobo", exact: true })).toBeVisible();
   await expect(page.locator(".login-agreement a").first()).toHaveAttribute("href", "/zh-CN/terms");

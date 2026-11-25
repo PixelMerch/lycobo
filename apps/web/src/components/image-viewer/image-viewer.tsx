@@ -2,7 +2,7 @@ import { Button, Modal } from "@heroui/react";
 import { motion } from "motion/react";
 import { type PointerEvent, type RefObject, useEffect, useRef, useState } from "react";
 import { DialogClose } from "../overlays/dialog-close";
-import { useCenteredDialogMotion } from "../overlays/use-centered-dialog-motion";
+import { useCenteredDialogEntrance } from "../overlays/use-centered-dialog-entrance";
 import "./image-viewer.css";
 
 import { useMessages } from "../../i18n/messages";
@@ -23,7 +23,7 @@ export function ImageViewer({
   onClose: () => void;
 }) {
   const t = useMessages(componentsMessages);
-  const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
+  const surfaceMotion = useCenteredDialogEntrance();
   const [index, setIndex] = useState(Math.max(0, Math.min(initialIndex, images.length - 1)));
   const active = images[index];
   const thumbnails = useRef<(HTMLButtonElement | null)[]>([]);
@@ -41,7 +41,7 @@ export function ImageViewer({
   const stage = useImageViewerStage(active);
   const { ready, zoom, rotate, zoomStep, reset } = stage;
   const loadingFocus = useRef<HTMLElement | null>(null);
-  const backdropDismiss = useBackdropDismiss(requestClose);
+  const backdropDismiss = useBackdropDismiss(onClose);
   useEffect(() => {
     if (!ready) return;
     const target = loadingFocus.current;
@@ -62,14 +62,10 @@ export function ImageViewer({
     <Modal
       isOpen
       onOpenChange={(open) => {
-        if (!open) requestClose();
+        if (!open) onClose();
       }}
     >
-      <Modal.Backdrop
-        className="browse-image-backdrop"
-        data-dialog-phase={phase}
-        {...backdropDismiss}
-      >
+      <Modal.Backdrop className="browse-image-backdrop" {...backdropDismiss}>
         <Modal.Container size="full" className="browse-image-container">
           <Modal.Dialog aria-label={t.viewer} className="browse-image-dialog">
             <motion.div
@@ -131,7 +127,7 @@ const interactiveParts =
   "button, .browse-image-picture, .browse-image-thumbnails, .browse-image-toolbar";
 
 // 在图片以外的空白处轻点（按下与松开几乎同一位置）才关闭浏览器，拖动或点在图片、工具上都不关闭。
-function useBackdropDismiss(requestClose: () => void) {
+function useBackdropDismiss(onClose: () => void) {
   const dismissStart = useRef<{ id: number; x: number; y: number } | null>(null);
   const onBlank = (target: EventTarget) =>
     target instanceof Element && !target.closest(interactiveParts);
@@ -151,7 +147,7 @@ function useBackdropDismiss(requestClose: () => void) {
         Math.hypot(event.clientX - start.x, event.clientY - start.y) < 4 &&
         onBlank(event.target)
       )
-        requestClose();
+        onClose();
     },
     onPointerCancelCapture: () => {
       dismissStart.current = null;

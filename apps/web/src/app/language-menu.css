@@ -8,7 +8,7 @@
   padding: 0 12px;
   border: 0;
   border-radius: 999px;
-  background: #ffffff14;
+  background: var(--site-header-button-fill);
   color: #ffffffcc;
   font-family: var(--shell-font-family);
   font-size: var(--text-base);
@@ -20,7 +20,7 @@
   transition: background-color 200ms ease;
 }
 .language-trigger:is(:hover, [data-hovered="true"], [aria-expanded="true"]) {
-  background: #ffffff24;
+  background: var(--site-header-nav-hover-fill);
   color: #fff;
 }
 .language-trigger[data-focus-visible="true"] {

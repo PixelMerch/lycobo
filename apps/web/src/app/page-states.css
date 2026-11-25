@@ -1,48 +1,55 @@
 .route-status {
+  --app-primary-gradient: var(--studio-accent-gradient);
+  --accent-foreground: var(--studio-canvas);
+  --focus: var(--foreground);
+  --accent-glow: none;
   display: grid;
   min-height: 100dvh;
   place-items: center;
-  padding: var(--space-6) var(--space-4);
+  padding: var(--space-8) var(--space-4);
+  background:
+    radial-gradient(ellipse 28rem 20rem at center, var(--fill-faint), transparent),
+    var(--studio-canvas);
 }
 
 .main-content .route-status {
   min-height: calc(100dvh - var(--header-height));
 }
 
-.route-status-card {
+.route-status .route-status-card {
   display: flex;
-  width: min(100%, 400px);
+  width: min(100%, 480px);
   flex-direction: column;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-6);
-  border: 1px solid var(--border);
-  border-radius: 24px;
-  background: var(--surface);
+  padding: var(--space-4) 0;
   text-align: center;
 }
 
 .route-status-icon {
   display: grid;
-  width: 52px;
-  height: 52px;
+  width: 64px;
+  height: 64px;
   place-items: center;
-  border-radius: 16px;
-  background: var(--default);
+  margin-bottom: var(--space-2);
+  border-radius: 20px;
+  background: linear-gradient(160deg, var(--fill-selected), var(--fill-faint));
   color: var(--foreground);
 }
 
-.route-status-card h1 {
+.route-status .route-status-card h1 {
   color: var(--foreground);
-  font-size: var(--text-xl);
-  line-height: var(--leading-xl);
+  font-size: clamp(var(--text-2xl), 4vw, var(--text-display));
+  line-height: 1.2;
   font-weight: var(--weight-semibold);
+  text-wrap: balance;
 }
 
 .route-status-card p {
   color: var(--muted);
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  text-wrap: pretty;
 }
 
 .route-status-actions {
@@ -50,14 +57,24 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: var(--space-2) var(--space-4);
-  margin-top: var(--space-2);
+  gap: var(--space-2);
+  margin-top: var(--space-3);
 }
 
 .route-status-actions :is(.button, .link) {
   min-height: 44px;
+  padding-inline: var(--control-padding-lg);
+  border-radius: var(--control-radius);
 }
 
 .route-status-actions .link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--control-gap);
+  background: var(--fill-soft);
   color: var(--foreground);
+  text-decoration: none;
+}
+.route-status-actions .link:is(:hover, [data-hovered="true"]) {
+  background: var(--fill-strong);
 }

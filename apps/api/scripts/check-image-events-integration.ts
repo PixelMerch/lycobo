@@ -97,11 +97,16 @@ try {
     first.organizationId,
     await hashPassword("events-fixture-password"),
   );
-  const auth = enterpriseAuth(authDb, {
-    secret: crypto.randomUUID() + crypto.randomUUID(),
-    origins: [origin],
-    secureCookie: false,
-  });
+  const auth = enterpriseAuth(
+    authDb,
+    {
+      secret: crypto.randomUUID() + crypto.randomUUID(),
+      origins: [origin],
+      secureCookie: false,
+      passwordTurnstile: { siteKey: "fixture-site-key", secret: "fixture-secret" },
+    },
+    async (_secret, token) => token === "fixture-token",
+  );
   const store = imageStore(directory);
   await store.ready();
   const app = createApp(
@@ -186,7 +191,11 @@ try {
   const loginResponse = await app.request("/api/v1/auth/enterprise/login", {
     method: "POST",
     headers: { Origin: origin, "Content-Type": "application/json" },
-    body: JSON.stringify({ account: "events-fixture", password: "events-fixture-password" }),
+    body: JSON.stringify({
+      account: "events-fixture",
+      password: "events-fixture-password",
+      captchaToken: "fixture-token",
+    }),
   });
   assert.equal(loginResponse.status, 200);
   const cookie = loginResponse.headers
@@ -220,13 +229,13 @@ try {
   await repository.create(first, input, crypto.randomUUID(), 1);
   await cookieNext("auth-expired");
   await cookieReader.cancel();
-  // Revocation is checked again before events are written, not just at connection setup.
+  // 向已打开的连接写入事件前也会再次检查撤销状态。
   await sql`update generation_api_keys set revoked_at=now() where id=${first.keyId}`;
   await repository.create(first, input, crypto.randomUUID(), 1);
   await replayNext("auth-expired");
   await replayReader.cancel();
   stopSecond();
-  // Distinct database connections/API processes see the same durable cursor and notifications.
+  // 不同数据库连接读取相同的持久化游标并接收同一通知。
   console.info(
     "SSE integration passed: isolated migrations, tenant isolation, committed notifications, rollback, task lifecycle, reconnect/replay, cursor ordering and revoked-session rejection (fixture only)",
   );

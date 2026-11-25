@@ -7,16 +7,8 @@ import { defineMessages } from "../../../i18n/messages";
 export const referencesMessages = defineMessages({
   "zh-CN": {
     imageName: (number: number) => `图片${number}`,
-    roles: { product: "商品", source: "原图", style: "风格" },
-    roleHints: {
-      product: "保持商品外观不变",
-      source: "要处理的图，每条方案对应自己的原图",
-      style: "只借鉴光线、色调和构图",
-    },
-    chooseRole: (name: string) => `${name}的角色`,
-    roleOfImage: (name: string, role: string) => `${name}：${role}，更改角色`,
-    processingFailed: "参考图处理失败，请重新导出为 PNG、JPEG 或 WebP 后重试。",
-    stillProcessing: "参考图仍在处理中，请稍后在素材库查看后重试。",
+    processingFailed: "参考图处理失败。请导出为 PNG、JPEG 或 WebP 后重试。",
+    stillProcessing: "参考图处理中，请稍后查看素材库。",
     cannotDecode: (position: number) =>
       `第 ${position} 张图片无法解码，请重新导出为 PNG、JPEG 或 WebP 后重试。`,
     cannotCompress: (position: number) =>
@@ -51,7 +43,7 @@ export const referencesMessages = defineMessages({
     addReferenceImages: "添加参考图片",
     addReference: "添加参考图",
     reading: "读取中…",
-    duplicatesFiltered: "存在相同素材，已自动过滤",
+    duplicatesFiltered: "已跳过重复素材",
     overLimit: (limit: number) => `最多添加 ${limit} 张参考图，请减少文件后重试。`,
     referenceImage: "参考图片",
     thumbnailProcessing: "处理中",
@@ -72,25 +64,15 @@ export const referencesMessages = defineMessages({
     undo: "撤销",
     emptyResult: "优化结果为空，请稍后重试",
     optimizeRefunded: "提示词优化失败，已退还积分",
-    optimizeInterrupted: "优化连接已中断，请重试以核对结果",
+    optimizeInterrupted: "连接中断，重试可核对结果",
     connectionLost: "连接已中断，请稍后重试",
     optimizeUnavailable: "提示词优化暂未开放",
     optimizeFailed: "提示词优化失败，请稍后重试",
   },
   en: {
     imageName: (number) => `Image ${number}`,
-    roles: { product: "Product", source: "Source", style: "Style" },
-    roleHints: {
-      product: "Keep the product exactly as it looks",
-      source: "An image to process; each plan item uses its own source",
-      style: "Borrow only lighting, color and composition",
-    },
-    chooseRole: (name) => `Role of ${name}`,
-    roleOfImage: (name, role) => `${name}: ${role}. Change role`,
-    processingFailed:
-      "The reference image couldn't be processed. Export it again as PNG, JPEG or WebP and retry.",
-    stillProcessing:
-      "The reference image is still processing. Check the asset library shortly and try again.",
+    processingFailed: "Couldn't process the image. Export as PNG, JPEG or WebP and retry.",
+    stillProcessing: "Image processing. Check the asset library shortly.",
     cannotDecode: (position) =>
       `Image ${position} can't be decoded. Export it again as PNG, JPEG or WebP and retry.`,
     cannotCompress: (position) =>
@@ -125,7 +107,7 @@ export const referencesMessages = defineMessages({
     addReferenceImages: "Add reference images",
     addReference: "Add reference",
     reading: "Reading…",
-    duplicatesFiltered: "Duplicate images were filtered out",
+    duplicatesFiltered: "Skipped duplicate images",
     overLimit: (limit) => `You can add up to ${limit} reference images. Remove some and try again.`,
     referenceImage: "Reference image",
     thumbnailProcessing: "Processing",
@@ -144,11 +126,11 @@ export const referencesMessages = defineMessages({
     polishPrompt: "Polish the prompt with AI",
     restorePrompt: "Restore the prompt before optimizing",
     undo: "Undo",
-    emptyResult: "The optimization came back empty. Please try again later",
-    optimizeRefunded: "Prompt optimization failed and your credits were refunded",
-    optimizeInterrupted: "The optimization connection dropped. Retry to check the result",
+    emptyResult: "No result. Try again later",
+    optimizeRefunded: "Optimization failed. Credits refunded",
+    optimizeInterrupted: "Connection lost. Retry to check the result",
     connectionLost: "The connection dropped. Please try again later",
     optimizeUnavailable: "Prompt optimization isn't available yet",
-    optimizeFailed: "Prompt optimization failed. Please try again later",
+    optimizeFailed: "Optimization failed. Try again later",
   },
 });

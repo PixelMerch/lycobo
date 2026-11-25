@@ -5,6 +5,8 @@
   min-width: 0;
 }
 .toast {
+  --glass-fill: none;
+  --glass-tint: #1e1e1e;
   inset-inline: auto;
   left: 50%;
   width: max-content;
@@ -107,9 +109,8 @@
   }
 }
 
-/* 带操作的顶部提示用深色毛玻璃，按钮和标题保持同排。 */
+/* 带操作的顶部提示让按钮和标题保持同排。 */
 .toast-region--top .toast:has(.toast-compact-action) {
-  --glass-tint: var(--glass-dark-tint);
   grid-template-columns: auto minmax(0, 1fr) auto;
   column-gap: var(--space-3);
   padding-block: var(--space-2);
@@ -128,15 +129,5 @@
 @media (max-width: 767px) {
   .toast-region--top .toast-compact-action {
     min-height: 44px;
-  }
-}
-@media (prefers-reduced-transparency: reduce) {
-  .toast-region--top .toast:has(.toast-compact-action) {
-    --glass-tint: var(--glass-fallback);
-  }
-}
-@supports not (backdrop-filter: blur(1px)) {
-  .toast-region--top .toast:has(.toast-compact-action) {
-    --glass-tint: var(--glass-fallback);
   }
 }

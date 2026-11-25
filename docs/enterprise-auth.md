@@ -1,6 +1,6 @@
 # 企业账号密码登录
 
-实现：Hono API、PostgreSQL 账号与会话、HS256 JWT、Node.js scrypt 密码哈希。企业账号密码可用。Google、Apple 和邮箱验证码通过 Supabase Auth 接入，由运行环境的配置启用。
+实现采用 Hono API、PostgreSQL 账号与会话、HS256 JWT、Node.js scrypt 密码哈希。企业账号密码登录由 Cloudflare Turnstile 保护。Google、Apple 和邮箱验证码通过 Supabase Auth 接入，由运行环境的配置启用。
 
 ## 配置与创建账号
 
@@ -9,6 +9,7 @@
 - `AUTH_JWT_SECRET`：至少 32 字节的随机密钥，不放入 VITE_*、代码或日志；更换后旧 JWT 失效。
 - `AUTH_TRUSTED_ORIGINS`：逗号分隔的精确 Web Origin，不能使用通配符或带路径的 URL。生产只允许 HTTPS；development 可配置明确的 loopback HTTP Origin。
 - `DATABASE_URL`：同一业务 PostgreSQL；Auth 池最大 3 个连接，Image Repository 池最大 5 个连接，关闭进程时共同释放。
+- 企业密码验证使用单独的 Turnstile 组件。开发环境读取 `DEV_AUTH_PASSWORD_TURNSTILE_SITE_KEY` 与 `DEV_AUTH_PASSWORD_TURNSTILE_SECRET`，组件需允许开发来源的主机名。生产 Worker 读取 `AUTH_PASSWORD_TURNSTILE_SITE_KEY` 与 `AUTH_PASSWORD_TURNSTILE_SECRET`，在部署前通过环境配置公开站点密钥和服务端密钥，并允许生产可信 Origin 的主机名。任一值缺失时企业密码登录停用，其他登录方式仍按各自的配置工作。
 
 账号绑定既有 `users` 和 `organization_members`，不通过公开注册接口赋予企业权限。账号全局唯一、3–128 位，以英文字母／数字起始，可包含 `. _ @ -`，忽略首尾空格与大小写。管理员在本地受控终端设置 `ENTERPRISE_ACCOUNT`、`ENTERPRISE_USER_ID`、`ENTERPRISE_ORGANIZATION_ID`，并通过临时环境变量提供密码，再执行：
 
@@ -22,11 +23,11 @@ Compose 修改环境变量后运行 `docker compose up -d --no-deps --wait api`�
 
 ## 接口
 
-所有 JSON 响应遵循 [统一返回格式](api-response.md)，下表业务结果均放在顶层 data 内。登录令牌读取 data.accessToken，用户信息读取 data.user。
+所有 JSON 响应遵循 [统一返回格式](node-ts-best-practices.md#api-响应)，下表业务结果均放在顶层 data 内。登录令牌读取 data.accessToken，用户信息读取 data.user。
 
 | 方法与路径                         | 输入／行为                                                                                                                                                                            |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| POST /api/v1/auth/enterprise/login | JSON `{account,password}`；必须携带可信 Origin；成功返回 `{accessToken,tokenType:"Bearer",expiresIn:86400,refreshExpiresIn:2592000,user}` 并写 HttpOnly Cookie                        |
+| POST /api/v1/auth/enterprise/login | JSON `{account,password,captchaToken}`；必须携带可信 Origin；成功返回 `{accessToken,tokenType:"Bearer",expiresIn:86400,refreshExpiresIn:2592000,user}` 并写 HttpOnly Cookie           |
 | GET /api/v1/auth/session           | 验证 JWT 后返回 `{userId,organizationId,role,account}`，另带可选 `uid`、`avatarPreset` 与 `preferredLocale`（偏好未选择为 null）；未登录／过期返回 401                                |
 | POST /api/v1/auth/refresh          | 仅接受可信 Origin 和 HttpOnly 刷新 Cookie；轮换刷新凭据并签发新访问 Token，返回同登录的字段；刷新 Token 不进入 JSON                                                                   |
 | POST /api/v1/auth/password         | 已登录；JSON `{currentPassword,newPassword}`，新密码 12–256 字符；验证旧密码，原子更新密码并撤销该账号全部会话                                                                        |
@@ -47,7 +48,7 @@ API 实例不缓存会话校验结果：后台停用账号、替换凭据以及�
 
 退出撤销当前会话；即使访问 Cookie 已过期，也会验证刷新凭据的签名并定位该会话。刚轮换的旧凭据只能撤销所属会话，不能再用于续期，避免退出与并发刷新竞态重新登录。通过改密码接口或已有账号设置命令修改密码，均撤销该账号全部会话，因此旧访问 Token 和刷新凭据同时失效；禁用账号、移除成员同样阻止访问和刷新。
 
-错误密码与不存在账号统一返回 401“账号或密码错误”。PostgreSQL 原子限流：每账号 15 分钟最多 10 次尝试、全局每分钟最多 200 次；限流返回 429 与 Retry-After。登录请求体受 API 32KiB 限制，账号／密码有长度上限；不记录密码、JWT、Cookie 或请求体。
+API 使用 Turnstile Siteverify 校验令牌成功状态、`password_login` 操作和可信请求 Origin 的主机名，通过后原子消费令牌哈希，再校验密码。令牌无效或重复提交返回 403，且不计入密码失败。错误密码与不存在账号使用同一流程，前四次失败返回 401，第五次返回 429、`ACCOUNT_LOCKED` 及 `Retry-After`。锁定持续 1 小时，期间再次尝试不会延长时限。成功登录或距离上次失败已满 1 小时时重新计数。PostgreSQL 按规范化后的账号哈希，串行化失败计数和会话签发。全局仍限制每分钟 200 次，改密接口沿用独立的请求限制。日志不记录密码、人机验证令牌、JWT、Cookie 或请求体。
 
 前端使用 TanStack Query 管理登录身份；登录／退出时取消旧请求，更新企业身份，并重置其他服务端查询：清除旧数据和错误状态、保留已挂载页面的查询订阅、自动重新获取工作台会话及其历史／素材，避免身份切换复用旧数据。无需刷新或跳转页面，保留用户的客户端创作草稿。Header 显示真实账号及“退出登录”；企业表单提交失败显示真实接口错误，不模拟成功。
 
@@ -96,12 +97,13 @@ API 实例不缓存会话校验结果：后台停用账号、替换凭据以及�
 - 参考 `.env.example`，只在本地忽略的 `.env` 中填写 Supabase 项目 URL、Publishable key 与已启用的供应商。Google 和 Apple 的客户端密钥由 Supabase Auth 保管。这些 `DEV_` 配置仅在 `NODE_ENV=development` 时读取。
 - 对本地 PostgreSQL 执行迁移 0048，然后以 `docker compose up -d --no-deps --wait --force-recreate studio` 载入配置。登录页从 `GET /api/v1/auth/oauth/providers` 读取可用入口。Hono 通过短期签名 Cookie 与 PKCE 交换验证 Supabase 身份，再签发 Lycobo 会话。成功后回到 `/{语言}/login?returnTo=…&oauth=success`，登录页据此提示“登录成功”再跳往原目标；失败回到同一路径并带 `oauth=failed`。这个参数只决定提示，登录状态仍以会话 Cookie 为准。
 - 以 Supabase 用户 UUID 建立稳定关联，首次登录创建独立个人工作区和 10 位 Lycobo UID。若两个登录方式由 Supabase 解析为同一用户 UUID，则复用同一个本地账号。企业账号与已有 UID 沿用原记录，相同邮箱不会自动关联到企业账号。
+- 登录回跳允许已注册的 `/{语言}/dashboard` 页面，保留查询参数和定位。旧工作区地址仍可回跳，并由前端转到新路由。
 
 
 ## 本地邮箱验证码
 
 1. Resend 验证发信子域并创建仅发送、限域的 API Key。在 Supabase Auth 的 SMTP Settings 使用 `smtp.resend.com:465`、用户名 `resend`、该密钥和品牌发件人 `Lycobo <no-reply@auth.lycobo.com>`。密钥只填 Supabase 控制台。
-2. 在 Supabase Auth 的 Emails 为 Magic link or OTP 与 Confirm sign up 保存同一份[英文验证码模板](auth/email-otp.html)，主题为 `Your Lycobo sign-in code`。首次使用与再次登录均发送 `{{ .Token }}`，邮箱验证码长度配置为 6 位。邮件统一用英文，站内登录界面继续跟随用户所选语言。
+2. 在 Supabase Auth 的 Emails 为 Magic link or OTP 与 Confirm sign up 保存同一份[英文验证码模板](email-otp.html)，主题为 `Your Lycobo sign-in code`。首次使用与再次登录均发送 `{{ .Token }}`，邮箱验证码长度配置为 6 位。邮件统一用英文，站内登录界面继续跟随用户所选语言。
 3. Cloudflare Turnstile 本地组件只绑定 `localhost` 和 `127.0.0.1`。在 Supabase Auth 的 Attack Protection 选 Cloudflare Turnstile 并保存验证密钥。在本地 `.env` 填 `DEV_SUPABASE_EMAIL_TURNSTILE_SITE_KEY` 公开站点密钥并重新创建 studio 容器。
 4. 用户点击发码才加载 Turnstile。Hono 检查可信 Origin 并将一次性令牌交 Supabase 验证，Supabase 验证成功后才通过 Resend 发码。邮箱和连接地址分别按发送及验证限流。开发代理下连接地址使用实际代理地址，全部本地代理请求共用该地址的配额。
 5. 输入验证码后 Hono 采用 Supabase 返回的用户 UUID 复用本地账号与 10 位 UID。验证码与第三方认证共用主站会话签发；站内已有企业账号不会按邮箱自动关联。

@@ -1,5 +1,24 @@
 import { expect, test } from "@playwright/test";
-import { apiFixture, mockImageApi } from "./image-api-fixture";
+import { apiFixture, chooseWorkspaceTool, mockImageApi } from "./image-api-fixture";
+
+test("the four commerce tools use the home header and content gutters", async ({ page }) => {
+  await mockImageApi(page);
+  await page.goto("/zh-CN");
+  const headerGeometry = (element: Element) => {
+    const style = getComputedStyle(element);
+    return {
+      width: element.getBoundingClientRect().width,
+      padding: [style.paddingInlineStart, style.paddingInlineEnd],
+    };
+  };
+  const home = await page.locator(".public-site-header").evaluate(headerGeometry);
+  for (const route of ["create", "smart-variation", "replica", "textile-set"]) {
+    await page.goto(`/zh-CN/dashboard/commerce/${route}`);
+    await expect(page.locator(".unified-workspace")).toBeVisible();
+    expect(await page.locator(".workspace-site-header").evaluate(headerGeometry)).toEqual(home);
+    expect(await page.locator(".main-content").evaluate(headerGeometry)).toEqual(home);
+  }
+});
 
 for (const width of [390, 1440]) {
   test(`workspace tools keep their own history and stay below the header at ${width}px`, async ({
@@ -56,7 +75,7 @@ for (const width of [390, 1440]) {
     await expect(page.locator(".generation-job")).toHaveCount(4);
     await page.evaluate(() => document.fonts.ready);
     await page.mouse.move(0, 0);
-    // Switching controls never display help; the composer banner owns it.
+    // 工具菜单和表单横幅均不重复弹出示例卡片。
     const textileShortcut = page
       .getByRole("navigation", { name: "电商创作工具" })
       .getByRole("button", { name: "家纺裂变", exact: true });
@@ -66,21 +85,14 @@ for (const width of [390, 1440]) {
     if (width >= 768) {
       const banner = page.locator(".workspace-composer-hero");
       await banner.hover();
-      await expect(preview).toContainText("一张图讲清卖点");
-      await expect(preview.getByRole("listitem")).toHaveCount(3);
-      await expect(preview).not.toContainText("点击切换到此功能");
-      const bannerBounds = await banner.boundingBox();
-      const previewBounds = await preview.boundingBox();
-      expect(previewBounds?.x).toBeGreaterThanOrEqual(
-        (bannerBounds?.x ?? 0) + (bannerBounds?.width ?? 0),
-      );
+      await expect(banner.getByRole("img", { name: /橙色跑鞋/ })).toBeVisible();
       await page.keyboard.press("Escape");
       await expect(preview).toHaveCount(0);
     }
     await expect(page).toHaveURL(/\/commerce\/create$/);
     await page.mouse.move(0, 0);
     const dock = page.getByRole("navigation", { name: "电商创作工具" });
-    await expect(dock.getByRole("button")).toHaveCount(4);
+    await expect(dock.getByRole("button")).toHaveCount(5);
     await expect(dock.getByRole("button", { name: "全部工具", exact: true })).toHaveCount(0);
     await expect(page.getByRole("dialog", { name: "选择工具" })).toHaveCount(0);
     if (width >= 1440) {
@@ -96,7 +108,7 @@ for (const width of [390, 1440]) {
         page.evaluate(
           (selector) => {
             const toolbar = document.querySelector(selector);
-            const header = document.querySelector(".topbar");
+            const header = document.querySelector(".workspace-site-header");
             return Math.abs(
               (toolbar?.getBoundingClientRect().top ?? 0) -
                 (header?.getBoundingClientRect().bottom ?? 0) -
@@ -128,10 +140,7 @@ for (const width of [390, 1440]) {
       expect(metaTop).toBeGreaterThanOrEqual((heading?.y ?? 0) + (heading?.height ?? 0));
     }
     await page.screenshot({ path: `/tmp/lycobo-workspace-tools-${width}.png` });
-    await page
-      .getByRole("navigation", { name: "电商创作工具" })
-      .getByRole("button", { name: "家纺裂变", exact: true })
-      .click();
+    await chooseWorkspaceTool(page, "家纺裂变");
     await expect(page).toHaveURL(/textile-set/);
     await expect(page.getByRole("tooltip")).toHaveCount(0);
     await expect(page.locator(".unified-workspace")).toHaveAttribute("data-tool", "textile");
@@ -141,18 +150,19 @@ for (const width of [390, 1440]) {
         name: "家纺裂变",
         exact: true,
       }),
-    ).toHaveAttribute("aria-current", "page");
+    ).toHaveAttribute("data-current", "true");
     await expect(page.locator(".composer-panel")).toContainText("详情图");
     await expect(page.locator(".composer-panel")).toContainText("裂变类型");
     // The panel hero follows the tool: its own example photo, name and purpose.
     const hero = page.locator(".workspace-composer-hero");
     await expect(hero).toHaveAttribute("data-tool", "textile");
-    await expect(hero.locator(".workspace-composer-hero-collage img")).toHaveCount(5);
-    await expect(hero.locator("img").first()).toHaveAttribute(
+    const collage = hero.getByRole("img", { name: /同一款红色方格被/ });
+    await expect(collage.locator("img")).toHaveCount(5);
+    await expect(collage.locator("img").first()).toHaveAttribute(
       "src",
-      "/studio/textile-views/front.webp",
+      "/landing/comforter-studio.webp",
     );
-    await expect(hero).toContainText("一张主图，延展多视角与细节图");
+    await expect(hero).toContainText("一张家纺图，生成多角度和细节图");
     await expect(page.locator(".generation-history")).toContainText("textile记录");
     await expect(page.locator(".generation-history")).not.toContainText("create记录");
     if (width >= 768) {
@@ -161,10 +171,7 @@ for (const width of [390, 1440]) {
         page.locator(".history-rail-item").first().getByRole("button").first(),
       ).toHaveAccessibleName(`查看任务 ${textileJobs[0]?.id}`);
     }
-    await page
-      .getByRole("navigation", { name: "电商创作工具" })
-      .getByRole("button", { name: "套图计划", exact: true })
-      .click();
+    await chooseWorkspaceTool(page, "套图计划");
     await expect(page.locator(".workspace-composer-title")).toHaveText("套图计划");
     await expect(page.locator(".unified-workspace")).toHaveAttribute("data-tool", "variation");
     await expect(page.locator(".generation-job")).toHaveCount(0);
@@ -175,10 +182,7 @@ for (const width of [390, 1440]) {
     expect(requested).not.toContain("null");
     if (width >= 768) {
       await expect(page.getByRole("textbox", { name: "创作需求" })).toBeVisible();
-      await page
-        .getByRole("navigation", { name: "电商创作工具" })
-        .getByRole("button", { name: "主图制作", exact: true })
-        .click();
+      await chooseWorkspaceTool(page, "主图制作");
       await expect(page.locator(".workspace-composer-title")).toHaveText("主图制作");
       await expect(page.getByRole("textbox", { name: "提示词", exact: true })).toHaveValue(prompt);
     }

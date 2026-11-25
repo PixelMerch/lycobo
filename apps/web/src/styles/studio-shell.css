@@ -130,7 +130,7 @@
   background: rgb(30 35 29 / 38%);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
-  box-shadow: 0 3.45px 29.785px rgb(168 255 0 / 3%);
+  box-shadow: 0 3.45px 29.785px color-mix(in srgb, var(--brand) 3%, transparent);
 }
 /* 工作区：顶部栏始终是页面底色的实色，不随滚动收窄或变磨砂，下方吸顶的参数栏和工具栏位置固定。 */
 .topbar[data-solid="true"]::before {
@@ -182,7 +182,7 @@
   min-height: 36px;
   padding: 0 20px;
   gap: 4px;
-  border-radius: 999px;
+  border-radius: var(--control-pill-radius);
   background: transparent;
   color: #ffffff99;
   font-size: var(--text-base);
@@ -192,12 +192,11 @@
 .topbar-nav .nav-row::before {
   display: none;
 }
-.topbar-nav .nav-row:is(:hover, [data-hovered="true"], [aria-expanded="true"]) {
-  background: #ffffff0a;
+.topbar-nav .nav-row:is(:hover, [data-hovered="true"], [aria-expanded="true"], :focus-visible) {
+  background: var(--site-header-nav-hover-fill);
   color: #ffffffcc;
 }
 .topbar-nav .nav-row:is(.active, [aria-current="page"]) {
-  background: transparent;
   color: #fff;
   font-weight: var(--weight-semibold);
 }
@@ -257,11 +256,11 @@
   height: var(--shell-pill-height);
   min-height: var(--shell-pill-height);
   border-radius: 50%;
-  background: #ffffff14;
+  background: var(--site-header-button-fill);
   color: #ffffffcc;
 }
 .header-news .account-footer-action.button:is(:hover, [data-hovered="true"]) {
-  background: #ffffff24;
+  background: var(--site-header-nav-hover-fill);
   color: #fff;
 }
 /* 登录按钮沿用品牌主色。 */
@@ -294,26 +293,15 @@
   height: 36px;
   min-height: 36px;
 }
-.header-actions .home-header-utilities {
-  display: flex;
-  align-items: center;
-  gap: inherit;
-}
 .topbar[data-commerce-header="true"]
-  :is(
-    .home-header-tool.button,
-    .language-trigger,
-    .header-credits,
-    .header-login.button,
-    .header-news .button
-  ) {
+  :is(.language-trigger, .header-credits, .header-login.button, .header-news .button) {
   border-radius: 12px;
 }
 .topbar[data-commerce-header="true"]
   .topbar-nav
   .nav-row:is(:hover, [data-hovered="true"], [aria-expanded="true"]),
 .topbar[data-commerce-header="true"]
-  :is(.home-header-tool, .language-trigger, .header-credits, .header-news .button):is(
+  :is(.language-trigger, .header-credits, .header-news .button):is(
     :hover,
     [data-hovered="true"],
     [aria-expanded="true"]
@@ -333,57 +321,6 @@
   :root :is(.topbar-menu, .popover).home-header-glass {
     --glass-tint: var(--glass-fallback);
     --glass-blur: none;
-  }
-}
-.home-header-tool.button {
-  height: var(--shell-pill-height);
-  min-height: var(--shell-pill-height);
-  padding-inline: 12px;
-  border-radius: 12px;
-  background: #ffffff14;
-  color: #fffd;
-}
-.home-header-tool.button:is(:hover, [data-hovered="true"]) {
-  background: #ffffff24;
-  color: #fff;
-}
-.home-header-tool.button.button--icon-only {
-  flex: none;
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
-  padding: 0;
-}
-.home-header-help {
-  max-width: min(320px, calc(100vw - 24px));
-  padding: 12px 16px;
-  font-size: var(--text-base);
-}
-.home-header-help b {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.home-header-help ul {
-  display: grid;
-  gap: 8px;
-}
-.mobile-nav .home-header-utilities {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 12px;
-}
-.mobile-nav .home-header-tool.button {
-  width: 100%;
-  min-height: 44px;
-}
-@media (max-width: 1100px) {
-  .topbar[data-commerce-header="true"] .home-header-tool-label {
-    display: none;
   }
 }
 .mobile-menu {
@@ -432,9 +369,6 @@
 }
 /* 手机顶部栏保留消息入口，导航与账户收进导航抽屉。 */
 @media (max-width: 767px) {
-  .header-actions .home-header-tool.button {
-    display: none;
-  }
   .topbar :is(.topbar-nav, .account-header) {
     display: none;
   }
@@ -449,31 +383,5 @@
   }
   .topbar[data-commerce-header="true"] .brand .lycobo-logo {
     width: 90px;
-  }
-}
-
-.header-workspace.button {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
-  min-height: 36px;
-  padding: 0;
-  border-radius: 12px;
-  background: #ffffff14;
-  color: #ffffffcc;
-}
-
-.header-workspace.button:hover {
-  background: #ffffff24;
-  color: #fff;
-}
-
-@media (max-width: 767px) {
-  .header-actions .header-workspace.button {
-    display: none;
   }
 }

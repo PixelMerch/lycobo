@@ -135,7 +135,7 @@ test("partial retry confirms only the cost of failed images", async ({ page }) =
   ).toHaveText("本次消耗 4 积分");
 });
 
-test("rejected regeneration uses a top toast without inserting an error into history", async ({
+test("insufficient credits opens checkout options without inserting an error into history", async ({
   page,
 }) => {
   await mockImageApi(page);
@@ -203,7 +203,36 @@ test("rejected regeneration uses a top toast without inserting an error into his
     .getByRole("button", { name: "确认", exact: true })
     .click();
   await expect.poll(() => retries).toBe(1);
-  await expect(page.locator(".toast-region")).toContainText(message);
+  const recharge = page.getByRole("dialog", { name: "充值积分", exact: true });
+  await expect(recharge).toContainText("积分不足，请充值后重试");
+  await recharge.getByRole("button", { name: "关闭充值积分" }).click();
+  await expect(recharge).toBeHidden();
   await expect(page.locator(".history-action-error")).toHaveCount(0);
   await expect(page.locator(".generation-job")).toHaveCount(1);
+});
+
+test("a rejected image submission opens recharge and preserves the draft", async ({ page }) => {
+  await mockImageApi(page);
+  await page.route("**/api/v1/image-tasks**", async (route) => {
+    if (route.request().method() !== "POST") return route.fallback();
+    return route.fulfill({
+      status: 409,
+      json: {
+        ...apiFixture({}, 409),
+        code: 30003,
+        message: "积分不足，请充值后重试",
+        error: { code: "INSUFFICIENT_CREDITS" },
+      },
+    });
+  });
+  await page.goto("/commerce/create");
+  const prompt = page.getByRole("textbox", { name: "提示词" });
+  await prompt.fill("柔光下的白底商品主图");
+  const generate = page.getByRole("button", { name: "立即生成", exact: true });
+  await generate.click();
+  const recharge = page.getByRole("dialog", { name: "充值积分", exact: true });
+  await expect(recharge).toContainText("积分不足，请充值后重试");
+  await recharge.getByRole("button", { name: "关闭充值积分" }).click();
+  await expect(prompt).toHaveValue("柔光下的白底商品主图");
+  await expect(generate).toBeFocused();
 });

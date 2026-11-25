@@ -21,9 +21,15 @@ function safeReturnTo(input: string) {
   if (!input.startsWith("/") || input.includes("\\")) return "/en";
   const url = new URL(input, "https://lycobo.invalid");
   if (url.origin !== "https://lycobo.invalid") return "/en";
+  const localePrefix = /^\/(?:en|zh-CN)(?=\/|$)/.exec(url.pathname)?.[0];
+  if (!localePrefix) return "/en";
+  const path = url.pathname.slice(localePrefix.length).replace(/\/$/, "");
   if (
-    !/^\/(?:en|zh-CN)(?:\/?$|\/(?:commerce(?:\/|$)|workspace$|assets$|video$|membership$|inspiration$))/.test(
-      url.pathname,
+    !/^(?:$|\/(?:commerce(?:\/|$)|workspace$|assets$|video$|inspiration$|free-canvas$))/.test(
+      path,
+    ) &&
+    !/^\/dashboard(?:\/(?:commerce\/(?:create|replica|textile-set|smart-variation)|video|free-canvas|assets))?$/.test(
+      path,
     )
   )
     return "/en";
@@ -83,6 +89,7 @@ export function oauthRoutes(
     c.json({
       providers: config?.providers ?? [],
       emailTurnstileSiteKey: config?.emailTurnstileSiteKey,
+      passwordTurnstileSiteKey: auth?.config.passwordTurnstile?.siteKey,
     }),
   );
   app.post("/start", async (c) => {

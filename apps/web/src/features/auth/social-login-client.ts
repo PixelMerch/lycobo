@@ -10,9 +10,9 @@ import { currentMessages } from "../../i18n/messages";
 import { normalizeApiResponse } from "../../lib/api-response";
 import { authMessages } from "./auth-messages";
 
-/** 获取服务端启用的登录方式，并在用户主动点击后开始授权。 */
-export function useSocialLogin(returnTo: string) {
-  const availability = useQuery({
+/** 读取服务端已启用的登录方式与公开站点密钥。 */
+export function useLoginAvailability() {
+  return useQuery({
     queryKey: ["social-login-providers"],
     retry: false,
     staleTime: 60000,
@@ -20,10 +20,15 @@ export function useSocialLogin(returnTo: string) {
       const response = await normalizeApiResponse(
         await fetch("/api/v1/auth/oauth/providers", { signal }),
       );
-      if (!response.ok) return { providers: [] };
+      if (!response.ok) return socialProvidersSchema.parse({ providers: [] });
       return socialProvidersSchema.parse(await response.json());
     },
   });
+}
+
+/** 展示已启用的登录方式，并在用户主动点击后开始第三方授权。 */
+export function useSocialLogin(returnTo: string) {
+  const availability = useLoginAvailability();
   const start = useMutation({
     mutationFn: async (provider: SocialProvider) => {
       const target =

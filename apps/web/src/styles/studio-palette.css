@@ -1,0 +1,8 @@
+/* 隔离首页和应用共用的画布、主操作与顶栏尺寸。 */
+:root {
+  --studio-header-height: 60px;
+  --studio-canvas: #121212;
+  --studio-primary-action: #f2f1ee;
+  --studio-accent: #a8ff00;
+  --studio-accent-gradient: linear-gradient(110deg, var(--studio-accent), #59e6a2);
+}

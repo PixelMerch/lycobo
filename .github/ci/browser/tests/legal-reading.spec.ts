@@ -7,12 +7,16 @@ test("legal contents support keyboard anchors and keep the chapter when switchin
   await mockImageApi(page, { signedIn: false });
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/en/terms");
+  await expect(page.locator(".public-site-header")).toBeVisible();
+  await expect(page.locator(".public-site-header .public-site-start")).toHaveText("Start Creating");
   const contents = page.getByRole("navigation", { name: "On this page", exact: true });
   const chapter = contents.locator('a[href="#terms-section-5"]');
   await chapter.focus();
   await chapter.press("Enter");
   await expect(page).toHaveURL(/\/en\/terms#terms-section-5$/);
   await expect(page.locator("#terms-section-5")).toBeInViewport();
+  await expect(page.locator("#terms-section-5")).toHaveText("5. Acceptable Use Policy");
+  await expect(page.locator(".public-site-header")).toHaveCSS("background-color", "rgb(0, 0, 0)");
   await expect(chapter).toHaveAttribute("aria-current", "location");
   await page.locator(".language-trigger").click();
   await page.getByRole("menuitemradio", { name: "简体中文", exact: true }).click();
@@ -40,6 +44,7 @@ test("mobile contents appear above the document and retain touch-sized chapter l
   await mockImageApi(page, { signedIn: false });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/zh-CN/terms");
+  await expect(page.locator(".public-site-header .mobile-menu")).toBeVisible();
   const contents = page.getByRole("navigation", { name: "本页目录", exact: true });
   await expect(contents).toBeVisible();
   const links = contents.getByRole("link");

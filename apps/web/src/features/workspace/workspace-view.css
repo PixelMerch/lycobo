@@ -1,56 +1,15 @@
-/* 超宽屏：工作区最宽为 1920 屏的内容宽度（1872px），更宽时三栏一起居中；1920 及以下不受影响。 */
-.unified-workspace {
-  max-width: 1872px;
-  margin-inline: auto;
-}
-
-/* 右侧素材栏旁的滑块叠在背景上，窄屏沿用系统滚动条。 */
-.workspace-scrollbar {
-  display: none;
-}
 @media (min-width: 1301px) {
-  html:has(.unified-workspace) {
-    scrollbar-width: none;
-  }
-  html:has(.unified-workspace)::-webkit-scrollbar {
-    display: none;
-  }
-  .workspace-scrollbar {
-    position: fixed;
-    z-index: 14;
-    inset-block: calc(var(--header-height) + var(--content-padding) + var(--workspace-column-top))
-      var(--content-padding);
-    inset-inline-end: max(3px, calc((100% - 1872px) / 2 - 10px));
-    display: block;
-    width: 8px;
-    pointer-events: none;
-  }
-  .workspace-scrollbar[inert] {
-    visibility: hidden;
-  }
-  .workspace-scrollbar-thumb {
-    width: 100%;
-    border-radius: 999px;
-    background: #ffffff59;
-    cursor: grab;
-    pointer-events: auto;
-    touch-action: none;
-  }
-  .workspace-scrollbar-thumb:is(:hover, :active, :focus-visible) {
-    background: #ffffff8c;
-  }
-  .workspace-scrollbar-thumb:active {
-    cursor: grabbing;
-  }
-}
-@media (min-width: 1921px) {
-  .back-to-top-button {
-    right: calc(var(--content-padding) + 96px + 34px + 16px + (100% - 1920px) / 2);
+  body:has(.unified-workspace) > .lycobo-page-scrollbar {
+    inset-block-start: calc(
+      var(--studio-header-height) +
+      var(--workspace-padding) +
+      var(--workspace-column-top)
+    );
   }
 }
 
 /* 桌面（≥1024px）：工具坞改成参数栏左侧的竖排工具栏，和参数栏共用第一列；每项图标在左、名称在右，
- * 名称单行显示（中文 168px、英文 224px 宽），收起后只剩 64px 宽的图标。历史上方是 48px 的“生成记录”
+ * 名称单行显示（展开宽 200px），收起后只剩 64px 宽的图标。历史上方是 48px 的“生成记录”
  * 标题行，与右栏“我的素材”同一行：工具栏、参数栏的顶边和两个标题文字对齐，第一张任务卡和第一张
  * 缩略图在标题行下方 12px 处对齐。
  * 窄屏仍是历史上方的横排工具坞，不显示标题行。 */
@@ -66,19 +25,30 @@
 .workspace-composer-toggle.button {
   display: none;
 }
+@property --workspace-tool-rail-progress {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
 @media (min-width: 1024px) {
-  .workspace.unified-workspace {
-    --workspace-toolbar-height: 48px;
-    --workspace-tool-rail-width: 168px;
-    /* 左侧工具栏和参数栏的顶边与“生成记录”“我的素材”标题文字的顶边对齐（标题在 48px 行内居中）。 */
-    --workspace-column-top: calc((var(--workspace-toolbar-height) - var(--leading-base)) / 2);
-    grid-template-columns: calc(var(--workspace-tool-rail-width) + 12px + 300px) minmax(0, 1fr);
+  body:has(.unified-workspace) {
+    --workspace-desktop-toolbar-height: 48px;
+    /* 左侧栏和右侧浮动滚动条与「我的素材」标题文字对齐。 */
+    --workspace-column-top: calc(
+      (var(--workspace-desktop-toolbar-height) - var(--leading-base)) /
+      2
+    );
   }
-  .workspace.unified-workspace:lang(en) {
-    --workspace-tool-rail-width: 224px;
+  .workspace.unified-workspace {
+    --workspace-toolbar-height: var(--workspace-desktop-toolbar-height);
+    --workspace-tool-rail-progress: 1;
+    --workspace-tool-rail-width: calc(64px + 136px * var(--workspace-tool-rail-progress));
+    --workspace-tool-rail-inset-progress: clamp(0, var(--workspace-tool-rail-progress), 1);
+    grid-template-columns: calc(var(--workspace-tool-rail-width) + 12px + 300px) minmax(0, 1fr);
+    transition: --workspace-tool-rail-progress var(--workspace-rail-width-spring);
   }
   .workspace.unified-workspace[data-tool-rail="collapsed"] {
-    --workspace-tool-rail-width: 64px;
+    --workspace-tool-rail-progress: 0;
   }
   .unified-workspace > :is(.composer-panel, .workspace-tool-dock) {
     top: calc(var(--header-height) + var(--content-padding) + var(--workspace-column-top));
@@ -135,28 +105,38 @@
     width: 100%;
     padding: 0;
     background: transparent;
-    overflow: visible;
+    overflow-x: clip;
+    overflow-y: visible;
   }
-  .workspace-tool-dock .workspace-tool-shortcut.button {
+  .workspace-tool-dock .workspace-tool-shortcut:is(.button, .workspace-tool-group) {
     gap: 10px;
     width: 100%;
-    padding: 8px 12px 8px 8px;
+    padding-block: 8px;
+    padding-inline: calc(16px - 8px * var(--workspace-tool-rail-inset-progress))
+      calc(12px * var(--workspace-tool-rail-inset-progress));
   }
-  .workspace-tool-dock .workspace-tool-label {
-    min-width: 0;
+  /* 底板跟着工具栏宽度缩到 40px，同时留住原来的选中态。 */
+  .workspace-tool-dock .workspace-tool-shortcut::before,
+  .workspace-tool-dock .workspace-tool-rail-ripple {
+    width: calc(100% - 12px * (1 - var(--workspace-tool-rail-inset-progress)));
   }
-  .workspace-tool-dock .workspace-tool-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .workspace-tool-dock :is(.workspace-tool-label, .workspace-tool-chevron) {
+    visibility: visible;
+    opacity: 1;
+    translate: 0;
+    transition:
+      opacity var(--workspace-rail-label-spring),
+      translate var(--workspace-rail-label-spring),
+      visibility 0s;
+    transition-delay: var(--workspace-rail-label-delay);
   }
-  /* 收起：只显示图标块，名称藏起来（按钮的可访问名称仍是工具名，悬停有提示）。 */
-  .unified-workspace[data-tool-rail="collapsed"] .workspace-tool-shortcut.button {
-    justify-content: center;
-    padding: 8px 0;
-  }
-  .unified-workspace[data-tool-rail="collapsed"] .workspace-tool-label {
-    display: none;
+  .unified-workspace[data-tool-rail="collapsed"]
+    .workspace-tool-dock
+    :is(.workspace-tool-label, .workspace-tool-chevron) {
+    visibility: hidden;
+    opacity: 0;
+    translate: -10px;
+    transition-delay: 0s, 0s, var(--workspace-rail-label-duration);
   }
   .workspace-composer-toggle.button {
     display: inline-flex;
@@ -166,18 +146,35 @@
     min-width: 40px;
     /* 收起按钮放在工具栏底部右侧，与左侧图标块的内缩对称；收起成图标时居中。 */
     align-self: flex-end;
-    margin: auto 8px 0 0;
-    border-radius: 12px;
+    margin-block: auto 0;
+    margin-inline-end: calc(6px + 2px * var(--workspace-tool-rail-inset-progress));
+    border-radius: var(--control-pill-radius);
     background: transparent;
-    color: #ffffffb3;
+    color: #fff;
   }
-  .unified-workspace[data-tool-rail="collapsed"] .workspace-composer-toggle.button {
-    align-self: center;
-    margin-right: 0;
+  .workspace-tool-toggle-icon {
+    display: inline-grid;
+  }
+  .workspace-tool-toggle-icon .ui-icon {
+    grid-area: 1 / 1;
+    transition: opacity var(--workspace-rail-icon-spring);
+  }
+  .workspace-composer-toggle[aria-expanded="true"] .workspace-tool-expand-icon,
+  .workspace-composer-toggle[aria-expanded="false"] .workspace-tool-collapse-icon {
+    opacity: 0;
   }
   .workspace-composer-toggle.button:is([data-hovered="true"], [data-focus-visible="true"]) {
     background: var(--fill-medium);
-    color: var(--foreground);
+  }
+}
+@media (prefers-reduced-motion: reduce) and (min-width: 1024px) {
+  .workspace.unified-workspace,
+  .workspace-tool-dock :is(.workspace-tool-label, .workspace-tool-chevron),
+  .unified-workspace[data-tool-rail="collapsed"]
+    .workspace-tool-dock
+    :is(.workspace-tool-label, .workspace-tool-chevron),
+  .workspace-tool-toggle-icon .ui-icon {
+    transition: none;
   }
 }
 @media (min-width: 1301px) {
@@ -222,9 +219,11 @@
   --toggle-button-bg-hover: #ffffff0a;
   --toggle-button-bg-pressed: #ffffff0a;
   --toggle-button-fg: #ffffff99;
-  --toggle-button-bg-selected: var(--fill-medium);
-  --toggle-button-bg-selected-hover: var(--fill-strong);
-  --toggle-button-bg-selected-pressed: var(--fill-strong);
-  --toggle-button-fg-selected: var(--foreground);
   border-radius: 8px;
+}
+:is(.workspace-density-toggle, .workspace-mobile-panels) .toggle-button {
+  --toggle-button-bg-selected: var(--workspace-tool-selected-fill);
+  --toggle-button-bg-selected-hover: var(--workspace-tool-selected-fill);
+  --toggle-button-bg-selected-pressed: var(--workspace-tool-selected-fill);
+  --toggle-button-fg-selected: var(--foreground);
 }

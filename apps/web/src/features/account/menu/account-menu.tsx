@@ -32,20 +32,24 @@ export function HeaderLogin() {
 }
 
 /**
- * 账户菜单提供设置、个人作品与退出登录。
+ * 点击头像或使用键盘打开账户菜单，进入设置、个人作品或退出登录。
  * 桌面顶部栏只显示头像并向下展开；手机导航抽屉底部显示头像和昵称，向上展开。
  */
 export function AccountMenu({
   onNavigate,
+  popoverClassName,
+  popoverOffset = 8,
   variant = "footer",
 }: {
   onNavigate?: () => void;
+  popoverClassName?: string;
+  popoverOffset?: number;
   variant?: "header" | "footer";
 }) {
   const session = useEnterpriseSession();
   const logout = useEnterpriseLogout();
-  const triggerRef = useRef<HTMLButtonElement>(null);
   const [isOpen, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const openSettings = useAccountOverlays((state) => state.openSettings);
   const openLibrary = useOpenAssetLibrary();
   const t = useMessages(accountMenuMessages);
@@ -63,6 +67,7 @@ export function AccountMenu({
     <div
       className={inHeader ? "account-header" : "account-footer"}
       onKeyDownCapture={(event) => {
+        if (event.key === "Escape" && isOpen) setOpen(false);
         // 面板展开时，回车只关闭面板，避免直接执行获得焦点的操作。
         if (!isOpen || event.key !== "Enter" || event.nativeEvent.isComposing) return;
         event.preventDefault();
@@ -90,9 +95,9 @@ export function AccountMenu({
           )}
         </Button>
         <Popover.Content
-          className="account-menu"
+          className={`account-menu${popoverClassName ? ` ${popoverClassName}` : ""}`}
           placement={inHeader ? "bottom end" : "top start"}
-          offset={8}
+          offset={popoverOffset}
           aria-label={t.accountMenu(accountDisplayName(account))}
         >
           <div className="account-menu-identity">

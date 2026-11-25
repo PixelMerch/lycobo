@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockImageApi } from "./image-api-fixture";
+import { chooseWorkspaceTool, mockImageApi } from "./image-api-fixture";
 
 test.beforeEach(async ({ page }) => {
   await mockImageApi(page);
@@ -10,48 +10,40 @@ test("workspace switches tools without discarding drafts and remembers the curre
 }) => {
   await page.goto("/commerce/create");
   await page.getByLabel("提示词", { exact: true }).fill("保留我的商品草稿");
-  const tools = page.getByRole("navigation", { name: "电商创作工具" });
-  await tools.getByRole("button", { name: "家纺裂变", exact: true }).click();
+  await chooseWorkspaceTool(page, "家纺裂变");
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
   await page.getByRole("link", { name: "首页", exact: true }).click();
-  await page.getByRole("button", { name: "工作区", exact: true }).click();
+  await page.goto("/workspace");
   await expect(page).toHaveURL(/\/commerce\/textile-set$/);
-  await tools.getByRole("button", { name: "主图制作", exact: true }).click();
+  await chooseWorkspaceTool(page, "主图制作");
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("保留我的商品草稿");
 });
 
-test("switching to video creation does not trigger paid work", async ({ page }) => {
+test("video is absent from the tool menu and its direct route does not trigger paid work", async ({
+  page,
+}) => {
   const submissions: string[] = [];
   page.on("request", (r) => {
     if (r.method() === "POST" && r.url().includes("image-tasks")) submissions.push(r.url());
   });
   await page.goto("/commerce/create");
-  await page
-    .getByRole("navigation", { name: "电商创作工具" })
-    .getByRole("button", { name: "视频创作", exact: true })
-    .click();
+  await expect(
+    page.getByRole("navigation", { name: "电商创作工具" }).getByRole("button", { name: /视频/ }),
+  ).toHaveCount(0);
+  await page.goto("/zh-CN/dashboard/video");
   await expect(page).toHaveURL(/\/video$/);
   await expect(page.getByRole("button", { name: /立即生成.*100/ })).toBeDisabled();
   expect(submissions).toEqual([]);
 });
 
-test("commerce lists only the four tools and opens the selected workspace on demand", async ({
+test("legacy commerce links redirect to the homepage and workspace routes remain available", async ({
   page,
 }) => {
-  await page.goto("/commerce");
-  await page.getByRole("button", { name: "电商", exact: true }).click();
-  const menu = page.getByRole("menu", { name: "电商功能" });
-  await expect(menu.getByRole("menuitem")).toHaveText([
-    "主图制作",
-    "家纺裂变",
-    "套图计划",
-    "爆款复制",
-  ]);
-  await menu.getByRole("menuitem", { name: "爆款复制" }).click();
-  await expect(page).toHaveURL(/\/commerce\?tool=replica#commerce-composer$/);
-  const preview = page.locator("#commerce-composer");
-  await preview.getByRole("link", { name: "进入工作区", exact: true }).last().click();
-  await expect(page).toHaveURL(/\/commerce\/replica$/);
+  await page.goto("/zh-CN/commerce?tool=replica#commerce-composer");
+  await expect(page).toHaveURL(/\/zh-CN\?tool=replica#commerce-composer$/);
+  await expect(page.locator("#lp-hero-title")).toBeVisible();
+  await page.goto("/zh-CN/commerce/replica");
+  await expect(page).toHaveURL(/\/zh-CN\/dashboard\/commerce\/replica$/);
   await page.goto("/workspace");
   await expect(page).toHaveURL(/\/commerce\/replica$/);
 });
@@ -68,10 +60,9 @@ test("tool-scoped history follows navigation and preserves the main-image draft"
   await page.goto("/commerce/create");
   await page.getByLabel("提示词", { exact: true }).fill("保留商品描述");
   await expect(page.getByRole("combobox", { name: "历史工具筛选" })).toHaveCount(0);
-  const tools = page.getByRole("navigation", { name: "电商创作工具" });
-  await tools.getByRole("button", { name: "家纺裂变", exact: true }).click();
+  await chooseWorkspaceTool(page, "家纺裂变");
   await expect.poll(() => filters.includes("textile")).toBe(true);
-  await tools.getByRole("button", { name: "主图制作", exact: true }).click();
+  await chooseWorkspaceTool(page, "主图制作");
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(page.getByLabel("提示词", { exact: true })).toHaveValue("保留商品描述");
   expect(filters).not.toContain("all");

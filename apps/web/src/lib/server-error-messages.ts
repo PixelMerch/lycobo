@@ -1,8 +1,7 @@
 import { defineMessages } from "../i18n/messages";
 
 /**
- * 服务端错误代码对应的英文说明。服务端只返回中文原文，英文界面按错误代码换成这里的说明；
- * 中文版不使用这些条目，保留为同一结构以便对照。
+ * 服务端错误代码对应的双语文案，积分反馈由工作区和充值弹框共用。
  */
 export const serverErrorMessages = defineMessages({
   "zh-CN": {
@@ -19,9 +18,11 @@ export const serverErrorMessages = defineMessages({
       FORBIDDEN: "没有访问权限。",
       UNTRUSTED_ORIGIN: "请求来源不受信任，请刷新页面后重试。",
       RATE_LIMITED: "操作过于频繁，请稍后重试。",
+      ACCOUNT_LOCKED: "密码错误次数过多，账号已锁定 1 小时。请在解锁后重试。",
+      LOGIN_CHALLENGE_FAILED: "人机验证未通过，请重试。",
       NOT_FOUND: "内容不存在或已被删除。",
       IDEMPOTENCY_CONFLICT: "这次提交与之前的提交冲突，请刷新后再提交。",
-      INSUFFICIENT_CREDITS: "企业积分余额不足。",
+      INSUFFICIENT_CREDITS: "积分不足，请充值后重试",
       STATE_CONFLICT: "内容已发生变化，请刷新后重试。",
       GENERATION_NOT_CONFIGURED: "生成服务暂未开放。",
       AUTH_NOT_CONFIGURED: "登录服务暂不可用，请稍后重试。",
@@ -45,10 +46,13 @@ export const serverErrorMessages = defineMessages({
       FORBIDDEN: "You don't have access to this.",
       UNTRUSTED_ORIGIN: "The request came from an untrusted page. Refresh and try again.",
       RATE_LIMITED: "Too many requests. Please wait a moment and try again.",
+      ACCOUNT_LOCKED:
+        "Too many incorrect passwords. This account is locked for 1 hour. Try again once it unlocks.",
+      LOGIN_CHALLENGE_FAILED: "Verification failed. Please try again.",
       NOT_FOUND: "This item doesn't exist or was deleted.",
       IDEMPOTENCY_CONFLICT:
         "This submission conflicts with an earlier one. Refresh before submitting again.",
-      INSUFFICIENT_CREDITS: "Not enough team credits.",
+      INSUFFICIENT_CREDITS: "Not enough credits. Top up to try again.",
       STATE_CONFLICT: "This item changed in the meantime. Refresh and try again.",
       GENERATION_NOT_CONFIGURED: "Generation isn't available yet.",
       AUTH_NOT_CONFIGURED: "Sign-in is unavailable right now. Please try again later.",

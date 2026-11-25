@@ -79,5 +79,3 @@ export const useStudioStore = create<{
   visitModel: (model) =>
     set((state) => ({ recentModels: [model, ...state.recentModels.filter((id) => id !== model)] })),
 }));
-export const photo = (image: string, thumbnail = false) =>
-  `/studio/${image}${thumbnail ? "-thumb" : ""}.webp`;

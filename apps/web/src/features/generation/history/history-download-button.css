@@ -1,0 +1,35 @@
+.history-download.button {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.history-download.button[data-pending="true"] {
+  color: var(--foreground);
+  opacity: 1;
+}
+
+.history-download-fill {
+  position: absolute;
+  inset: 0;
+  background: var(--fill-strong);
+  pointer-events: none;
+  transform-origin: left;
+}
+
+.history-download.button:not([data-phase="idle"]) .history-download-fill {
+  transition: transform 160ms ease-out;
+}
+
+.history-download-content {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .history-download.button:not([data-phase="idle"]) .history-download-fill {
+    transition: none;
+  }
+}

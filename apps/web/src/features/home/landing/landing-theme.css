@@ -1,0 +1,10 @@
+/* 首页正文和顶栏共用中性色，页边距沿用公开顶栏变量。 */
+:root {
+  --landing-canvas: #0b0b0b;
+  --landing-surface: #0b0b0b;
+  --landing-foreground: #fdfdfd;
+  --landing-muted: #a3a3a3;
+  --landing-border: #262626;
+  --landing-focus: #fdfdfd;
+  --landing-gutter: var(--public-site-header-gutter);
+}

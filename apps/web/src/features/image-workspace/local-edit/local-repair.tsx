@@ -1,8 +1,8 @@
-import { Button, Spinner } from "@heroui/react";
+import { Button } from "@heroui/react";
 import { IconArrowLeft, IconPlus } from "@tabler/icons-react";
-import { CreditCoin } from "../../../components/credit-coin";
 import { DialogClose } from "../../../components/overlays/dialog-close";
 import { UiIcon } from "../../../components/ui-icon";
+import { GenerateButton } from "../../generation/composer/generate-button";
 import type { PreviewImage } from "../image-preview";
 import { RepairRegionCard } from "./repair-region-card";
 import type { LocalRepairEditor } from "./use-local-repair";
@@ -42,6 +42,7 @@ export function LocalRepairPanel({
     add,
     submit,
   } = editor;
+  const submitLabel = ownPending ? t.confirmLastSubmission : t.generateNow;
   return (
     <aside
       className="image-preview-info repair-info image-preview-workspace-panel"
@@ -92,27 +93,14 @@ export function LocalRepairPanel({
       <div className="repair-submit">
         {!available && models.isSuccess && <p className="repair-message">{t.unsupported}</p>}
         {pending && !ownPending && <p className="repair-message">{t.confirmElsewhere}</p>}
-        {/* 任务进度在右下角提示里播报，这里不重复。 */}
-        {/* 与创作面板相同：文字加积分标记，提交时就能看到费用，不另起一行账单。 */}
-        <Button
-          fullWidth
-          variant="primary"
-          size="lg"
-          className={`generation-submit repair-generate${busy ? " generation-pending" : ""}`}
-          data-submitting={busy || undefined}
-          isPending={generate.isPending}
+        <GenerateButton
+          label={busy ? t.generating : submitLabel}
+          submitting={generate.isPending}
+          submittingLabel={t.generating}
           isDisabled={!available || !image || busy || !canGenerate || (pending && !ownPending)}
-          onPress={() => void submit()}
-        >
-          {busy && <Spinner size="md" color="current" role="status" aria-label={t.generating} />}
-          {ownPending ? t.confirmLastSubmission : t.generateNow}
-          {!ownPending && !busy && models.data && (
-            <span className="generate-credit-cost" aria-hidden="true">
-              <CreditCoin />
-              <span>{models.data.unitCredits}</span>
-            </span>
-          )}
-        </Button>
+          cost={ownPending || busy ? undefined : models.data?.unitCredits}
+          onPress={submit}
+        />
         {result?.output_asset_id && (
           <Button
             variant="secondary"

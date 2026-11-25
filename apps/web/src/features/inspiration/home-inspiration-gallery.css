@@ -1,0 +1,296 @@
+/* 独立灵感库和素材库共用分类搜索栏与作品瀑布流。 */
+.home-inspiration {
+  min-width: 0;
+  margin: 36px 0 0;
+  padding: 0 60px 40px 116px;
+}
+.home-inspiration .tabs {
+  display: block;
+}
+.home-inspiration-bar {
+  --command-field-width: min(300px, 52vw);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: calc(var(--inspiration-toolbar-height, 56px) + var(--space-3));
+  /* 留白随筛选栏固定，作品滚过时仍与控件保持同样的距离。 */
+  padding-block-end: var(--space-3);
+}
+.home-inspiration-no-results {
+  min-height: clamp(260px, 50dvh, 480px);
+  font-size: var(--text-sm);
+}
+.home-inspiration .tabs__panel {
+  width: 100%;
+  min-width: 0;
+  margin-top: 0;
+  padding: 0;
+}
+/* 每列平分可用宽度，行列间距一致。 */
+.home-inspiration-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  align-items: start;
+}
+.home-inspiration-column {
+  display: grid;
+  min-width: 0;
+}
+.home-inspiration-grid,
+.home-inspiration-column {
+  gap: 4px;
+}
+.home-inspiration-tile {
+  /* 将与图片按钮并列的「做同款」定位在当前卡片内。 */
+  position: relative;
+}
+.home-inspiration-card.button {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 6px;
+  background: var(--surface);
+  text-align: left;
+  isolation: isolate;
+}
+/* 图片上方一圈细线，让浅色图片在深色页面上仍有边界。 */
+.home-inspiration-card.button::after {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  content: "";
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px #ffffff0f;
+  pointer-events: none;
+  transition: box-shadow 200ms ease;
+}
+.home-inspiration-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+.home-inspiration-tile:where([data-shape="portrait"]) img {
+  aspect-ratio: 4 / 5;
+}
+.home-inspiration-tile:where([data-shape="landscape"]) img {
+  aspect-ratio: 4 / 3;
+}
+/* 图片底部为悬停标题和操作留出空间。 */
+.home-inspiration-panel {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 3;
+  display: grid;
+  padding: 22px 10px 46px;
+  background: linear-gradient(transparent, rgb(12 12 12 / 92%));
+  color: #fff;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 35%);
+  opacity: 0;
+  translate: 0 8px;
+  pointer-events: none;
+  transition:
+    opacity 200ms ease,
+    translate 200ms ease;
+}
+.home-inspiration-panel strong {
+  overflow: hidden;
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-base);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* “做同款”与卡片按钮并列，避免嵌套按钮。 */
+.home-inspiration-cta.button {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 4;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--app-primary-gradient);
+  color: var(--accent-foreground);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  line-height: 16px;
+  opacity: 0;
+  translate: 0 8px;
+  pointer-events: none;
+  transition:
+    opacity 200ms ease,
+    translate 200ms ease;
+}
+.home-inspiration-tile:has([data-focus-visible])
+  :is(.home-inspiration-panel, .home-inspiration-cta.button) {
+  opacity: 1;
+  translate: 0;
+  pointer-events: auto;
+}
+.home-inspiration-tile:has([data-focus-visible]) .home-inspiration-card.button::after {
+  box-shadow: inset 0 0 0 1px #ffffff4d;
+}
+@media (hover: hover) {
+  .home-inspiration-tile:hover :is(.home-inspiration-panel, .home-inspiration-cta.button) {
+    opacity: 1;
+    translate: 0;
+    pointer-events: auto;
+  }
+  .home-inspiration-tile:hover .home-inspiration-card.button::after {
+    box-shadow: inset 0 0 0 1px #ffffff4d;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .home-inspiration-card img {
+    transition: scale 320ms ease;
+  }
+  .home-inspiration-tile:has([data-focus-visible]) .home-inspiration-card img {
+    scale: 1.05;
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
+  .home-inspiration-tile:hover .home-inspiration-card img {
+    scale: 1.05;
+  }
+}
+/* 触屏没有悬停：点按图片打开详情，“做同款”在详情里。 */
+@media (hover: none) {
+  .home-inspiration-panel,
+  .home-inspiration-cta.button {
+    display: none;
+  }
+}
+
+.modal__dialog.home-inspiration-detail {
+  overflow: hidden;
+  width: min(840px, calc(100vw - 32px));
+  max-width: 840px;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  border-radius: 24px;
+}
+.home-inspiration-detail :is(.modal__header, .modal__body) {
+  padding: 0;
+}
+.home-inspiration-detail .modal__header {
+  position: relative;
+  padding-inline-end: var(--dismiss-target);
+}
+.home-inspiration-detail .dialog-close {
+  /* 让关闭热区对齐标题首行中心，不撑高标题栏。 */
+  position: absolute;
+  inset-block-start: calc((var(--leading-xl) - var(--dismiss-target)) / 2);
+  inset-inline-end: -18px;
+}
+.home-inspiration-detail-content {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+.home-inspiration-detail-content > img {
+  align-self: end;
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: min(60vh, 380px);
+  border-radius: 16px;
+  object-fit: contain;
+}
+.home-inspiration-description {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.home-inspiration-prompt-group {
+  display: grid;
+  gap: var(--space-2);
+}
+.home-inspiration-prompt-group > span {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+.home-inspiration-description h3 {
+  margin: 0;
+  color: var(--foreground);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-sm);
+}
+.home-inspiration-prompt {
+  margin: 0;
+  padding: var(--space-4);
+  border-radius: var(--field-radius);
+  color: color-mix(in srgb, var(--muted) 60%, var(--foreground));
+  background: var(--fill-soft);
+  font-size: var(--text-sm);
+  line-height: var(--leading-base);
+}
+.home-inspiration-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-block-start: auto;
+}
+/* 减少动态效果时直接显示悬停内容，图片不放大。 */
+@media (prefers-reduced-motion: reduce) {
+  .home-inspiration-panel,
+  .home-inspiration-cta.button,
+  .home-inspiration-card.button::after {
+    transition: none;
+  }
+  .home-inspiration-panel,
+  .home-inspiration-cta.button {
+    translate: 0;
+  }
+}
+/* 减少透明度时改用实色，保证文字可读。 */
+@media (prefers-reduced-transparency: reduce) {
+  .home-inspiration-panel {
+    background: var(--studio-canvas);
+  }
+}
+@media (max-width: 767px) {
+  .home-inspiration {
+    margin-top: 32px;
+    padding: 0 20px 32px;
+  }
+  .home-inspiration-bar {
+    min-height: calc(var(--inspiration-toolbar-height, 52px) + var(--space-3));
+  }
+  .home-inspiration-grid,
+  .home-inspiration-column {
+    gap: 3px;
+  }
+  .modal__dialog.home-inspiration-detail {
+    padding: var(--space-4);
+  }
+  .home-inspiration-detail .dialog-close {
+    inset-inline-end: calc(-1 * var(--space-4));
+  }
+  .home-inspiration-detail-content {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+  .home-inspiration-detail-content > img {
+    justify-self: center;
+    max-width: 280px;
+    max-height: min(40vh, 280px);
+  }
+  .home-inspiration-actions .button {
+    flex: 1 1 0;
+  }
+}

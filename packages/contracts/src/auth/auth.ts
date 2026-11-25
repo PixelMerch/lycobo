@@ -7,7 +7,11 @@ export const enterpriseAccountSchema = z
   .max(128)
   .regex(/^[a-z0-9][a-z0-9._@-]*$/);
 export const enterpriseLoginSchema = z
-  .object({ account: enterpriseAccountSchema, password: z.string().min(1).max(256) })
+  .object({
+    account: enterpriseAccountSchema,
+    password: z.string().min(1).max(256),
+    captchaToken: z.string().min(1).max(2048),
+  })
   .strict();
 export const enterprisePasswordChangeSchema = z
   .object({
@@ -61,6 +65,7 @@ export const socialLoginInputSchema = z
 export const socialProvidersSchema = z.object({
   providers: z.array(z.enum(socialProviders)),
   emailTurnstileSiteKey: z.string().min(1).optional(),
+  passwordTurnstileSiteKey: z.string().min(1).optional(),
 });
 const emailAddress = z.string().trim().toLowerCase().max(254).email();
 /** 验证码发送请求必须包含 Cloudflare 的短期令牌。 */

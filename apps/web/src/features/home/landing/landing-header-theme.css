@@ -1,0 +1,66 @@
+/* 首页顶栏保持黑色半透明与毛砂，Logo 与控件为纯白，开始创作使用高对比白底黑字。 */
+:root:has(.public-site-header[data-landing-header]) {
+  --site-header-scroll-background: rgb(18 18 18 / 84%);
+  --site-header-scroll-blur: blur(14px);
+  --site-header-button-fill: #ffffff0d;
+
+  .public-site-header {
+    color-scheme: dark;
+    --foreground: var(--landing-foreground);
+    --surface: var(--landing-surface);
+    --surface-foreground: var(--landing-foreground);
+    --overlay-foreground: var(--landing-foreground);
+    --muted: var(--landing-muted);
+    --accent: var(--landing-foreground);
+    --control-selected-foreground: var(--landing-foreground);
+    --shell-nav-foreground: var(--landing-foreground);
+    --shell-nav-hover: var(--site-header-nav-hover-fill);
+    --shell-nav-active: var(--site-header-nav-hover-fill);
+    --fill-soft: var(--site-header-menu-hover-fill);
+    --interaction-active: var(--landing-border);
+    --dismiss-foreground: var(--landing-foreground);
+    --dismiss-hover: var(--site-header-nav-hover-fill);
+    background: transparent;
+    color: var(--landing-foreground);
+  }
+
+  .public-site-brand-art,
+  .mobile-nav .lycobo-logo {
+    filter: brightness(0) invert(1);
+  }
+
+  .landing-header-controls {
+    --site-header-nav-hover-fill: #ffffff14;
+    --landing-control-color: var(--landing-foreground);
+    --landing-control-hover-color: var(--landing-foreground);
+  }
+
+  .public-site-header
+    .topbar-nav
+    .nav-row:where(:not(:hover, [data-hovered="true"], [aria-expanded="true"], :focus-visible)) {
+    color: var(--landing-foreground);
+  }
+
+  :is(.public-site-header, .mobile-nav)
+    :is(.nav-row, .public-site-brand):is(:focus-visible, [data-focus-visible="true"]) {
+    outline: 2px solid var(--landing-focus);
+    outline-offset: 2px;
+  }
+
+  .public-site-start.link {
+    background: #fdfdfd;
+    color: #0b0b0b;
+  }
+
+  .public-site-start.link:is(:hover, [data-hovered="true"]) {
+    background: #d9d9d9;
+  }
+
+  .public-site-start.link:is(:focus-visible, [data-focus-visible="true"]) {
+    outline-color: var(--landing-focus);
+  }
+
+  .landing-account-controls .account-avatar[data-avatar-preset] {
+    --avatar-ink: var(--landing-foreground);
+  }
+}

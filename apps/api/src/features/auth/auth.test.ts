@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { createApp } from "../../app";
 import { hashPassword, verifyPassword } from "./password";
+import { verifyPasswordTurnstile } from "./password-turnstile";
 import { enterpriseAuth, readAuthConfig } from "./service";
 
 const origin = "http://localhost:5173";
@@ -27,6 +28,9 @@ async function fixture(email = false) {
   const repository: AuthRepository = {
     close: vi.fn(),
     allowLogin: vi.fn(async () => true),
+    claimPasswordChallenge: vi.fn(async () => true),
+    passwordLoginRetryAfter: vi.fn(async () => 0),
+    recordPasswordFailure: vi.fn(async () => 0),
     allowEmailCode: vi.fn(async () => true),
     credential: vi.fn(async (account) => (account === user.account ? credential : null)),
     createSession: vi.fn(async () => true),
@@ -45,16 +49,22 @@ async function fixture(email = false) {
   const oauth = {
     origin: "https://fixture.supabase.co",
     key: "fixture-key",
-    providers: [],
+    providers: ["google" as const],
     emailTurnstileSiteKey: "fixture-sitekey",
   };
-  const auth = enterpriseAuth(repository, {
-    secret,
-    origins: [origin],
-    secureCookie: false,
-    ...(email && { oauth }),
-  });
-  return { auth, repository, app: createApp(undefined, undefined, auth) };
+  const verifyChallenge = vi.fn(async (_secret: string, token: string) => token === "fixture-pass");
+  const auth = enterpriseAuth(
+    repository,
+    {
+      secret,
+      origins: [origin],
+      secureCookie: false,
+      passwordTurnstile: { siteKey: "fixture-site-key", secret: "fixture-secret" },
+      ...(email && { oauth }),
+    },
+    verifyChallenge,
+  );
+  return { auth, repository, verifyChallenge, app: createApp(undefined, undefined, auth) };
 }
 describe("enterprise JWT login", () => {
   it("hashes with a random salt, verifies exact passwords and rejects malformed hashes", async () => {
@@ -106,7 +116,7 @@ describe("enterprise JWT login", () => {
       app.request("/api/v1/auth/enterprise/login", {
         method: "POST",
         headers: { Origin: requestOrigin, "Content-Type": "application/json" },
-        body: JSON.stringify({ account, password }),
+        body: JSON.stringify({ account, password, captchaToken: "fixture-pass" }),
       });
     expect((await request(user.account, "bad", "https://hostile.example")).status).toBe(403);
     expect(repository.credential).not.toHaveBeenCalled();
@@ -120,7 +130,58 @@ describe("enterprise JWT login", () => {
     vi.mocked(repository.allowLogin).mockResolvedValue(false);
     const limited = await request(user.account, "fixture-password-123");
     expect(limited.status).toBe(429);
-    expect(limited.headers.get("retry-after")).toBe("900");
+    expect(limited.headers.get("retry-after")).toBe("60");
+  });
+  it("requires verification before checking passwords and reports the current lock", async () => {
+    const { app, repository, verifyChallenge } = await fixture();
+    const request = (captchaToken?: string) =>
+      app.request("/api/v1/auth/enterprise/login", {
+        method: "POST",
+        headers: { Origin: origin, "Content-Type": "application/json" },
+        body: JSON.stringify({ account: user.account, password: "bad", captchaToken }),
+      });
+    expect((await request()).status).toBe(400);
+    expect(verifyChallenge).not.toHaveBeenCalled();
+    expect((await request("invalid")).status).toBe(403);
+    expect(repository.credential).not.toHaveBeenCalled();
+    expect(repository.recordPasswordFailure).not.toHaveBeenCalled();
+    vi.mocked(repository.recordPasswordFailure).mockResolvedValueOnce(3600);
+    const locked = await request("fixture-pass");
+    expect(locked.status).toBe(429);
+    expect(locked.headers.get("Retry-After")).toBe("3600");
+    expect(await locked.json()).toMatchObject({ error: { code: "ACCOUNT_LOCKED" } });
+    vi.mocked(repository.passwordLoginRetryAfter).mockResolvedValueOnce(3500);
+    expect((await request("fixture-pass")).headers.get("Retry-After")).toBe("3500");
+    expect(repository.recordPasswordFailure).toHaveBeenCalledTimes(1);
+    expect(repository.createSession).not.toHaveBeenCalled();
+  });
+  it("accepts Siteverify success only for the login action and the trusted hostname", async () => {
+    const fetchSiteverify = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", fetchSiteverify);
+    try {
+      fetchSiteverify
+        .mockResolvedValueOnce(
+          Response.json({ success: true, action: "email_login", hostname: "localhost" }),
+        )
+        .mockResolvedValueOnce(
+          Response.json({ success: true, action: "password_login", hostname: "elsewhere.example" }),
+        )
+        .mockResolvedValueOnce(
+          Response.json({ success: true, action: "password_login", hostname: "localhost" }),
+        )
+        .mockResolvedValueOnce(
+          Response.json({ success: false, "error-codes": ["timeout-or-duplicate"] }),
+        )
+        .mockRejectedValueOnce(new Error("fixture timeout"));
+      const verify = () => verifyPasswordTurnstile("fixture-secret", "fixture-token", origin);
+      expect(await verify()).toBe(false);
+      expect(await verify()).toBe(false);
+      expect(await verify()).toBe(true);
+      expect(await verify()).toBe(false);
+      expect(await verify()).toBe(false);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
   it("saves only a supported locale for the authenticated user", async () => {
     const { app, auth, repository } = await fixture();
@@ -199,6 +260,7 @@ describe("enterprise JWT login", () => {
       body: JSON.stringify({
         account: user.account.toUpperCase(),
         password: "fixture-password-123",
+        captchaToken: "fixture-pass",
       }),
     });
     expect(response.status).toBe(200);
@@ -307,6 +369,37 @@ describe("enterprise JWT login", () => {
         await auth.authenticate(await sign({ ...valid, ...patch }, secret, "HS256")),
       ).toBeNull();
     }
+  });
+});
+
+describe("第三方登录工作区回跳", () => {
+  it.each([
+    [
+      "/zh-CN/dashboard/commerce/create?task=fixture#result",
+      "/zh-CN/dashboard/commerce/create?task=fixture#result",
+    ],
+    ["/en/dashboard", "/en/dashboard"],
+    ["/zh-CN/recharge?source=footer#packs", "/en"],
+    ["/zh-CN/membership", "/en"],
+    ["/en/dashboard/login", "/en"],
+    ["//external.example/en/dashboard", "/en"],
+  ])("只保留受支持的目标 %s", async (returnTo, expected) => {
+    const { app } = await fixture(true);
+    const start = await app.request("/api/v1/auth/oauth/start", {
+      method: "POST",
+      headers: { Origin: origin, "Content-Type": "application/json" },
+      body: JSON.stringify({ provider: "google", returnTo }),
+    });
+    expect(start.status).toBe(200);
+    const cookie = start.headers.getSetCookie()[0]?.split(";", 1)[0] ?? "";
+    // 不提供供应商授权码，检查签名流程保留的返回地址，不调用外部服务。
+    const callback = await app.request("/api/v1/auth/oauth/callback", {
+      headers: { Cookie: cookie },
+    });
+    expect(callback.status).toBe(302);
+    const location = new URL(callback.headers.get("Location") ?? "", origin);
+    expect(location.searchParams.get("returnTo")).toBe(expected);
+    expect(location.searchParams.get("oauth")).toBe("failed");
   });
 });
 
