@@ -1,3 +1,4 @@
+import { BillingError } from "@lycoboai/billing";
 import { imageModelsResponseSchema, unwrapApiData } from "@lycoboai/contracts";
 import type { ImageRepository } from "@lycoboai/db";
 import { supportedResolutions, validateModelInput } from "@lycoboai/generation";
@@ -5,7 +6,9 @@ import type { ImageStore } from "@lycoboai/storage";
 import { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { expect, it, vi } from "vitest";
 import { createApp } from "../../../app";
-import { createCreemModerator, type GenerationModerator } from "../../moderation/creem-moderation";
+import type { ExternalWalletService } from "../../billing/wallet-service";
+import { createCreemModerator } from "../../moderation/creem-moderation";
+import type { GenerationModerator } from "../../moderation/service";
 
 const unexpected = async (): Promise<never> => {
   throw new Error("Unexpected dependency call");
@@ -15,6 +18,8 @@ function fixture(
   managedModelsOnly = false,
   extra: {
     wake?: () => Promise<void>;
+    wakeBilling?: (id: string) => Promise<void>;
+    billing?: ExternalWalletService;
     moderate?: GenerationModerator | undefined;
     get?: ImageRepository["get"];
     retry?: ImageRepository["retry"];
@@ -77,6 +82,19 @@ function fixture(
     markReferenceDeleted: unexpected,
     provision: unexpected,
     wallet: unexpected,
+    billingCustomer: unexpected,
+    billingEmail: unexpected,
+    saveBillingCustomer: unexpected,
+    createBillingOrder: unexpected,
+    saveBillingCheckout: unexpected,
+    confirmBillingOrder: unexpected,
+    refreshBillingAccount: unexpected,
+    billingEntries: unexpected,
+    billingOrders: unexpected,
+    leaseGenerationCharges: unexpected,
+    finishGenerationCharge: unexpected,
+    replayImageSubmission: async () => undefined,
+    replayImageRetry: async () => false,
     walletEntries: unexpected,
     rechargeOrders: unexpected,
     createRecharge: unexpected,
@@ -116,6 +134,8 @@ function fixture(
   const app = createApp(() => {}, {
     repository,
     moderate: extra.moderate,
+    billing: extra.billing,
+    wakeBilling: extra.wakeBilling,
     store,
     signAsset: extra.signAsset,
     plannerKey: extra.optimizer ? "fixture" : undefined,
@@ -175,7 +195,7 @@ it("blocks rejected submissions before repository or queue calls", async () => {
 });
 
 it("screens every distinct item in a generated image set before accepting the task", async () => {
-  const moderate = vi.fn<GenerationModerator>(async () => {});
+  const moderate = vi.fn<GenerationModerator>(async () => undefined);
   const { create, submit } = fixture(false, false, { moderate });
   const result = await submit(undefined, {
     count: 2,
@@ -210,7 +230,7 @@ it("screens the stored content of the selected retry item and binds its position
       { id: crypto.randomUUID(), title: "场景", prompt: "生成一张窗边自然光的商品图" },
     ],
   };
-  const moderate = vi.fn<GenerationModerator>(async () => {});
+  const moderate = vi.fn<GenerationModerator>(async () => undefined);
   const retry = vi.fn<ImageRepository["retry"]>().mockResolvedValue({ id: jobId, replayed: false });
   const { app } = fixture(false, false, {
     moderate,
@@ -602,4 +622,51 @@ it("streams DeepSeek text and only completes after the result is settled", async
   expect(await (await optimize()).text()).toContain("event: complete");
   expect(request).toHaveBeenCalledTimes(1);
   expect(finish).toHaveBeenCalledTimes(1);
+});
+
+it("persists separate per-image billing approvals and routes the task to billing before generation", async () => {
+  const generationAccount = vi.fn(async () => ({ provider: "fixture", accountId: "cca_fixture" }));
+  const moderate = vi.fn<GenerationModerator>(async () => ["mod_one", "mod_two"]);
+  const wakeBilling = vi.fn(async () => {});
+  const wake = vi.fn(async () => {});
+  const { create, submit } = fixture(false, false, {
+    billing: {
+      provider: "fixture",
+      generationAccount,
+      balance: unexpected,
+    },
+    moderate,
+    wake,
+    wakeBilling,
+  });
+  expect((await submit(undefined, { count: 2 })).status).toBe(202);
+  expect(generationAccount).toHaveBeenCalledWith(expect.anything(), 4);
+  expect(moderate.mock.calls[0]?.[3]).toBe(true);
+  expect(create.mock.calls[0]?.[6]).toEqual({
+    provider: "fixture",
+    accountId: "cca_fixture",
+    approvals: new Map([
+      [0, "mod_one"],
+      [1, "mod_two"],
+    ]),
+  });
+  expect(wakeBilling).toHaveBeenCalledOnce();
+  expect(wake).not.toHaveBeenCalled();
+});
+
+it("returns insufficient credits before persisting a generation in external billing mode", async () => {
+  const { create, submit } = fixture(false, false, {
+    billing: {
+      provider: "fixture",
+      generationAccount: async () => {
+        throw new BillingError("INSUFFICIENT_CREDITS");
+      },
+      balance: unexpected,
+    },
+    moderate: async () => ["mod_one"],
+  });
+  const rejected = await submit();
+  expect(rejected.status).toBe(409);
+  expect(await rejected.json()).toMatchObject({ error: { code: "INSUFFICIENT_CREDITS" } });
+  expect(create).not.toHaveBeenCalled();
 });

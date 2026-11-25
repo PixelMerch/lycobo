@@ -1,7 +1,8 @@
+import { BillingError } from "@lycoboai/billing";
 import { ImageRepositoryError, VariationError, WalletError } from "@lycoboai/db";
 import { type Context, Hono } from "hono";
 import { enterprisePrincipal } from "../auth/principal";
-import { ModerationError } from "../moderation/creem-moderation";
+import { ModerationError } from "../moderation/service";
 import { registerImageWallet } from "../wallet/wallet-routes";
 import { registerImageAssetDelivery, registerImageAssetLibrary } from "./assets/asset-routes";
 import { imageDeliveries } from "./assets/delivery";
@@ -18,7 +19,7 @@ import {
 
 export type { ImageApiDependencies } from "./route-context";
 
-function repositoryFailure(code: string): { status: 400 | 403 | 404 | 409; message: string } {
+function repositoryFailure(code: string): { status: 400 | 403 | 404 | 409 | 503; message: string } {
   switch (code) {
     case "FORBIDDEN":
       return { status: 403, message: "没有权限操作此任务" };
@@ -30,6 +31,9 @@ function repositoryFailure(code: string): { status: 400 | 403 | 404 | 409; messa
       return { status: 400, message: "当前模型渠道未启用或不支持所选参数，请刷新模型配置" };
     case "INSUFFICIENT_CREDITS":
       return { status: 409, message: "积分不足，请充值后重试" };
+    case "BILLING_UNAVAILABLE":
+    case "CREDIT_APPROVAL_INVALID":
+      return { status: 503, message: "积分结算暂不可用，请稍后重试" };
     case "STATE_CONFLICT":
       return { status: 409, message: "任务正在生成或状态已更新，请稍后重试" };
     default:
@@ -81,7 +85,11 @@ export function imageRoutes(deps: ImageApiDependencies) {
         "分析请求未执行，请检查图片或稍后再试",
         error.code === "RATE_LIMITED" ? 409 : 400,
       );
-    if (error instanceof ImageRepositoryError || error instanceof WalletError) {
+    if (
+      error instanceof ImageRepositoryError ||
+      error instanceof WalletError ||
+      error instanceof BillingError
+    ) {
       const { status, message } = repositoryFailure(error.code);
       return fail(c, error.code, message, status);
     }

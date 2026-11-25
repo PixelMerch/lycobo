@@ -1,20 +1,14 @@
+import { creditPacks } from "@lycoboai/contracts";
 import { describe, expect, it } from "vitest";
-import { parseCreditCheckoutLinks } from "./credit-checkout-links";
-import { cnyPerUsdEstimate, creditPackDisplay, creditPacks } from "./credit-pack-pricing";
+import { cnyPerUsdEstimate, creditPackDisplay } from "./credit-pack-pricing";
 
-describe("credit pack checkout links", () => {
-  it("selects the correct checkout when different packs share a price", () => {
-    const standard = "https://www.creem.io/payment/prod_standard_fixture";
-    const offer = "https://www.creem.io/payment/prod_offer_fixture";
-    const links = parseCreditCheckoutLinks(
-      JSON.stringify({ "regular:5999": standard, "offer:5999": offer }),
-    );
+describe("credit pack display", () => {
+  it("keeps offer and regular checkout keys distinct even when their prices match", () => {
     const catalog = creditPackDisplay(creditPacks[2], "en", 2);
     const production = creditPackDisplay(creditPacks[3], "en", 2, true);
     expect(catalog.price).toBe(production.price);
-    expect(links.get(catalog.checkoutKey)).toBe(standard);
-    expect(links.get(production.checkoutKey)).toBe(offer);
-    expect(links.get(creditPackDisplay(creditPacks[0], "en", 2).checkoutKey)).toBeUndefined();
+    expect(catalog.checkoutKey).toBe("regular:catalog");
+    expect(production.checkoutKey).toBe("offer:production");
   });
 
   it("keeps the base estimate around 0.40 CNY and makes bigger offers cheaper per image", () => {
@@ -47,20 +41,5 @@ describe("credit pack checkout links", () => {
       "¥0.36",
       "¥0.35",
     ]);
-  });
-
-  it("drops ambiguous keys and malformed or non-Creem addresses", () => {
-    expect(parseCreditCheckoutLinks("unconfigured").size).toBe(0);
-    expect(
-      parseCreditCheckoutLinks(
-        JSON.stringify({
-          299: "https://www.creem.io/payment/prod_ambiguous_fixture",
-          "offer:299": "https://creem.io.example.com/payment/prod_fixture",
-          "regular:449": "http://www.creem.io/payment/prod_fixture",
-          "offer:1999": "https://example.com",
-          "regular:2999": "https://www.creem.io",
-        }),
-      ).size,
-    ).toBe(0);
   });
 });

@@ -1,31 +1,11 @@
 import { z } from "zod";
+import { type GenerationModerator, ModerationError } from "./service";
 
 const responseSchema = z.object({
   id: z.string().min(1),
   object: z.literal("moderation_result"),
   decision: z.enum(["allow", "flag", "deny"]),
 });
-
-const errors = {
-  CONTENT_REJECTED: { status: 400, message: "提示词未通过审核，请修改后重试。" },
-  MODERATION_UNAVAILABLE: { status: 503, message: "内容审核暂不可用，请稍后重试。" },
-} as const;
-
-/** 审核失败只携带固定错误码，避免暴露提示词、密钥和服务商响应。 */
-export class ModerationError extends Error {
-  readonly failure;
-
-  constructor(readonly code: keyof typeof errors) {
-    super(code);
-    this.failure = errors[code];
-  }
-}
-
-export type GenerationModerator = (
-  prompts: readonly string[],
-  requestId: string,
-  signal: AbortSignal,
-) => Promise<void>;
 
 const batchSize = 4;
 const timeoutMs = 5000;
@@ -48,8 +28,7 @@ async function readDecision(response: Response) {
   } finally {
     await reader.cancel();
   }
-  return responseSchema.parse(JSON.parse(new TextDecoder().decode(buffer.subarray(0, offset))))
-    .decision;
+  return responseSchema.parse(JSON.parse(new TextDecoder().decode(buffer.subarray(0, offset))));
 }
 
 async function screenPrompt(
@@ -89,11 +68,12 @@ export function createCreemModerator(
   const origin = key?.startsWith("creem_test_")
     ? "https://test-api.creem.io"
     : "https://api.creem.io";
-  return async (prompts, requestId, signal) => {
+  return async (prompts, requestId, signal, separateApprovals) => {
     if (env.CREEM_MODERATION_ENABLED !== "true" || !key?.startsWith("creem_"))
       throw new ModerationError("MODERATION_UNAVAILABLE");
-    // 同次申请的相同文案只审核一次。限制并发，超时预算覆盖整批。
-    const uniquePrompts = [...new Set(prompts)];
+    // 逐图扣费需要独立审核 ID，纯审核模式可复用相同文案的审核结果。
+    const uniquePrompts = separateApprovals ? prompts : [...new Set(prompts)];
+    const approvals: string[] = [];
     const deadline = AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]);
     for (let start = 0; start < uniquePrompts.length; start += batchSize) {
       const decisions = await Promise.all(
@@ -110,9 +90,11 @@ export function createCreemModerator(
             ),
           ),
       );
-      if (decisions.some((decision) => decision !== "allow"))
+      if (decisions.some(({ decision }) => decision !== "allow"))
         throw new ModerationError("CONTENT_REJECTED");
+      approvals.push(...decisions.map(({ id }) => id));
     }
     if (deadline.aborted) throw new ModerationError("MODERATION_UNAVAILABLE");
+    return approvals;
   };
 }

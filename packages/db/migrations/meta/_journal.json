@@ -351,6 +351,13 @@
       "when": 1794389479525,
       "tag": "0049_user_nickname",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1795600871498,
+      "tag": "0050_billing_adapters",
+      "breakpoints": true
     }
   ]
 }

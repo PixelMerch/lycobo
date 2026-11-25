@@ -23,6 +23,8 @@ export const businessCodes = {
   AUTH_NOT_CONFIGURED: 40002,
   VIDEO_REFERENCES_UNAVAILABLE: 40003,
   MODERATION_UNAVAILABLE: 40004,
+  BILLING_UNAVAILABLE: 40005,
+  CREDIT_APPROVAL_INVALID: 40006,
   INTERNAL_ERROR: 50000,
 } as const;
 const base = { request_id: z.uuid(), message: z.string() };

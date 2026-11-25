@@ -1103,3 +1103,125 @@ export const promptOptimizations = pgTable(
     ),
   ],
 );
+
+export const billingCustomers = pgTable(
+  "billing_customers",
+  {
+    provider: text("provider").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    customerId: text("customer_id").notNull(),
+    accountId: text("account_id").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.provider, t.userId] }),
+    unique("billing_customers_remote_customer").on(t.provider, t.customerId),
+    unique("billing_customers_remote_account").on(t.provider, t.accountId),
+  ],
+).enableRLS();
+
+export const billingOrders = pgTable(
+  "billing_orders",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    idempotencyKey: uuid("idempotency_key").notNull(),
+    provider: text("provider").notNull(),
+    productId: text("product_id").notNull(),
+    customerId: text("customer_id").notNull(),
+    checkoutId: text("checkout_id"),
+    checkoutUrl: text("checkout_url"),
+    transactionId: text("transaction_id"),
+    amountMinor: integer("amount_minor").notNull(),
+    credits: integer("credits").notNull(),
+    paidAt: timestamp("paid_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    unique("billing_orders_request").on(t.organizationId, t.userId, t.idempotencyKey),
+    unique("billing_orders_checkout").on(t.provider, t.checkoutId),
+    unique("billing_orders_transaction").on(t.provider, t.transactionId),
+    index("billing_orders_owner").on(t.organizationId, t.userId, t.createdAt, t.id),
+    index("billing_orders_user").on(t.userId),
+    check("billing_orders_value", sql`${t.amountMinor} > 0 and ${t.credits} > 0`),
+  ],
+).enableRLS();
+
+export const generationCreditCharges = pgTable(
+  "generation_credit_charges",
+  {
+    itemId: uuid("item_id")
+      .primaryKey()
+      .references(() => generationJobItems.id),
+    provider: text("provider").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    accountId: text("account_id").notNull(),
+    approval: text("approval").notNull(),
+    previousItemId: uuid("previous_item_id").references(() => generationJobItems.id),
+    amount: integer("amount").notNull(),
+    state: text("state").notNull().default("debit"),
+    transactionId: text("transaction_id"),
+    leaseToken: uuid("lease_token"),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("generation_credit_user").on(t.userId),
+    index("generation_credit_previous_item").on(t.previousItemId),
+    unique("generation_credit_provider_transaction").on(t.provider, t.transactionId),
+    unique("generation_credit_provider_approval").on(t.provider, t.approval),
+    check("generation_credit_amount", sql`${t.amount} > 0`),
+    check(
+      "generation_credit_state",
+      sql`${t.state} in ('debit','paid','declined','reverse','reversed')`,
+    ),
+    check(
+      "generation_credit_transaction_state",
+      sql`(${t.transactionId} is not null) = (${t.state} in ('paid','reverse','reversed'))`,
+    ),
+    index("generation_credit_next_attempt")
+      .on(t.provider, t.nextAttemptAt)
+      .where(sql`${t.state} in ('debit','reverse')`),
+  ],
+).enableRLS();
+
+export const billingCreditEntries = pgTable(
+  "billing_credit_entries",
+  {
+    id: bigint("id", { mode: "bigint" }).primaryKey().generatedAlwaysAsIdentity(),
+    provider: text("provider").notNull(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    kind: text("kind").notNull(),
+    amount: integer("amount").notNull(),
+    itemId: uuid("item_id").references(() => generationJobItems.id),
+    orderId: uuid("order_id").references(() => billingOrders.id),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    unique("billing_entries_order").on(t.orderId),
+    unique("billing_entries_item_kind").on(t.itemId, t.kind),
+    index("billing_entries_owner_cursor").on(t.provider, t.organizationId, t.userId, t.id),
+    index("billing_entries_user").on(t.userId),
+    index("billing_entries_org").on(t.organizationId),
+    check(
+      "billing_entries_kind_amount",
+      sql`(${t.kind}='consume' and ${t.amount}<0 and ${t.itemId} is not null and ${t.orderId} is null)
+      or (${t.kind}='refund' and ${t.amount}>0 and ${t.itemId} is not null and ${t.orderId} is null)
+      or (${t.kind}='recharge' and ${t.amount}>0 and ${t.orderId} is not null and ${t.itemId} is null)`,
+    ),
+  ],
+).enableRLS();

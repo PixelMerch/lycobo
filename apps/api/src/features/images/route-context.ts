@@ -4,13 +4,19 @@ import type { ImageStore } from "@lycoboai/storage/core";
 import type { Context } from "hono";
 import { z } from "zod";
 import type { EnterpriseAuth } from "../auth/service";
-import type { GenerationModerator } from "../moderation/creem-moderation";
+import type { CheckoutService } from "../billing/service";
+import type { ExternalWalletService } from "../billing/wallet-service";
+import type { GenerationModerator } from "../moderation/service";
 import type { DeliverySigner } from "./assets/delivery";
 import type { WorkbenchSession } from "./session";
 
 export type ImageApiDependencies = {
   repository: ImageRuntimeRepository;
   moderate?: GenerationModerator | undefined;
+  billing?: ExternalWalletService | undefined;
+  checkout?: CheckoutService | undefined;
+  wakeBilling?: ((jobId: string) => Promise<void>) | undefined;
+  billingWebhooks?: import("hono").Hono | undefined;
   uploadsEnabled?: boolean;
   uploads?: {
     enqueue(scope: ImagePrincipal, bytes: Uint8Array): Promise<string>;

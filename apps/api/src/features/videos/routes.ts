@@ -9,7 +9,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { enterprisePrincipal } from "../auth/principal";
 import type { EnterpriseAuth } from "../auth/service";
-import { type GenerationModerator, ModerationError } from "../moderation/creem-moderation";
+import { type GenerationModerator, ModerationError } from "../moderation/service";
 import type { videoService } from "./service";
 export type VideoApiDependencies = { service: ReturnType<typeof videoService> };
 

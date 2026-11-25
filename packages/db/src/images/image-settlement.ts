@@ -1,7 +1,9 @@
 import type postgres from "postgres";
+import { requestCreditReversal } from "../wallet/generation-charges";
 import { appendWalletEntry, ensureWallet } from "../wallet/wallet-repository";
 import { recordImageEvent } from "./image-event-repository";
 
+/** 结束图片任务并按原钱包结算确定失败的图片。 */
 export function imageSettlement(sql: postgres.Sql, tasksSince?: Date) {
   const refreshJob = async (tx: postgres.TransactionSql, jobId: string) => {
     await tx`update generation_jobs j set status = case
@@ -17,6 +19,7 @@ export function imageSettlement(sql: postgres.Sql, tasksSince?: Date) {
     if (job) await recordImageEvent(tx, String(job.organization_id), "task", jobId);
   };
   const refund = async (tx: postgres.TransactionSql, jobId: string, itemId: string) => {
+    if (await requestCreditReversal(tx, itemId)) return;
     const credits =
       await tx`insert into generation_credit_ledger (organization_id,job_id,item_id,event_type,amount)
       select j.organization_id,j.id,${itemId},'refund',coalesce(

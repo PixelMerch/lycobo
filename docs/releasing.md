@@ -112,7 +112,7 @@ Node API、Sharp、S3 与 LISTEN/SSE 仅用于隔离本地开发及测试。生�
 
 Secrets 使用受保护输入或忽略的临时文件配置；不能写入 Git、命令参数、日志或前端。`backups/`、`.env*`、`.dev.vars*`、`.cloudflare/` 保持 Git 忽略，只有 `.env.example` 可提交。不得依赖开发进程自动继承生产基础设施凭据。
 
-Creem 审核由主站的 `CREEM_MODERATION_ENABLED` 控制。启用前把 `CREEM_API_KEY` 写入主站 Worker Secret，按测试／正式密钥分别使用 Creem 对应环境。开关开启但密钥缺失时，发起生成会返回可重试的审核错误。使用 Creem 正式收款前，须开启审核及完成 Customer Credits 链路；邮件重审以正式环境的真实审核记录为准。 [Creem 审核文档](https://docs.creem.io/features/moderation)
+Creem 审核由主站的 `CREEM_MODERATION_ENABLED` 控制。启用前把 `CREEM_API_KEY` 写入主站 Worker Secret，按测试／正式密钥分别使用 Creem 对应环境。开关开启但密钥缺失时，发起生成会返回可重试的审核错误。Creem 在线收款由独立的 `BILLING_PROVIDER` 控制，默认为 `local`。启用前须完成迁移、在图片消费者配置同环境密钥、验证购买与逐图扣费、确认旧余额的履约方式。邮件重审以正式环境的真实审核记录为准。操作见[钱包与计费](enterprise-wallet.md#creem-验证与切换)。 [Creem 审核文档](https://docs.creem.io/features/moderation)
 
 ### 发布前后检查
 

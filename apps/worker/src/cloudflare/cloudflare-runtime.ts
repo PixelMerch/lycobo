@@ -28,7 +28,7 @@ export type CloudflareImageEnv = Pick<
   | "CLOUDFLARE_CONSUMER_ENABLED"
   | "CLOUDFLARE_GENERATION_ENABLED"
   | "CLOUDFLARE_TASKS_SINCE"
->;
+> & { CREEM_API_KEY?: string };
 
 /** 每次调用独立连接 Hyperdrive，结束时关闭客户端，避免跨请求共享 I/O。 */
 export async function openCloudflareRuntime(env: CloudflareImageEnv) {

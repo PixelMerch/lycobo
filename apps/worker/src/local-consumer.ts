@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { creemBillingProvider, settleGenerationCredits } from "@lycoboai/billing";
 import { openImageRepository } from "@lycoboai/db";
 import { readImagePolicy, standaloneModels } from "@lycoboai/generation";
 import { objectImageStore } from "@lycoboai/storage/object-images";
@@ -15,6 +16,10 @@ const objects = objectImageStore(imageObjectBucket(process.env), repository.stor
 const encode = slots(2);
 const store: typeof objects = { ...objects, put: (...args) => encode(() => objects.put(...args)) };
 const policy = readImagePolicy(process.env);
+const creemTestKey = process.env.CREEM_API_KEY?.trim();
+const billingProvider = creemTestKey?.startsWith("creem_test_")
+  ? creemBillingProvider(creemTestKey)
+  : undefined;
 let stopping = false;
 for (const signal of ["SIGINT", "SIGTERM"])
   process.once(signal, () => {
@@ -25,6 +30,7 @@ try {
     if (policy.enabled)
       try {
         await repository.expireClaims();
+        if (billingProvider) await settleGenerationCredits(billingProvider, repository);
         await drainImageOutbox({
           repository,
           stopStartingAt: Date.now() + 5000,

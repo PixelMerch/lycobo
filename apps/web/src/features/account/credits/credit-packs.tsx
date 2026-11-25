@@ -1,27 +1,28 @@
-import { Button, Link } from "@heroui/react";
-import { imageUnitCredits } from "@lycoboai/contracts";
+import { Button } from "@heroui/react";
+import { creditPacks, imageUnitCredits } from "@lycoboai/contracts";
 import { IconSparkle } from "@tabler/icons-react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
-import { useEnterpriseSession } from "../../auth/auth-client";
-import { useWallet } from "../wallet-client";
-import { creditCheckoutLinks } from "./credit-checkout-links";
+import { useErrorToast } from "../../../lib/error-toast";
+import { useCheckoutOptions, useCreditCheckout, useWallet } from "../wallet-client";
 import { CreditOffer, useCreditOffer } from "./credit-offer";
-import { cnyPerUsdEstimate, creditPackDisplay, creditPacks } from "./credit-pack-pricing";
+import { cnyPerUsdEstimate, creditPackDisplay } from "./credit-pack-pricing";
 import { creditsMessages } from "./credits-messages";
 
 const featuredPacks: Partial<
   Record<(typeof creditPacks)[number]["id"], "recommended" | "best-rate">
 > = { production: "recommended", bulk: "best-rate" };
 
-/** 展示积分包、出图估算、推荐档位与对应的 Creem 付款入口。 */
+/** 展示积分包、出图估算、推荐档位与对应的在线购买入口。 */
 export function CreditPacks() {
   const t = useMessages(creditsMessages);
   const wallet = useWallet();
-  const { data: account } = useEnterpriseSession();
+  const { data: checkoutOptions } = useCheckoutOptions();
+  const checkout = useCreditCheckout();
+  useErrorToast(checkout.error?.message);
   const locale = useLocale();
-  const offer = useCreditOffer();
+  const offer = useCreditOffer(checkoutOptions?.offerEnd);
   const unit = wallet.data?.unitCredits ?? imageUnitCredits;
   const packs = creditPacks.map((pack) => {
     const display = creditPackDisplay(pack, locale, unit, offer.includeOffer);
@@ -30,7 +31,7 @@ export function CreditPacks() {
       featured: featuredPacks[pack.id],
       display,
       hasBonus: offer.includeOffer && pack.bonusCredits > 0,
-      checkout: account ? creditCheckoutLinks.get(display.checkoutKey) : undefined,
+      canBuy: checkoutOptions?.packs.includes(display.checkoutKey) === true,
     };
   });
   return (
@@ -38,7 +39,7 @@ export function CreditPacks() {
       {offer.includeOffer && <CreditOffer seconds={offer.seconds} />}
       <section aria-label={t.packs}>
         <ul className="credit-pack-grid">
-          {packs.map(({ id, featured, display, hasBonus, checkout }) => (
+          {packs.map(({ id, featured, display, hasBonus, canBuy }) => (
             <li key={id} className="credit-pack" data-featured={featured}>
               {featured && (
                 <span className="credit-pack-recommendation">
@@ -72,26 +73,15 @@ export function CreditPacks() {
                     </span>
                   )}
                 </div>
-                {checkout ? (
-                  <Link
-                    href={checkout}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="credit-pack-buy"
-                    aria-label={t.buyPack(display.credits)}
-                  >
-                    {t.buyNow}
-                  </Link>
-                ) : (
-                  <Button
-                    isDisabled
-                    variant="primary"
-                    className="credit-pack-buy"
-                    aria-label={t.buyPack(display.credits)}
-                  >
-                    {t.buyNow}
-                  </Button>
-                )}
+                <Button
+                  isDisabled={!canBuy || checkout.isPending}
+                  variant="primary"
+                  className="credit-pack-buy"
+                  aria-label={t.buyPack(display.credits)}
+                  onPress={() => checkout.mutate(display.checkoutKey)}
+                >
+                  {t.buyNow}
+                </Button>
               </div>
             </li>
           ))}

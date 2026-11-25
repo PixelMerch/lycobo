@@ -143,6 +143,7 @@ export function createApp(
       "/api/v1/webhooks",
       providerWebhookRoutes({ config: webhook, repository: images.repository, wake: images.wake }),
     );
+  if (images?.billingWebhooks) app.route("/api/v1/webhooks", images.billingWebhooks);
   if (realtime) app.route("/api/v1", realtimeRoutes(realtime));
   if (images) app.route("/api/v1", imageRoutes(images));
   app.get("/api/health/live", (c) => c.json({ status: "ok", service: "lycoboai-api" }));

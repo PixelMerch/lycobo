@@ -1,3 +1,4 @@
+import { creemBillingProvider, drainGenerationCredits } from "@lycoboai/billing";
 import { openAuthRepository, openRealtimeRepository } from "@lycoboai/db";
 import { supportedResolutions, validateModelInput } from "@lycoboai/generation";
 import { dispatchImageOutbox, dispatchRealtime } from "@lycoboai/queue";
@@ -6,6 +7,9 @@ import { openCloudflareRuntime } from "../../worker/src/cloudflare/cloudflare-ru
 import { createApp } from "./app";
 import { closeAfterStream } from "./cloudflare-response";
 import { enterpriseAuth, readAuthConfig } from "./features/auth/service";
+import { creemWebhookRoutes } from "./features/billing/creem-webhook";
+import { checkoutService } from "./features/billing/service";
+import { externalWalletService } from "./features/billing/wallet-service";
 import { readWebhookConfig } from "./features/images/webhooks/provider-webhook";
 import { createCreemModerator } from "./features/moderation/creem-moderation";
 
@@ -13,7 +17,69 @@ type OptionalBindings = {
   SUPABASE_AUTH_PUBLISHABLE_KEY?: string;
   SUPABASE_EMAIL_TURNSTILE_SITE_KEY?: string;
   CREEM_API_KEY?: string;
+  CREEM_WEBHOOK_SECRET?: string;
+  BILLING_PRODUCTS?: string;
+  BILLING_OFFER_END_AT?: string;
 };
+
+function activeBilling(env: CloudflareEnv & OptionalBindings, trustedOrigin: string | undefined) {
+  const mode = String(env.BILLING_PROVIDER ?? "local");
+  if (mode === "local") return;
+  const key = env.CREEM_API_KEY?.trim();
+  if (
+    mode !== "creem" ||
+    !key?.startsWith("creem_") ||
+    !env.CREEM_WEBHOOK_SECRET ||
+    !trustedOrigin ||
+    env.CREEM_MODERATION_ENABLED !== "true"
+  )
+    throw new Error("BILLING_CONFIGURATION_REQUIRED");
+  return { provider: creemBillingProvider(key), successUrl: new URL("/", trustedOrigin).href };
+}
+
+function cloudflareBilling(
+  env: CloudflareEnv & OptionalBindings,
+  repository: Awaited<ReturnType<typeof openCloudflareRuntime>>["repository"],
+  trustedOrigin: string | undefined,
+) {
+  const configured = activeBilling(env, trustedOrigin);
+  const checkout =
+    configured &&
+    checkoutService(repository, configured.provider, {
+      products: env.BILLING_PRODUCTS,
+      offerEnd: env.BILLING_OFFER_END_AT,
+      successUrl: configured.successUrl,
+    });
+  const billingWebhooks = env.CREEM_WEBHOOK_SECRET
+    ? creemWebhookRoutes(
+        env.CREEM_WEBHOOK_SECRET,
+        repository,
+        env.CREEM_API_KEY?.trim().startsWith("creem_test_") ? "creem-test" : "creem",
+      )
+    : undefined;
+  let jobId: string | undefined;
+  return {
+    dependencies: {
+      billing: configured && externalWalletService(repository, configured.provider),
+      checkout,
+      billingWebhooks,
+      wakeBilling: async (id: string) => {
+        jobId = id;
+      },
+    },
+    async flush() {
+      if (!configured || !jobId) return;
+      try {
+        const deferred = await drainGenerationCredits(configured.provider, repository, jobId);
+        if (deferred) console.error("BILLING_SETTLEMENT_DEFERRED");
+        await dispatchImageOutbox(repository, env.IMAGE_QUEUE);
+      } catch {
+        // 已接受任务的账务意图可由独立 Worker 恢复。
+        console.error("BILLING_SETTLEMENT_DEFERRED");
+      }
+    },
+  };
+}
 
 /** 为每次请求组装 Hono API、鉴权和 Webhook 验签依赖。 */
 export async function serveCloudflareApi(
@@ -49,11 +115,13 @@ export async function serveCloudflareApi(
     if (env.IMAGE_WEBHOOK_ENABLED === "true" && !webhook)
       throw new Error("WEBHOOK_CONFIGURATION_REQUIRED");
     const { policy, repository, store, uploads } = runtime;
+    const billingRuntime = cloudflareBilling(env, repository, auth.config.origins[0]);
     const app = createApp(
       (event) => console.error(event),
       {
         repository,
         moderate: createCreemModerator(env),
+        ...billingRuntime.dependencies,
         store,
         uploads,
         uploadsEnabled: env.CLOUDFLARE_CONSUMER_ENABLED === "true",
@@ -106,9 +174,10 @@ export async function serveCloudflareApi(
     }
     // 业务已落库，消息投递不阻塞响应；连接随受管任务结束关闭，失败仍有 outbox 恢复。
     if (background) {
-      background(deliverAndClose(request, realtime, env, close));
+      background(deliverAndClose(request, realtime, env, close, billingRuntime.flush));
       streaming = true;
     } else {
+      await billingRuntime.flush();
       await deliverRealtime(request, realtime, env);
     }
     return response;
@@ -135,8 +204,10 @@ async function deliverAndClose(
   realtime: ReturnType<typeof openRealtimeRepository>,
   env: CloudflareEnv,
   close: () => Promise<void>,
+  settle: () => Promise<void>,
 ) {
   try {
+    await settle();
     await deliverRealtime(request, realtime, env);
   } finally {
     await close();

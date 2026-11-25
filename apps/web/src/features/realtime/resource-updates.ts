@@ -33,7 +33,8 @@ export function applyResourceEvent(
   if (event.kind === "release" && event.release)
     client.setQueryData(["site-release"], { release: event.release });
   else if (event.kind === "notification") resources.enqueue("notifications");
-  else if (event.kind === "wallet") resources.enqueue("wallet", "wallet-entries");
+  else if (event.kind === "wallet")
+    resources.enqueue("wallet", "wallet-entries", "wallet-recharges");
   else return false;
   return true;
 }

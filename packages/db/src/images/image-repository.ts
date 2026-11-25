@@ -3,6 +3,8 @@ import postgres from "postgres";
 import { modelManagementRepository } from "../models/model-management-repository";
 import { promptOptimizationRepository } from "../planning/prompt-optimization-repository";
 import { variationRepository } from "../planning/variation-repository";
+import { billingRepository } from "../wallet/billing-repository";
+import { generationCharges } from "../wallet/generation-charges";
 import { walletRepository } from "../wallet/wallet-repository";
 import { nativeProviderWebhooks } from "../webhooks/provider-webhook-repository";
 import { imageAssetRepository } from "./image-asset-repository";
@@ -21,6 +23,7 @@ export {
   ImageRepositoryError,
   type IndependentModelConfiguration,
 } from "./image-repository-types";
+export type { ImageCreditAuthorization } from "./image-submission-repository";
 
 /** 为一次调用组装图片持久化能力，关闭时释放数据库连接。 */
 export function openImageRepository(
@@ -64,6 +67,8 @@ export function openImageRepository(
     close: () => sql.end({ timeout: 5 }),
     settleInvalidResponses: settlement.settleInvalidResponses,
     ...walletRepository(sql),
+    ...billingRepository(sql),
+    ...generationCharges(sql, settlement.refreshJob),
     models: {
       ...modelManagementRepository(sql),
       ...(independent
@@ -86,7 +91,7 @@ export function openImageRepository(
 }
 export type ImageRepository = ReturnType<typeof openImageRepository>;
 
-// Runtime services do not expose provisioning, payment settlement or model-admin writes.
+// 运行时不暴露模型管理和本地人工充值入口。
 type PortableMethod<T> = T extends (...args: infer A) => Promise<infer R>
   ? (...args: A) => Promise<R extends readonly (infer E)[] ? E[] : R>
   : T;

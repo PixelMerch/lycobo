@@ -117,7 +117,9 @@ export function imageExecutionRepository(
         await tx`select id from generation_jobs where id=${candidate.job_id} for update`;
         const [row] =
           await tx`select i.id,i.position,i.job_id,j.organization_id,j.user_id,j.input,j.provider_model,j.provider_snapshot,e.phase,e.task_id,e.status_path,e.deadline_at,e.poll_failures from generation_job_items i join generation_jobs j on j.id=i.job_id left join provider_executions e on e.item_id=i.id
-          where i.id=${itemId} and (i.status='queued' or (i.status='running' and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now()))) for update of i skip locked`;
+          where i.id=${itemId}
+          and not exists(select 1 from generation_credit_charges c where c.item_id=i.id and c.state<>'paid')
+          and (i.status='queued' or (i.status='running' and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now()))) for update of i skip locked`;
         if (!row) return null;
         const input = imageGenerationInputSchema.parse(row.input);
         const executionToken = randomUUID();

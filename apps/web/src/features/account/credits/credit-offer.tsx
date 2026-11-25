@@ -1,16 +1,11 @@
+import { creditOfferEnd } from "@lycoboai/contracts";
 import { useEffect, useState } from "react";
 import { useMessages } from "../../../i18n/messages";
 import { creditsMessages } from "./credits-messages";
 
-const configuredEnd = import.meta.env.VITE_CREDIT_OFFER_END_AT;
-const explicitEnd =
-  typeof configuredEnd === "string" && configuredEnd.endsWith("Z")
-    ? Date.parse(configuredEnd)
-    : Number.NaN;
-const offerEnd = Number.isFinite(explicitEnd) ? explicitEnd : Date.parse("2026-12-06T16:00:00Z");
-
 /** 使用全站固定的活动截止时间，活动到期后恢复常规积分与价格。 */
-export function useCreditOffer() {
+export function useCreditOffer(serverEnd?: string) {
+  const offerEnd = Date.parse(creditOfferEnd(serverEnd));
   const [now, setNow] = useState(Date.now);
   const seconds = Math.max(0, Math.ceil((offerEnd - now) / 1000));
   const isActive = seconds > 0;
