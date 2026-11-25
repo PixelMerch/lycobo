@@ -92,8 +92,6 @@ export const creditsMessages = defineMessages({
     orderCredits: (credits: string) => `${credits} 积分`,
     shownOrders: (count: number) => `显示 ${count} 笔 · 筛选仅针对已加载的订单`,
     reloadOrders: "重新加载订单",
-    ordersNoteTitle: "在线支付开通后，订单状态将实时同步",
-    ordersNote: "当前订单由企业管理员充值生成；积分到账情况可在“积分明细”查看。",
   },
   en: {
     ledgerKinds: {
@@ -188,8 +186,5 @@ export const creditsMessages = defineMessages({
     orderCredits: (credits) => `${credits} credits`,
     shownOrders: (count) => `Showing ${count} · Filters apply to loaded orders only`,
     reloadOrders: "Reload orders",
-    ordersNoteTitle: "Order status will sync in real time once online payment opens",
-    ordersNote:
-      "Orders are currently created when a team admin tops up; see Credit history for credits received.",
   },
 });

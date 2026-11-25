@@ -17,12 +17,14 @@ export function LanguageMenu({
   popoverClassName = "",
   hoverCloseDelay,
   popoverOffset = 4,
+  portalContainer,
 }: {
   account: EnterpriseIdentity | null | undefined;
   homeGlass?: boolean;
   popoverClassName?: string;
   hoverCloseDelay?: number;
   popoverOffset?: number;
+  portalContainer?: HTMLElement | undefined;
 }) {
   const locale = useLocaleStore((state) => state.locale);
   const { changeLanguage, isSaving } = useAccountLanguage(account ?? undefined);
@@ -55,6 +57,7 @@ export function LanguageMenu({
       </Dropdown.Trigger>
       <Dropdown.Popover
         ref={menu.popoverRef}
+        {...(portalContainer ? { UNSTABLE_portalContainer: portalContainer } : {})}
         className={`choice-menu${homeGlass ? " home-header-glass" : ""} ${popoverClassName}`}
         placement="bottom end"
         offset={popoverOffset}

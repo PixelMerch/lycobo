@@ -35,18 +35,28 @@ export async function mockPasswordTurnstile(page: Page) {
 export async function mockImageApi(page: Page, { signedIn = true } = {}) {
   const userId = crypto.randomUUID(),
     organizationId = crypto.randomUUID();
+  let preferredLocale: "zh-CN" | "en" | undefined;
   // Favorites are server state; the fixture keeps them for the page's lifetime.
   const favorites = new Set<string>();
   await page.route("**/api/v1/**", async (route) => {
     const path = new URL(route.request().url()).pathname;
     if (path.startsWith("/api/v1/auth/")) {
       const session = path.endsWith("/session");
-      const status = session && signedIn ? 200 : session ? 401 : 503;
+      const changeLocale = path.endsWith("/locale") && route.request().method() === "PUT";
+      const status = session || changeLocale ? (signedIn ? 200 : 401) : 503;
+      if (changeLocale && signedIn) {
+        const body: { preferredLocale?: unknown } | null = route.request().postDataJSON();
+        const next = body?.preferredLocale;
+        if (next !== "zh-CN" && next !== "en") {
+          return route.fulfill({ status: 400, json: apiFixture({}, 400) });
+        }
+        preferredLocale = next;
+      }
       await route.fulfill({
         status,
         json: apiFixture(
-          session && signedIn
-            ? { userId, organizationId, account: "image-fixture", role: "member" }
+          status === 200
+            ? { userId, organizationId, account: "image-fixture", role: "member", preferredLocale }
             : {},
           status,
         ),

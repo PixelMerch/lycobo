@@ -2,7 +2,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { builtinModules } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 
 const serverPackages = /@lycoboai\/(db|queue|generation|storage)(?:[/"']|$)/;
 // 只检查运行源代码和依赖声明，防止已移除的平台被当作备用路径重新接入。

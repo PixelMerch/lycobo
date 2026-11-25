@@ -262,7 +262,7 @@ function useHistoryTaskActions(
   const error =
     generation.isError && hasPendingSubmission(session.data)
       ? t.submissionPending
-      : generation.error?.message;
+      : generation.feedbackError?.message;
   useErrorToast(generation.isError ? error : null);
   const models = useImageModels();
   const pending = usePendingSubmission(session.data);

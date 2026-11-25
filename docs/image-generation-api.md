@@ -16,6 +16,8 @@
 
 每张固定 2 积分，忽略旧 `IMAGE_CREDITS_PER_IMAGE` 定价；提交扣费、确定失败按张退款。充值订单与账务只读接口已接入，真实支付未接入，见 [企业钱包](enterprise-wallet.md)。
 
+积分不足返回 HTTP 409 和 `INSUFFICIENT_CREDITS`。生图请求被拒绝时，Web 打开充值弹框并保留草稿。中文和英文界面都按错误码显示简短提示。
+
 ## API
 
 所有 JSON 响应遵循 [统一返回格式](node-ts-best-practices.md#api-响应)，原业务结果放入顶层 data；错误使用 request_id、数字业务码和中文 message。未验证身份返回 401，跨组织资源返回 404。API 客户端使用 `Authorization: Bearer <LycoBo 访问令牌>`（不是供应商密钥）；浏览器支持企业 JWT HttpOnly Cookie，不开放凭证通配 CORS。图片内容接口保留二进制响应。

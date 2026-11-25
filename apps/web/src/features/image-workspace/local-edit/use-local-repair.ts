@@ -293,7 +293,7 @@ function useRepairTasks(assetId: string, imageError: string | null) {
   });
   useErrorToast(
     latest.error?.message ??
-      generate.error?.message ??
+      generate.feedbackError?.message ??
       job.error?.message ??
       models.error?.message ??
       imageError,

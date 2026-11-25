@@ -45,7 +45,7 @@ export function ReplicaPage() {
     products.every((product) => product.id !== target.id) &&
     supportsReferences(capabilities, products.length + 1) &&
     capabilities?.enabledResolutions.some((value) => value === draft.resolution);
-  const error = generate.error ?? models.error ?? session.error;
+  const error = generate.feedbackError ?? models.error ?? session.error;
   const errorMessage = error instanceof ImageApiError ? error.message : common.serviceUnavailable;
   useErrorToast(error ? errorMessage : null);
   const patchDraft = (patch: Partial<typeof draft>) => update({ draft: { ...draft, ...patch } });

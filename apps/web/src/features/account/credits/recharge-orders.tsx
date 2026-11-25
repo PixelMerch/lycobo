@@ -1,8 +1,6 @@
 import { Button, Chip, Table, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import { IconReceipt } from "@tabler/icons-react";
 import { useState } from "react";
 import { InfiniteLoad } from "../../../components/infinite-load";
-import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
@@ -123,13 +121,6 @@ export function RechargeOrders() {
               {t.reloadOrders}
             </Button>
           )}
-        </div>
-      </div>
-      <div className="account-orders-note">
-        <UiIcon icon={IconReceipt} size="navigation" />
-        <div>
-          <strong>{t.ordersNoteTitle}</strong>
-          <p>{t.ordersNote}</p>
         </div>
       </div>
     </section>

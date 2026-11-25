@@ -43,9 +43,12 @@ export function AccountOverlayHost() {
           <AccountSettingsDialog section={settings} onClose={() => close("settings")} />
         </Suspense>
       )}
-      {dialog === "recharge" && (
+      {(dialog === "recharge" || dialog === "recharge-insufficient") && (
         <Suspense fallback={null}>
-          <RechargeDialog onClose={() => close("dialog")} />
+          <RechargeDialog
+            insufficient={dialog === "recharge-insufficient"}
+            onClose={() => close("dialog")}
+          />
         </Suspense>
       )}
       {dialog === "usage" && (

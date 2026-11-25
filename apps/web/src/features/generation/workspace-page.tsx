@@ -56,7 +56,7 @@ function Workspace({ model }: { model: ModelId }) {
   const generate = useGenerateImage({ successFeedback: "button" });
   const [showMore, setShowMore] = useState(false);
   useErrorToast(modelQuery.isError ? imageErrorMessage(modelQuery.error) : null);
-  const submissionError = generate.isError ? imageErrorMessage(generate.error) : null;
+  const submissionError = generate.feedbackError ? imageErrorMessage(generate.feedbackError) : null;
   useErrorToast(session.isError ? imageErrorMessage(session.error) : submissionError);
   const capabilities = modelCapabilities(modelQuery.data, model, "create");
   const enabledResolutions = capabilities?.enabledResolutions ?? [];

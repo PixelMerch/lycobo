@@ -175,7 +175,7 @@ test("我的素材 opens on the current tool and filters source, time and favori
 
   const favoritesLabel = dialog.getByText("仅看收藏", { exact: true });
   await favoritesLabel.click();
-  await expect(dialog.getByText("还没有收藏的素材")).toBeVisible();
+  await expect(dialog.getByText("暂无收藏")).toBeVisible();
   const empty = dialog.locator(".asset-empty");
   await expect(empty.locator("p")).toHaveCount(1);
   await expect(empty.locator("h2, button")).toHaveCount(0);
@@ -361,7 +361,7 @@ test("素材库 keeps its tab and filters in the address; older favorites links 
   await page.goto("/assets?source=favorites");
   await expect(page.getByRole("heading", { name: "素材库", level: 1 })).toBeAttached();
   await expect(page.getByRole("switch", { name: "仅看收藏" })).toBeChecked();
-  await expect(page.getByText("还没有收藏的素材")).toBeVisible();
+  await expect(page.getByText("暂无收藏")).toBeVisible();
   expect(queries.at(-1)?.get("favorite")).toBe("true");
   expect(queries.at(-1)?.has("kind")).toBe(false);
   await page.getByText("仅看收藏", { exact: true }).click();

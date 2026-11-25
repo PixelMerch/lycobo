@@ -6,6 +6,24 @@ async function switchLanguage(page: Page, language: string) {
   await page.getByRole("menuitemradio", { name: language, exact: true }).click();
 }
 
+test("the homepage language menu stays anchored while scrolling under the pointer", async ({
+  page,
+}) => {
+  await mockImageApi(page, { signedIn: false });
+  await page.goto("/en");
+  const trigger = page.locator(".language-trigger");
+  const option = page.getByRole("menuitemradio", { name: "English", exact: true });
+  await trigger.hover();
+  await option.hover();
+  // 滚动正文，同时让鼠标始终停在选项上。
+  await page.evaluate(() => window.scrollTo({ top: 600, behavior: "instant" }));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await expect(option).toBeInViewport();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await page.mouse.move(320, 260);
+  await expect(option).toBeHidden();
+});
+
 test("homepage language follows the URL and switching preserves query, history, and scroll", async ({
   page,
 }) => {
@@ -21,7 +39,8 @@ test("homepage language follows the URL and switching preserves query, history, 
   await expect(page).toHaveURL(/\/zh-CN\?tool=create#commerce-composer$/);
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
   await expect(title).toContainText("让你的商品图");
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(500);
+  // 双语文字高度不同，浏览器的滚动锚点可能小幅调整像素值；阅读位置仍应留在原区域。
+  await expect.poll(() => page.evaluate(() => Math.abs(window.scrollY - 500))).toBeLessThan(40);
   await page.goBack();
   await expect(page).toHaveURL(/\/en\?tool=create#commerce-composer$/);
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
@@ -47,9 +66,9 @@ test("workspace language switch preserves draft and routes tool navigation in th
     "保留这个商品图草稿",
   );
   await expect(page.locator('[data-locale-draft-probe="kept"]')).toBeVisible();
-  await expect(page.locator(".workspace-site-header .header-workspace")).toHaveAttribute(
+  await expect(page.locator(".workspace-site-header .workspace-site-brand")).toHaveAttribute(
     "href",
-    "/en/dashboard",
+    "/en",
   );
   expect(localizedApiRequests).toEqual([]);
 });

@@ -32,7 +32,7 @@ export function useVariationGeneration() {
   const configured =
     !!caps?.enabledResolutions.some((value) => value === draft.resolution) &&
     (!draft.references.length || supportsReferences(caps, draft.references.length));
-  useErrorToast(generation.error?.message);
+  useErrorToast(generation.feedbackError?.message);
   return {
     submitting: generation.isPending,
     pending: ownPending,

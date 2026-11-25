@@ -26,7 +26,7 @@ export function useTextileGeneration() {
   const configured =
     supportsReferences(capabilities, 1 + draft.detailImages.length) &&
     resolutions.includes(draft.resolution);
-  useErrorToast(generation.error?.message ?? models.error?.message);
+  useErrorToast(generation.feedbackError?.message ?? models.error?.message);
   return {
     resolutions,
     pending: ownPending,

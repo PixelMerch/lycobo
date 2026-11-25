@@ -1,4 +1,5 @@
 import { IconBook, IconLayoutDashboard } from "@tabler/icons-react";
+import { useState } from "react";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
 import { AccountMenu } from "../features/account/menu/account-menu";
@@ -24,6 +25,7 @@ export function SiteHeaderControls({
   publicMenus?: boolean;
 }) {
   const t = useMessages(shellMessages);
+  const [languageAnchor, setLanguageAnchor] = useState<HTMLDivElement | null>(null);
   return (
     <div className="landing-header-controls">
       <RouteLink
@@ -33,9 +35,10 @@ export function SiteHeaderControls({
       >
         <UiIcon icon={IconBook} size="navigation" />
       </RouteLink>
-      <div className="landing-language-control">
+      <div ref={setLanguageAnchor} className="landing-language-control">
         <LanguageMenu
           account={account}
+          portalContainer={languageAnchor ?? undefined}
           homeGlass={!publicMenus}
           popoverClassName="landing-control-popover landing-language-popover"
           hoverCloseDelay={100}

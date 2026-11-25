@@ -22,8 +22,7 @@ function videoFailure(error: Error) {
     return fail("VALIDATION_ERROR", "请检查视频描述、参考图片和时长", 400);
   const code = z.object({ code: z.string() }).safeParse(error);
   const symbol = code.success ? code.data.code : error.message;
-  if (symbol === "INSUFFICIENT_CREDITS")
-    return fail(symbol, "积分不足，每次视频生成需要100积分", 409);
+  if (symbol === "INSUFFICIENT_CREDITS") return fail(symbol, "积分不足，请充值后重试", 409);
   if (symbol === "REFERENCE_NOT_FOUND") return fail(symbol, "参考图片不存在或不属于当前账号", 400);
   if (symbol === "VIDEO_REFERENCES_UNAVAILABLE")
     return fail(symbol, videoReferenceUnavailableMessage, 503);

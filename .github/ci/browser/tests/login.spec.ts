@@ -277,7 +277,7 @@ test("social sign-in spins on the pressed button and confirms success on return"
   );
   await expect(dialog.getByRole("button", { name: "使用 Apple 登录", exact: true })).toBeDisabled();
   fail();
-  await expect(dialog.getByText("第三方登录未完成，请重试。", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("登录未完成，请重试。", { exact: true })).toBeVisible();
   await expect(dialog.getByRole("status", { name: "正在登录" })).toHaveCount(0);
 
   // 服务端完成第三方登录后带 oauth=success 回到登录页：提示“登录成功”再回到原页面。
