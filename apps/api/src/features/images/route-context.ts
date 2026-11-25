@@ -4,11 +4,13 @@ import type { ImageStore } from "@lycoboai/storage/core";
 import type { Context } from "hono";
 import { z } from "zod";
 import type { EnterpriseAuth } from "../auth/service";
+import type { GenerationModerator } from "../moderation/creem-moderation";
 import type { DeliverySigner } from "./assets/delivery";
 import type { WorkbenchSession } from "./session";
 
 export type ImageApiDependencies = {
   repository: ImageRuntimeRepository;
+  moderate?: GenerationModerator | undefined;
   uploadsEnabled?: boolean;
   uploads?: {
     enqueue(scope: ImagePrincipal, bytes: Uint8Array): Promise<string>;
@@ -23,7 +25,7 @@ export type ImageApiDependencies = {
   standaloneKey?: string | undefined;
   providerRequest?: typeof fetch | undefined;
   events?: ImageEventFeed | undefined;
-  // Starts background processing after work is enqueued when the transport has no push.
+  // 没有推送传输时，在入队后唤醒后台处理。
   wake?: (() => Promise<void>) | undefined;
   signAsset?: DeliverySigner | undefined;
   auth?: EnterpriseAuth | undefined;
@@ -33,7 +35,7 @@ export type ImageApiDependencies = {
   unitCredits: number;
   editsEnabled?: boolean;
   session?: WorkbenchSession | undefined;
-  // Capability policy is shared with the Worker and injected at startup.
+  // API 和 Worker 共用能力策略，由启动入口注入。
   validate: (input: z.infer<typeof imageGenerationInputSchema>) => void;
   resolutions: (model: z.infer<typeof imageGenerationInputSchema>["model"]) => string[];
 };

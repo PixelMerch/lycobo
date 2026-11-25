@@ -26,7 +26,9 @@
 
 站点公开三份政策和统一客服邮箱 `support@lycobo.com`，当前价格与档位由充值弹框和结账显示。用户协议第 5 节为可接受使用政策。申请时，Creem 商家资料和收据使用同一客服邮箱。发布正式政策前确认运营主体法定信息、生效日期与隐私披露。退款页面中的 Creem 条款适用于通过 Creem 成交的订单。 [Creem 商家审核指南](https://docs.creem.io/merchant-of-record/account-reviews/account-reviews)
 
-当前账本及充值预览仍使用项目本地实现。Creem 要求每次 AI 图片或视频生成和编辑先经过其内容审核，付费生成的积分扣减关联审核结果，并使用 Creem Customer Credits。申请正式收款前需另行完成并验证这些接口，以及支付确认、到账和退款对账。现有积分余额不能证明某一笔购买是否已使用，落实按笔退款规则需要有可核对的购买积分来源和使用记录。 [Creem 生成式 AI 要求](https://docs.creem.io/merchant-of-record/account-reviews/gen-ai-requirements)
+Creem 正式商品目录已创建活动入门包 **Lycobo Trial · 104 AI Image Credits**，价格为一次性付费 $2.99 USD，交付为 104 个 AI 生成积分。正式支付仍待审核，站内购买按钮未关联该商品。
+
+接入正式支付还需通过服务端创建收银台会话，将 Creem 买家及其生成积分账户与已登录的 Lycobo 工作区关联。Creem 负责发放所购积分，站内应核对到账通知和余额。每次付费生成使用审核结果 ID 幂等扣费并记录对应的任务，明确失败的输出才按实际扣款结算。余额和账单沿用工作区权限，退款对账需关联原订单和消费流水。 [Creem 生成式 AI 接入指南](https://docs.creem.io/merchant-of-record/account-reviews/gen-ai-technical-integration-guide)
 
 ## 模型与价格
 

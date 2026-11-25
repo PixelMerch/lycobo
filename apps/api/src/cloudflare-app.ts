@@ -7,16 +7,18 @@ import { createApp } from "./app";
 import { closeAfterStream } from "./cloudflare-response";
 import { enterpriseAuth, readAuthConfig } from "./features/auth/service";
 import { readWebhookConfig } from "./features/images/webhooks/provider-webhook";
+import { createCreemModerator } from "./features/moderation/creem-moderation";
 
-type AuthBindings = {
+type OptionalBindings = {
   SUPABASE_AUTH_PUBLISHABLE_KEY?: string;
   SUPABASE_EMAIL_TURNSTILE_SITE_KEY?: string;
+  CREEM_API_KEY?: string;
 };
 
 /** 为每次请求组装 Hono API、鉴权和 Webhook 验签依赖。 */
 export async function serveCloudflareApi(
   request: Request,
-  env: CloudflareEnv & AuthBindings,
+  env: CloudflareEnv & OptionalBindings,
   background?: (work: Promise<void>) => void,
 ) {
   if (new URL(request.url).pathname === "/api/health/live") return createApp().fetch(request);
@@ -51,6 +53,7 @@ export async function serveCloudflareApi(
       (event) => console.error(event),
       {
         repository,
+        moderate: createCreemModerator(env),
         store,
         uploads,
         uploadsEnabled: env.CLOUDFLARE_CONSUMER_ENABLED === "true",

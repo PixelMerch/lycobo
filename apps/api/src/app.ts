@@ -137,7 +137,7 @@ export function createApp(
     return requestSizeLimit(limit)(c, next);
   });
   app.route("/api/v1/auth", authRoutes(auth));
-  app.route("/api/v1", videoRoutes(videos, auth));
+  app.route("/api/v1", videoRoutes(videos, auth, images?.moderate));
   if (images && webhook)
     app.route(
       "/api/v1/webhooks",

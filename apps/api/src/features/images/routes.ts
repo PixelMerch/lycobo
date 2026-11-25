@@ -1,6 +1,7 @@
 import { ImageRepositoryError, VariationError, WalletError } from "@lycoboai/db";
 import { type Context, Hono } from "hono";
 import { enterprisePrincipal } from "../auth/principal";
+import { ModerationError } from "../moderation/creem-moderation";
 import { registerImageWallet } from "../wallet/wallet-routes";
 import { registerImageAssetDelivery, registerImageAssetLibrary } from "./assets/asset-routes";
 import { imageDeliveries } from "./assets/delivery";
@@ -36,11 +37,12 @@ function repositoryFailure(code: string): { status: 400 | 403 | 404 | 409; messa
   }
 }
 
+/** 注册鉴权后的图片接口，并将业务失败转换为统一响应。 */
 export function imageRoutes(deps: ImageApiDependencies) {
   const app = new Hono<Env>();
   const resolvePrincipal = async (c: Context) => {
     const bearer = c.req.header("Authorization");
-    // Keep existing service API keys compatible; browser sessions never fall back to local identity.
+    // 保留服务 API 密钥的兼容性，浏览器会话不回退到本地身份。
     if (deps.auth && bearer && /^Bearer [\w-]{43}$/.test(bearer))
       return deps.repository.authenticate(bearer.slice(7));
     return deps.auth
@@ -61,7 +63,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
     setWorkbenchCookie(c, deps.session);
     return c.json({ userId: principal.userId, organizationId: principal.organizationId });
   });
-  // Display-only metadata is public; authenticated task and capability routes stay below.
+  // 展示用元数据公开，任务和能力接口仍需鉴权。
   app.get("/image-model-logos", async (c) => c.json(await deps.repository.models.logos()));
   app.use("*", async (c, next) => {
     const principal = await resolvePrincipal(c);
@@ -70,6 +72,8 @@ export function imageRoutes(deps: ImageApiDependencies) {
     await next();
   });
   app.onError((error, c) => {
+    if (error instanceof ModerationError)
+      return fail(c, error.code, error.failure.message, error.failure.status);
     if (error instanceof VariationError)
       return fail(
         c,

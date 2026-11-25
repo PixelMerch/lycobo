@@ -13,6 +13,8 @@ export const serverErrorMessages = defineMessages({
       INVALID_IMAGE: "图片格式或尺寸无效，仅支持 PNG、JPEG、WebP。",
       REFERENCE_NOT_FOUND: "参考图片不存在或不属于当前账号。",
       MODEL_CAPABILITY_UNVERIFIED: "该模型的能力尚未核实，请换一个模型。",
+      CONTENT_REJECTED: "提示词未通过审核，请修改后重试。",
+      MODERATION_UNAVAILABLE: "内容审核暂不可用，请稍后重试。",
       UNAUTHORIZED: "登录已过期，请重新登录。",
       INVALID_CREDENTIALS: "账号或密码错误。",
       FORBIDDEN: "没有访问权限。",
@@ -41,6 +43,8 @@ export const serverErrorMessages = defineMessages({
       REFERENCE_NOT_FOUND: "A reference image no longer exists or isn't in this account.",
       MODEL_CAPABILITY_UNVERIFIED:
         "This model hasn't been verified yet. Please choose another one.",
+      CONTENT_REJECTED: "Your prompt didn't pass review. Edit it and try again.",
+      MODERATION_UNAVAILABLE: "Content review is temporarily unavailable. Try again later.",
       UNAUTHORIZED: "Your session has expired. Please sign in again.",
       INVALID_CREDENTIALS: "The account or password is incorrect.",
       FORBIDDEN: "You don't have access to this.",

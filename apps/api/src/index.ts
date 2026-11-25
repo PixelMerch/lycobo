@@ -21,6 +21,7 @@ import { createApp } from "./app";
 import { readEnv } from "./env";
 import { enterpriseAuth, readAuthConfig } from "./features/auth/service";
 import { readWorkbenchSession } from "./features/images/session";
+import { createCreemModerator } from "./features/moderation/creem-moderation";
 
 // Node entrypoint is for isolated local development. Production uses cloudflare.ts.
 const env = readEnv(process.env);
@@ -54,6 +55,7 @@ const app = createApp(
   (event) => logger.error(event, "Request failed"),
   {
     repository,
+    moderate: createCreemModerator(process.env),
     store,
     auth,
     signAsset,

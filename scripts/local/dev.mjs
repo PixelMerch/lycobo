@@ -11,6 +11,16 @@ try {
 }
 const docker = process.argv.includes("--docker");
 const env = localEnvironment(process.env, docker, { ...settings, ...process.env });
+const moderationEnabled = process.env.CREEM_MODERATION_ENABLED ?? settings.CREEM_MODERATION_ENABLED;
+const creemKey = (process.env.CREEM_API_KEY ?? settings.CREEM_API_KEY)?.trim();
+// 本地审核只允许 API 子进程使用 Creem 测试密钥。
+const apiEnv = {
+  ...env,
+  ...(moderationEnabled ? { CREEM_MODERATION_ENABLED: moderationEnabled } : {}),
+  ...(moderationEnabled === "true" && creemKey?.startsWith("creem_test_")
+    ? { CREEM_API_KEY: creemKey }
+    : {}),
+};
 const names = process.argv.includes("--api-only") ? ["api"] : ["api", "worker", "assets", "web"];
 const children = names.map((name) =>
   spawn(
@@ -18,7 +28,7 @@ const children = names.map((name) =>
     ["--filter", `@lycoboai/${name}`, docker && name === "web" ? "dev:docker" : "dev"],
     {
       stdio: "inherit",
-      env,
+      env: name === "api" ? apiEnv : env,
       detached: process.platform !== "win32",
     },
   ),

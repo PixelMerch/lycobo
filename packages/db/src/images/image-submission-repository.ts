@@ -140,6 +140,16 @@ function retryableItems(items: RetryItem[], itemId: string | undefined) {
   return failed;
 }
 
+function assertApprovedRetryPositions(items: RetryItem[], approvedPositions?: readonly number[]) {
+  // 审核在事务外完成；重试范围发生变化时，让用户重新提交这批图片。
+  if (
+    approvedPositions &&
+    (approvedPositions.length !== items.length ||
+      items.some((item) => !approvedPositions.includes(item.position)))
+  )
+    throw new ImageRepositoryError("STATE_CONFLICT");
+}
+
 async function retireFailedItems(
   tx: postgres.TransactionSql,
   scope: ImageScope,
@@ -329,6 +339,7 @@ export function imageSubmissionRepository(
       key: string,
       itemId?: string,
       requireManaged = false,
+      approvedPositions?: readonly number[],
     ) {
       return sql.begin(async (tx) => {
         await verifyMember(tx, scope);
@@ -339,6 +350,7 @@ export function imageSubmissionRepository(
           RetryItem[]
         >`select id,position,status,error_code from generation_job_items where job_id=${jobId} and superseded_at is null order by position for update`;
         const failed = retryableItems(items, itemId);
+        assertApprovedRetryPositions(failed, approvedPositions);
         if (requireManaged) await refreshManagedRetry(tx, jobId, job, items, independent);
         await retireFailedItems(tx, scope, jobId, failed, refund);
         const wallet = await ensureWallet(tx, scope);

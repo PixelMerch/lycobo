@@ -112,6 +112,8 @@ Node API、Sharp、S3 与 LISTEN/SSE 仅用于隔离本地开发及测试。生�
 
 Secrets 使用受保护输入或忽略的临时文件配置；不能写入 Git、命令参数、日志或前端。`backups/`、`.env*`、`.dev.vars*`、`.cloudflare/` 保持 Git 忽略，只有 `.env.example` 可提交。不得依赖开发进程自动继承生产基础设施凭据。
 
+Creem 审核由主站的 `CREEM_MODERATION_ENABLED` 控制。启用前把 `CREEM_API_KEY` 写入主站 Worker Secret，按测试／正式密钥分别使用 Creem 对应环境。开关开启但密钥缺失时，发起生成会返回可重试的审核错误。使用 Creem 正式收款前，须开启审核及完成 Customer Credits 链路；邮件重审以正式环境的真实审核记录为准。 [Creem 审核文档](https://docs.creem.io/features/moderation)
+
 ### 发布前后检查
 
 正式版本从 GitHub Actions 的 **Release → Run workflow** 发布。部署 job 使用 `cloudflare-production` 环境中的 `CLOUDFLARE_API_TOKEN`，按仓库 Wrangler 配置部署主站和图片 Worker。该环境只允许 main，数据库连接信息和应用密钥继续由 Cloudflare 管理。

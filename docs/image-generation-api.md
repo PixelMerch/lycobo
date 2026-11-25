@@ -18,6 +18,8 @@
 
 积分不足返回 HTTP 409 和 `INSUFFICIENT_CREDITS`。生图请求被拒绝时，Web 打开充值弹框并保留草稿。中文和英文界面都按错误码显示简短提示。
 
+主站通过 `CREEM_MODERATION_ENABLED` 控制 Creem 提示词审核，当前默认关闭。开启后，预查模型、参考图状态与审核并行进行。新生成、套图和需要实际重发的任务按模型实际使用的文案审核，整批通过后才进入扣费及任务入队事务。已提交的供应商任务仍先查询原结果。审核拒绝或可疑返回 400 `CONTENT_REJECTED`，超时、异常或缺少密钥返回 503 `MODERATION_UNAVAILABLE`。两种失败均不会创建新的图片任务或扣费。审核请求只包含文字和不透明的请求编号。
+
 ## API
 
 所有 JSON 响应遵循 [统一返回格式](node-ts-best-practices.md#api-响应)，原业务结果放入顶层 data；错误使用 request_id、数字业务码和中文 message。未验证身份返回 401，跨组织资源返回 404。API 客户端使用 `Authorization: Bearer <LycoBo 访问令牌>`（不是供应商密钥）；浏览器支持企业 JWT HttpOnly Cookie，不开放凭证通配 CORS。图片内容接口保留二进制响应。
