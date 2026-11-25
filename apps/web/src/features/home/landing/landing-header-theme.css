@@ -1,12 +1,10 @@
-/* 首页顶栏与菜单保留黑色透明和磨砂，品牌及控件为白色。 */
-:root:has(.public-site-header[data-landing-frame]) {
+/* 首页顶栏保持黑色半透明与毛砂，Logo 与控件为纯白，开始创作使用高对比白底黑字。 */
+:root:has(.public-site-header[data-landing-header]) {
+  --site-header-scroll-background: rgb(18 18 18 / 84%);
+  --site-header-scroll-blur: blur(14px);
   --site-header-button-fill: #ffffff0d;
-  --site-header-nav-hover-fill: #ffffff14;
-  --site-header-menu-hover-fill: #ffffff0f;
-  --site-header-menu-background: var(--glass-dark-tint);
-  --site-header-menu-blur: blur(14px);
 
-  :is(.public-site-header, .landing-control-popover, .mobile-nav, .account-menu) {
+  .public-site-header {
     color-scheme: dark;
     --foreground: var(--landing-foreground);
     --surface: var(--landing-surface);
@@ -22,37 +20,29 @@
     --interaction-active: var(--landing-border);
     --dismiss-foreground: var(--landing-foreground);
     --dismiss-hover: var(--site-header-nav-hover-fill);
-    --glass-tint: var(--site-header-menu-background);
-    --glass-fill: linear-gradient(transparent, transparent);
-    --glass-border: transparent;
-    --glass-blur: var(--site-header-menu-blur);
-    --glass-shadow: 0 12px 32px rgb(0 0 0 / 8%);
+    background: transparent;
     color: var(--landing-foreground);
   }
 
-  .public-site-header {
-    background: transparent;
+  .public-site-header[data-scrolled="true"] {
+    border-bottom: 1px solid #2e2e2e;
   }
 
-  /* Rive 与静态回退统一使用白色字形，保持原有轮廓和滚动进度。 */
   .public-site-brand-art,
   .mobile-nav .lycobo-logo {
     filter: brightness(0) invert(1);
   }
 
   .landing-header-controls {
+    --site-header-nav-hover-fill: #ffffff14;
     --landing-control-color: var(--landing-foreground);
     --landing-control-hover-color: var(--landing-foreground);
   }
 
-  :is(.public-site-header, .mobile-nav) .nav-row,
-  .landing-control-popover :is(.menu-item, .credits-menu-balance strong),
-  .account-menu-row {
+  .public-site-header
+    .topbar-nav
+    .nav-row:where(:not(:hover, [data-hovered="true"], [aria-expanded="true"], :focus-visible)) {
     color: var(--landing-foreground);
-  }
-
-  .mobile-nav .nav-group-label {
-    color: var(--landing-muted);
   }
 
   :is(.public-site-header, .mobile-nav)
@@ -62,12 +52,12 @@
   }
 
   .public-site-start.link {
-    background: var(--landing-foreground);
-    color: var(--landing-surface);
+    background: #fdfdfd;
+    color: #0b0b0b;
   }
 
   .public-site-start.link:is(:hover, [data-hovered="true"]) {
-    background: var(--landing-action-hover);
+    background: #d9d9d9;
   }
 
   .public-site-start.link:is(:focus-visible, [data-focus-visible="true"]) {
@@ -76,41 +66,5 @@
 
   .landing-account-controls .account-avatar[data-avatar-preset] {
     --avatar-ink: var(--landing-foreground);
-  }
-
-  .landing-control-popover .credits-menu-plan {
-    --menu-row-fill: var(--landing-subtle);
-  }
-
-  .landing-control-popover .credits-menu-upgrade {
-    background: var(--landing-subtle);
-    color: var(--landing-foreground);
-  }
-
-  .account-menu-details > span,
-  .account-footer-action,
-  .landing-control-popover .credits-menu-balance {
-    color: var(--landing-muted);
-  }
-}
-/* 工具菜单使用中性深灰磨砂，首屏仍能透出图片色彩。 */
-@supports (backdrop-filter: blur(1px)) {
-  @media not (prefers-reduced-transparency: reduce) {
-    :root:has(.public-site-header[data-landing-frame]) .topbar-menu.landing-control-popover {
-      --site-header-menu-background: rgb(44 44 44 / 60%);
-      --site-header-menu-blur: blur(20px);
-    }
-  }
-}
-@media (prefers-reduced-transparency: reduce) {
-  :root:has(.public-site-header[data-landing-frame]) {
-    --site-header-menu-background: var(--landing-subtle);
-    --site-header-menu-blur: none;
-  }
-}
-@supports not (backdrop-filter: blur(1px)) {
-  :root:has(.public-site-header[data-landing-frame]) {
-    --site-header-menu-background: var(--landing-subtle);
-    --site-header-menu-blur: none;
   }
 }

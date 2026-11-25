@@ -1,8 +1,8 @@
-/* 首页与灵感库共用顶栏布局；首页的滚动区由隔离文档提供。 */
+/* 首页与灵感库共用顶栏布局。 */
 .topbar.public-site-header {
   gap: 16px;
 }
-.topbar.public-site-header[data-landing-frame] {
+.topbar.public-site-header[data-landing-header] {
   position: fixed;
   inset-inline: 0;
 }
@@ -48,7 +48,7 @@
 .public-site-wordmark {
   opacity: clamp(0, calc(1 - var(--site-brand-progress, 0) / 0.65), 1);
 }
-.public-site-header[data-landing-frame] .public-site-wordmark {
+.public-site-header[data-landing-header] .public-site-wordmark {
   translate: calc(-8px * var(--site-brand-progress, 0));
 }
 .public-site-symbol {
@@ -59,7 +59,7 @@
     rotate(calc(-45deg * var(--site-brand-progress, 0)));
 }
 @media (prefers-reduced-motion: reduce) {
-  .public-site-header[data-landing-frame] .public-site-wordmark {
+  .public-site-header[data-landing-header] .public-site-wordmark {
     translate: none;
   }
   .public-site-symbol {
@@ -69,15 +69,20 @@
 .public-site-desktop-nav .nav-row {
   padding-inline: 12px;
 }
+.public-site-header
+  .public-site-desktop-nav
+  .nav-row:is(:hover, [data-hovered="true"], [aria-expanded="true"], :focus-visible) {
+  background-color: var(--site-header-nav-hover-fill);
+}
 .public-site-section.button {
   font-weight: 500;
 }
 @media (max-width: 1159px) {
-  .public-site-header[data-landing-frame] .mobile-menu {
+  .public-site-header[data-landing-header] .mobile-menu {
     display: inline-flex;
     flex: none;
   }
-  .public-site-header[data-landing-frame] .public-site-desktop-nav {
+  .public-site-header[data-landing-header] .public-site-desktop-nav {
     display: none;
   }
 }
@@ -101,6 +106,18 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   white-space: nowrap;
+}
+.topbar.public-site-header:is([data-landing-header], .studio-app:has(.inspiration-library) > *) {
+  padding-inline: var(--public-site-header-gutter);
+  .landing-header-controls {
+    --landing-control-fill-radius: var(--control-radius);
+  }
+  .public-site-brand-art {
+    --site-brand-wordmark-offset: 0%;
+  }
+  .public-site-start.link {
+    border-radius: var(--control-radius);
+  }
 }
 @media (hover: hover) and (pointer: fine) {
   .public-site-start.link:hover {

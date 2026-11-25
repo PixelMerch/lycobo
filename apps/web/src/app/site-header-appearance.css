@@ -1,5 +1,6 @@
 /* 站点顶栏与工作区共用品牌尺寸和交互配色。 */
 :root {
+  --public-site-header-gutter: clamp(20px, 2.5vw, 36px);
   --site-header-button-fill: var(--fill-medium, #ffffff14);
   --site-header-nav-hover-fill: #ffffff24;
   --workspace-tool-selected-fill: #303030;

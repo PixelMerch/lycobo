@@ -11,8 +11,7 @@
       "!!.agents/skills",
       "!!**/pnpm-lock.yaml",
       "!!worker-configuration.d.ts",
-      "!!packages/db/migrations",
-      "!!apps/web/public/openart-reference/index.html"
+      "!!packages/db/migrations"
     ]
   },
   "formatter": {

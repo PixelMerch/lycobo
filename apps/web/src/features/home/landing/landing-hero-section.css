@@ -1,0 +1,249 @@
+/* 复刻 LTX 首屏：纯黑顶部留白、居中大标题、锐利矩形白底主按钮与全幅横向手风琴展开画廊。 */
+.lp-hero {
+  position: relative;
+  padding-top: clamp(56px, 6.5vw, 104px);
+  padding-bottom: clamp(48px, 6vw, 88px);
+}
+
+.lp-hero-head {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 20px;
+  max-width: 860px;
+  margin-inline: auto;
+}
+
+.lp-hero-title {
+  display: grid;
+  gap: 4px;
+  font-size: clamp(38px, 5.6vw, 72px);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.035em;
+}
+
+.lp-hero-line {
+  display: block;
+}
+
+.lp-hero-subtitle {
+  max-width: 58ch;
+  color: var(--lp-muted);
+  font-size: clamp(15px, 1.35vw, 17px);
+  line-height: 1.65;
+}
+
+.lp-hero-actions {
+  display: flex;
+  justify-content: center;
+  padding-top: 6px;
+}
+
+.lp-hero-actions .lp-btn-primary.link {
+  min-height: 48px;
+  padding-inline: 32px;
+  font-size: 15px;
+}
+
+.lp-hero-stage {
+  margin-top: clamp(40px, 4.8vw, 64px);
+  padding-inline: var(--lp-gutter);
+}
+
+/* 横向手风琴容器：铺满视口宽度，激活面板占据 ~70% 宽度，两侧收起面板呈窄幅电影切片。 */
+.lp-hero-accordion {
+  display: flex;
+  gap: 10px;
+  height: clamp(400px, 56vh, 620px);
+  width: 100%;
+}
+
+.lp-hero-panel {
+  position: relative;
+  flex: 1 1 0%;
+  min-width: 0;
+  border: 1px solid var(--lp-border);
+  border-radius: 8px;
+  background: var(--lp-surface);
+  overflow: hidden;
+  transition:
+    flex-grow 620ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 260ms ease;
+}
+
+.lp-hero-panel[data-active="true"] {
+  flex-grow: 4.6;
+  border-color: var(--lp-border-strong);
+}
+
+.lp-hero-panel-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.62);
+  transform: scale(1.04);
+  transition:
+    transform 700ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 420ms ease;
+}
+
+.lp-hero-panel[data-active="true"] .lp-hero-panel-img {
+  filter: brightness(0.95);
+  transform: scale(1);
+}
+
+.lp-hero-panel-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(11 11 11 / 8%) 28%, rgb(11 11 11 / 88%) 100%);
+  pointer-events: none;
+}
+
+.lp-hero-panel-trigger.button {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.lp-hero-panel-body {
+  position: absolute;
+  z-index: 3;
+  inset: auto 0 0;
+  display: grid;
+  gap: 12px;
+  padding: clamp(20px, 2.4vw, 34px);
+  pointer-events: none;
+}
+
+.lp-hero-panel-title {
+  color: var(--lp-fg);
+  font-size: clamp(18px, 1.8vw, 26px);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.lp-hero-panel-details {
+  display: grid;
+  justify-items: start;
+  gap: 18px;
+  max-width: 52ch;
+  pointer-events: auto;
+}
+
+.lp-hero-panel-desc {
+  color: #d4d4d4;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.lp-hero-panel-cta.link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding-inline: 18px;
+  border: 1px solid rgb(255 255 255 / 72%);
+  border-radius: 8px;
+  background: rgb(11 11 11 / 48%);
+  color: #fdfdfd;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  backdrop-filter: blur(8px);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lp-hero-panel-cta.link:hover {
+    border-color: #fdfdfd;
+    background: #fdfdfd;
+    color: #0b0b0b;
+    text-decoration: none;
+  }
+}
+
+@media (max-width: 960px) {
+  .lp-hero-accordion {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .lp-hero-panel {
+    flex: none;
+    height: 112px;
+    transition: height 480ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .lp-hero-panel[data-active="true"] {
+    height: 360px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-hero-panel,
+  .lp-hero-panel-img,
+  .lp-hero-panel-cta.link {
+    transition: none;
+  }
+
+  .lp-logo-track {
+    animation: none;
+  }
+}
+
+/* 复刻 LTX 首屏手风琴下方的单色无缝滚动品牌标识带。 */
+.lp-logo-marquee {
+  margin-top: clamp(32px, 4vw, 52px);
+  padding-block: 16px;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent 0%, #000000 8%, #000000 92%, transparent 100%);
+}
+
+.lp-logo-track {
+  display: flex;
+  align-items: center;
+  gap: clamp(44px, 5vw, 76px);
+  width: max-content;
+  animation: lp-logo-scroll 38s linear infinite;
+}
+
+.lp-logo-track[data-static="true"] {
+  animation: none;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  padding-inline: var(--lp-gutter);
+}
+
+.lp-logo-item {
+  display: block;
+  height: 24px;
+  width: auto;
+  object-fit: contain;
+  opacity: 0.56;
+  filter: grayscale(1) brightness(1.15);
+  user-select: none;
+}
+
+@keyframes lp-logo-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}

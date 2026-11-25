@@ -1,0 +1,214 @@
+/* 复刻 LTX 竖向控制台选项卡 + 宽屏画框切换 + 4 列创作起点卡片。 */
+.lp-console {
+  padding-block: var(--lp-section-space);
+  border-top: 1px solid var(--lp-border);
+}
+
+.lp-console-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.42fr) minmax(0, 1fr);
+  gap: clamp(20px, 3vw, 40px);
+  align-items: center;
+}
+
+.lp-console-tabs.toggle-button-group {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.lp-console-tab.toggle-button {
+  position: relative;
+  display: grid;
+  grid-template-columns: 3px minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+  justify-items: start;
+  width: 100%;
+  height: auto;
+  padding: 18px 18px 18px 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--lp-muted);
+  text-align: left;
+  white-space: normal;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.lp-console-tab.toggle-button[data-selected="true"] {
+  background: var(--lp-surface);
+  color: var(--lp-fg);
+}
+
+.lp-console-tab-bar {
+  position: relative;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--lp-border);
+  overflow: hidden;
+}
+
+.lp-console-tab-bar-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #fdfdfd;
+}
+
+.lp-console-tab-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.lp-console-tab-title {
+  color: var(--lp-fg);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.lp-console-tab-desc {
+  color: var(--lp-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.lp-console-stage {
+  aspect-ratio: 16 / 10;
+  background: var(--lp-surface);
+}
+
+.lp-console-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lp-start-block {
+  display: grid;
+  gap: 28px;
+  margin-top: clamp(64px, 7.5vw, 112px);
+  padding-top: clamp(48px, 6vw, 80px);
+  border-top: 1px solid var(--lp-border);
+}
+
+.lp-start-head {
+  display: grid;
+  gap: 8px;
+}
+
+.lp-start-title {
+  font-size: clamp(26px, 3vw, 38px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+.lp-start-subtitle {
+  color: var(--lp-muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.lp-start-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.lp-start-card.link {
+  display: grid;
+  gap: 12px;
+  height: 100%;
+  padding: 22px;
+  border: 1px solid var(--lp-border);
+  border-radius: 8px;
+  background: var(--lp-surface);
+  text-decoration: none;
+  transition:
+    border-color 200ms ease,
+    background-color 200ms ease,
+    transform 200ms ease;
+}
+
+.lp-start-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.lp-start-card-title {
+  color: var(--lp-fg);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.lp-start-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--lp-border-strong);
+  border-radius: 8px;
+  color: var(--lp-fg);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+}
+
+.lp-start-card-desc {
+  color: var(--lp-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lp-console-tab.toggle-button:hover {
+    background: rgb(255 255 255 / 4%);
+  }
+
+  .lp-start-card.link:hover {
+    border-color: var(--lp-border-strong);
+    background: var(--lp-surface-elevated);
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
+
+  .lp-start-card.link:hover .lp-start-card-icon {
+    border-color: #fdfdfd;
+    background: #fdfdfd;
+    color: #0b0b0b;
+  }
+}
+
+@media (max-width: 1024px) {
+  .lp-console-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lp-start-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .lp-start-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-start-card.link,
+  .lp-start-card-icon {
+    transition: none;
+  }
+}

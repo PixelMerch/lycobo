@@ -1,12 +1,10 @@
-/* 首页宿主和隔离正文共用黑色主题，卡片用炭灰分层，不覆盖工作区主题。 */
+/* 首页正文和顶栏共用中性色，页边距沿用公开顶栏变量。 */
 :root {
-  --landing-canvas: #121212;
-  --landing-surface: #121212;
-  --landing-subtle: #1c1c1c;
-  --landing-foreground: #f2f2f2;
-  --landing-muted: #ababab;
-  --landing-border: #333;
-  --landing-action-foreground: #121212;
-  --landing-action-hover: #d4d4d4;
-  --landing-focus: #f2f2f2;
+  --landing-canvas: #0b0b0b;
+  --landing-surface: #0b0b0b;
+  --landing-foreground: #fdfdfd;
+  --landing-muted: #a3a3a3;
+  --landing-border: #262626;
+  --landing-focus: #fdfdfd;
+  --landing-gutter: var(--public-site-header-gutter);
 }

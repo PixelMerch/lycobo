@@ -7,7 +7,7 @@ import "./site-footer.css";
 
 const wordmark = { src: "/brand/lycobo-footer-wordmark.svg", width: 429, height: 108 };
 
-/** 灵感库和协议页使用公共页脚布局，站内链接沿用本地化路由。 */
+/** 首页、灵感库和协议页使用公共页脚布局，站内链接沿用本地化路由。 */
 export function SiteFooter() {
   const t = useMessages(siteFooterMessages);
   const groups = siteFooterGroups(useLocale());

@@ -1,88 +1,48 @@
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
-import { useOutletContext } from "react-router";
-import { LoadingState } from "../../../components/loading-state";
-import { useLocale } from "../../../i18n/locale-store";
+import { useEffect, useLayoutEffect } from "react";
 import { useMessages } from "../../../i18n/messages";
-import { useAppLocation, useAppNavigate } from "../../../i18n/use-localized-navigation";
-import { landingCopy } from "./landing-copy";
-import {
-  type LandingFrame,
-  readLandingNavigation,
-  scrollLandingFrame,
-  scrollLandingSection,
-} from "./landing-frame";
-import { referenceMessages } from "./reference-messages";
-import { renderLandingDocument } from "./render-landing-document";
-import "./reference.css";
+import { useAppLocation } from "../../../i18n/use-localized-navigation";
+import { SiteFooter } from "../../site/site-footer";
+import { LandingCapabilitySection } from "./landing-capability-section";
+import { LandingClosingSection } from "./landing-closing-section";
+import { LandingDemoSection } from "./landing-demo-section";
+import { scrollToLandingFaq } from "./landing-faq-navigation";
+import { LandingFaqSection } from "./landing-faq-section";
+import { landingHeroMessages } from "./landing-hero-messages";
+import { LandingHeroSection } from "./landing-hero-section";
+import { LandingReviewSection } from "./landing-review-section";
+import "./landing-theme.css";
+import "./landing-header-theme.css";
+import "./landing-tokens.css";
 
-async function loadLandingTemplate(signal: AbortSignal) {
-  const response = await fetch("/openart-reference/index.html", { signal });
-  if (!response.ok) throw new Error("LANDING_TEMPLATE_UNAVAILABLE");
-  return response.text();
-}
-
-/** 呈现以三组商品图为核心的双语首页，保留站内导航和语言切换的滚动位置。 */
+/** 组合 Lycobo 双语官网首页的功能介绍、常见问题和公共页脚。 */
 export function LandingPage() {
-  const locale = useLocale();
-  const t = useMessages(referenceMessages);
-  const { frameRef, pendingScroll } = useOutletContext<LandingFrame>();
+  const t = useMessages(landingHeroMessages);
   const { hash } = useAppLocation();
-  const navigate = useAppNavigate();
-  const { data, isError } = useQuery({
-    queryKey: ["commerce-landing-template"],
-    queryFn: ({ signal }) => loadLandingTemplate(signal),
-    staleTime: Infinity,
-  });
-  const document = useMemo(
-    () => (data ? renderLandingDocument(data, landingCopy(locale), locale) : undefined),
-    [data, locale],
-  );
+
   useEffect(() => {
-    function followLink(event: MessageEvent<unknown>) {
-      // sandbox 的来源为 null，只接收本页所持窗口的消息。
-      if (event.source !== frameRef.current?.contentWindow) return;
-      const path = readLandingNavigation(event.data);
-      if (path) void navigate(path);
-    }
-    window.addEventListener("message", followLink);
-    return () => window.removeEventListener("message", followLink);
-  }, [frameRef, navigate]);
+    document.title = t.pageTitle;
+  }, [t.pageTitle]);
 
-  useEffect(
-    () => () => {
-      pendingScroll.current = null;
-    },
-    [pendingScroll],
-  );
+  useLayoutEffect(() => {
+    if (hash === "#faq") scrollToLandingFaq();
+  }, [hash]);
 
-  function restoreScroll() {
-    const scrollY = pendingScroll.current;
-    if (scrollY !== null) {
-      pendingScroll.current = null;
-      scrollLandingFrame(frameRef, scrollY);
-    } else if (hash === "#faq") {
-      scrollLandingSection(frameRef, "faq");
-    }
-  }
-
-  if (!document) {
-    if (!isError) return <LoadingState className="openart-reference" label={t.loading} />;
-    return (
-      <div className="openart-reference landing-load-state" role="status">
-        {t.unavailable}
-      </div>
-    );
-  }
   return (
-    <iframe
-      ref={frameRef}
-      onLoad={restoreScroll}
-      className="openart-reference"
-      title={t.title}
-      srcDoc={document}
-      sandbox="allow-scripts"
-      referrerPolicy="no-referrer"
-    />
+    <>
+      <div
+        className="lp-page"
+        onLoadCapture={(event) => {
+          if (event.target instanceof HTMLImageElement) event.target.dataset.loaded = "";
+        }}
+      >
+        <LandingHeroSection />
+        <LandingCapabilitySection />
+        <LandingDemoSection />
+        <LandingReviewSection />
+        <LandingClosingSection />
+        <LandingFaqSection />
+      </div>
+      <SiteFooter />
+    </>
   );
 }

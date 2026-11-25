@@ -24,7 +24,7 @@ export const landingFaqMessages = defineMessages({
       "任务确认失败后，对应积分退回原钱包；多张图片部分失败时，只退回失败部分。结果仍在核对中的任务，请先查看任务状态与积分明细。",
   },
   en: {
-    faqTitle: "Frequently asked\nquestions",
+    faqTitle: "Frequently asked questions",
     faqImagesQuestion: "What kind of product photos should I upload?",
     faqImagesAnswer:
       "Use a clear photo with the whole product visible. Add reference images when you need to show fabric, patterns, or specific details.",

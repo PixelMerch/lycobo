@@ -1,43 +1,39 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const reference = readFileSync("apps/web/public/openart-reference/index.html", "utf8");
-const features = readFileSync("apps/web/src/features/home/landing/landing-features.html", "utf8");
-const showcase = readFileSync("apps/web/src/features/home/landing/landing-showcase.html", "utf8");
-const planner = readFileSync(
-  "apps/web/src/features/home/landing/landing-planner-preview.html",
+const landingPage = readFileSync("apps/web/src/features/home/landing/landing-page.tsx", "utf8");
+const heroSection = readFileSync(
+  "apps/web/src/features/home/landing/landing-hero-section.tsx",
   "utf8",
 );
-const container = readFileSync("apps/web/src/features/home/landing/landing-page.tsx", "utf8");
+const capabilitySection = readFileSync(
+  "apps/web/src/features/home/landing/landing-capability-section.tsx",
+  "utf8",
+);
 
-describe("Landing document isolation", () => {
-  it("keeps the compact product showcase without remote scripts or media", () => {
-    expect(reference).toContain("__LYCOBO_HERO__");
-    expect(reference).toContain("__LYCOBO_MOTION_SCRIPT__");
-    expect(reference).toContain("__LYCOBO_SHOWCASE__");
-    expect(showcase).toContain('type="range"');
-    expect(features).toContain("__LYCOBO_PLANNER_PREVIEW__");
-    expect(reference).toContain("__LYCOBO_FAQ__");
-    expect(reference).not.toMatch(/<script\b[^>]*\bsrc=/i);
-    expect(reference + showcase + planner + features).not.toMatch(
-      /<(img|video|source)\b[^>]*\bsrc="(?!data:|__LYCOBO_IMAGE_(?:scene|lamp|handbag|collection|textile|optimize)__")/i,
+describe("Landing composition", () => {
+  it("keeps the React sections in order and uses the public footer", () => {
+    const sections = Array.from(
+      landingPage.matchAll(/<(Landing\w+Section|SiteFooter)\b/g),
+      ([, name]) => name,
     );
-    expect(reference).not.toMatch(/<link\b/i);
-    expect(reference).not.toMatch(/<iframe\b/i);
+    expect(sections).toEqual([
+      "LandingHeroSection",
+      "LandingCapabilitySection",
+      "LandingDemoSection",
+      "LandingReviewSection",
+      "LandingClosingSection",
+      "LandingFaqSection",
+      "SiteFooter",
+    ]);
+    expect(landingPage).not.toContain("<iframe");
+    expect(landingPage).not.toContain("dangerouslySetInnerHTML");
   });
 
-  it("blocks network, forms and access to the host application", () => {
-    expect(reference).toContain("connect-src 'none'");
-    expect(reference).toContain("form-action 'none'");
-    expect(reference).toContain("default-src 'none'");
-    expect(container).toContain('sandbox="allow-scripts"');
-    expect(container).not.toContain("allow-same-origin");
-    expect(container).not.toContain("allow-popups");
-  });
-
-  it("excludes recorded trackers and outgoing navigation", () => {
-    expect(reference).not.toMatch(/google_tags_first_party|gtm\.start|sendBeacon|document\.cookie/);
-    expect(reference).not.toMatch(/window\.open\(|window\.location\.href\s*=/);
-    expect(reference).toContain('name="robots" content="noindex,nofollow"');
+  it("includes the horizontal hero accordion, logo marquee, sticky deck, and cursor follower", () => {
+    expect(heroSection).toContain("lp-hero-accordion");
+    expect(heroSection).toContain("lp-logo-marquee");
+    expect(capabilitySection).toContain("lp-stack-deck");
+    expect(capabilitySection).toContain("lp-float-cursor");
   });
 });

@@ -7,7 +7,7 @@ import {
   IconSpaces,
   IconX,
 } from "@tabler/icons-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Navigate, Outlet } from "react-router";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
@@ -22,7 +22,6 @@ import { loginHref } from "../features/auth/login-navigation";
 import { commercePath, commerceToolHref, commerceTools } from "../features/commerce/commerce-tools";
 import { useImageEvents } from "../features/generation/use-image-events";
 import { creationGuidePath } from "../features/guide/creation-guide-path";
-import type { LandingFrame } from "../features/home/landing/landing-frame";
 import { inspirationLibraryPath } from "../features/inspiration/inspiration-path";
 import { legalPaths } from "../features/legal/legal-document";
 import { workspaceToolMessages } from "../features/workspace/workspace-tool-messages";
@@ -57,12 +56,9 @@ export function StudioShell() {
   const { pathname } = location;
   const t = useMessages(shellMessages);
   const workspace = isDashboardPath(pathname);
-  const frameRef = useRef<HTMLIFrameElement>(null);
-  const pendingScroll = useRef<number | null>(null);
-  const landingFrame: LandingFrame | undefined =
-    pathname === commercePath ? { frameRef, pendingScroll } : undefined;
+  const isLanding = pathname === commercePath;
   const publicNavigation =
-    !!landingFrame || pathname === inspirationLibraryPath || pathname === creationGuidePath;
+    isLanding || pathname === inspirationLibraryPath || pathname === creationGuidePath;
   const session = useEnterpriseSession();
   const signedIn = !!session.data;
   const protectedRoute = !publicPaths.has(pathname);
@@ -91,15 +87,12 @@ export function StudioShell() {
       {publicNavigation && (
         <PublicSiteHeader
           account={session.data}
-          landingFrame={landingFrame}
+          isLanding={isLanding}
           showStartCreating={!session.isPending && !signedIn}
         />
       )}
       {!publicNavigation && !workspace && <StudioHeader account={session.data} />}
-      <main className="main-content">
-        {routeNeedsLogin && session.isPending && <PageLoading />}
-        {!routeNeedsLogin && <Outlet context={landingFrame} />}
-      </main>
+      <main className="main-content">{routeNeedsLogin ? <PageLoading /> : <Outlet />}</main>
       <RealtimeEvents />
       {signedIn && <AccountOverlayHost />}
       {signedIn && <AssetLibraryHost />}

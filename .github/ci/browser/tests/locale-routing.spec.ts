@@ -6,22 +6,26 @@ async function switchLanguage(page: Page, language: string) {
   await page.getByRole("menuitemradio", { name: language, exact: true }).click();
 }
 
-test("homepage language follows the URL and switching preserves query and history", async ({
+test("homepage language follows the URL and switching preserves query, history, and scroll", async ({
   page,
 }) => {
   await mockImageApi(page);
   await page.addInitScript(() => localStorage.setItem("lycobo.locale", "zh-CN"));
   await page.goto("/en?tool=create#commerce-composer");
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
-  const landing = page.frameLocator("iframe.openart-reference");
-  await expect(landing.locator("html")).toHaveAttribute("lang", "en");
-  await page.locator(".landing-language-control .language-trigger").click();
-  await page.getByRole("menuitemradio", { name: "简体中文", exact: true }).click();
+  const title = page.locator("#lp-hero-title");
+  await expect(title).toContainText("Product photos");
+  await page.evaluate(() => window.scrollTo({ top: 500, behavior: "instant" }));
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(500);
+  await switchLanguage(page, "简体中文");
   await expect(page).toHaveURL(/\/zh-CN\?tool=create#commerce-composer$/);
-  await expect(landing.locator("html")).toHaveAttribute("lang", "zh-CN");
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
+  await expect(title).toContainText("让你的商品图");
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(500);
   await page.goBack();
   await expect(page).toHaveURL(/\/en\?tool=create#commerce-composer$/);
-  await expect(landing.locator("html")).toHaveAttribute("lang", "en");
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(title).toContainText("Product photos");
 });
 
 test("workspace language switch preserves draft and routes tool navigation in the selected language", async ({

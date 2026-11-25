@@ -14,30 +14,25 @@ import "./language-menu.css";
 export function LanguageMenu({
   account,
   homeGlass = false,
-  onBeforeChange,
   popoverClassName = "",
   hoverCloseDelay,
   popoverOffset = 4,
-  dismissVersion = 0,
 }: {
   account: EnterpriseIdentity | null | undefined;
   homeGlass?: boolean;
-  onBeforeChange?: () => void;
   popoverClassName?: string;
   hoverCloseDelay?: number;
   popoverOffset?: number;
-  dismissVersion?: number;
 }) {
   const locale = useLocaleStore((state) => state.locale);
   const { changeLanguage, isSaving } = useAccountLanguage(account ?? undefined);
   const t = useMessages(shellMessages);
-  const menu = useHoverMenu(hoverCloseDelay, dismissVersion);
+  const menu = useHoverMenu(hoverCloseDelay);
   function select(keys: Selection) {
     menu.close();
     if (keys === "all") return;
     const next = parseLocale(Array.from(keys)[0]);
     if (!next || next === locale) return;
-    onBeforeChange?.();
     changeLanguage(next);
   }
   return (

@@ -650,18 +650,13 @@ test("textile mode selects views and opens the textile tool with the uploaded ma
 });
 
 for (const width of [1440, 390]) {
-  test(`header switches to a light surface without shifting controls at ${width}px`, async ({
-    page,
-  }) => {
+  test(`header gets a dark backdrop without shifting controls at ${width}px`, async ({ page }) => {
     await mockImageApi(page);
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/");
     const header = page.locator(".public-site-header");
-    const frame = page.frameLocator("iframe.openart-reference");
     const scroll = (top: number) =>
-      frame.locator("html").evaluate((element, scrollY) => {
-        element.ownerDocument.defaultView?.scrollTo(0, scrollY);
-      }, top);
+      page.evaluate((scrollY) => window.scrollTo({ top: scrollY, behavior: "instant" }), top);
     const surface = () =>
       header.evaluate((element) => {
         const style = getComputedStyle(element, "::before");
@@ -669,8 +664,7 @@ for (const width of [1440, 390]) {
       });
     const height = () => header.evaluate((element) => element.getBoundingClientRect().height);
     const brand = page.locator(".public-site-brand");
-    const brandTop = () =>
-      brand.evaluate((element) => element.getBoundingClientRect().top + window.scrollY);
+    const brandTop = () => brand.evaluate((element) => element.getBoundingClientRect().top);
     await expect(brand).toBeVisible();
     await expect(header).not.toHaveAttribute("data-scrolled");
     expect(await surface()).toEqual({ background: "rgba(0, 0, 0, 0)", blur: "none" });
@@ -680,8 +674,8 @@ for (const width of [1440, 390]) {
     await scroll(400);
     await expect(header).toHaveAttribute("data-scrolled", "true");
     await expect.poll(surface).toEqual({
-      background: "rgb(250, 250, 250)",
-      blur: "none",
+      background: "rgba(18, 18, 18, 0.84)",
+      blur: "blur(14px)",
     });
     expect(await height()).toBe(60);
     expect(await brandTop()).toBe(top);
@@ -690,6 +684,11 @@ for (const width of [1440, 390]) {
     await scroll(0);
     await expect(header).not.toHaveAttribute("data-scrolled");
     await expect.poll(surface).toEqual({ background: "rgba(0, 0, 0, 0)", blur: "none" });
+    if (width === 390) {
+      await header.locator(".mobile-menu").click();
+      await page.locator(".public-site-mobile-nav .public-site-section").click();
+      await expect(page.locator("#faq-title")).toBeFocused();
+    }
   });
 }
 
@@ -726,7 +725,7 @@ test("home uses Lycobo's own brand language instead of copying the reference loo
 test("home and legal pages share the public footer and link to FAQ", async ({ page }) => {
   await mockImageApi(page);
   await page.goto("/");
-  const footer = page.frameLocator("iframe.openart-reference").locator(".site-footer");
+  const footer = page.locator("footer.site-footer");
   await footer.scrollIntoViewIfNeeded();
   await expect(footer.getByRole("navigation")).toBeVisible();
   const links = footer.getByRole("link");
@@ -747,7 +746,7 @@ test("home and legal pages share the public footer and link to FAQ", async ({ pa
   await expect(links).toHaveText(labels);
   await expect(footer.getByRole("link", { name: "退款政策", exact: true })).toHaveAttribute(
     "href",
-    "https://bonko.fun/refund-policy",
+    "/zh-CN/refund-policy",
   );
   await expect(footer.getByRole("img", { name: "Lycobo", exact: true })).toBeVisible();
   await expect(footer).toContainText(`© ${new Date().getFullYear()} Lycobo`);
@@ -757,7 +756,7 @@ test("home and legal pages share the public footer and link to FAQ", async ({ pa
   await expect(legalFooter.getByRole("link")).toHaveText(labels);
   await legalFooter.getByRole("link", { name: "常见问题", exact: true }).click();
   await expect(page).toHaveURL(/\/zh-CN#faq$/);
-  await expect(page.frameLocator("iframe.openart-reference").locator("#faq-title")).toBeFocused();
+  await expect(page.locator("#faq-title")).toBeFocused();
 });
 
 test("phones get the vidmuse bottom bar with labelled shortcuts", async ({ page }) => {

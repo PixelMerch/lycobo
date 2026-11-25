@@ -1,16 +1,10 @@
-import { type RefObject, useCallback, useEffect, useRef } from "react";
+import { type RefObject, useEffect, useRef } from "react";
 import type { createLandingBrandRenderer } from "../features/home/landing/landing-brand-renderer";
 
 /** 将首页的滚动位置绘制到品牌时间轴，并保留静态素材回退。 */
-export function usePublicHeaderBrand(
-  headerRef: RefObject<HTMLElement | null>,
-  scroll: RefObject<number>,
-  animated: boolean,
-) {
+export function usePublicHeaderBrand(headerRef: RefObject<HTMLElement | null>, animated: boolean) {
   const brandRef = useRef<HTMLSpanElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const schedule = useRef<(() => void) | null>(null);
-  const scheduleDraw = useCallback(() => schedule.current?.(), []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -27,7 +21,7 @@ export function usePublicHeaderBrand(
       frame = 0;
       if (!canvas || !brand || !header) return;
       // 滚动前 500px 播放一次交接，向上滚动时沿同一时间轴倒放。
-      const progress = Math.max(0, Math.min(1, scroll.current / 500));
+      const progress = Math.max(0, Math.min(1, window.scrollY / 500));
       if (progress > 0) header.dataset.scrolled = "true";
       else delete header.dataset.scrolled;
       brand.style.setProperty("--site-brand-progress", String(progress));
@@ -40,8 +34,8 @@ export function usePublicHeaderBrand(
       if (!frame) frame = window.requestAnimationFrame(draw);
     }
 
-    schedule.current = requestDraw;
     draw();
+    window.addEventListener("scroll", requestDraw, { passive: true });
     window.addEventListener("resize", requestDraw, { passive: true });
     reducedMotion.addEventListener("change", requestDraw);
     // Rive 单独分包，网络或初始化失败时继续用 SVG。
@@ -62,7 +56,7 @@ export function usePublicHeaderBrand(
     return () => {
       abort.abort();
       window.cancelAnimationFrame(frame);
-      schedule.current = null;
+      window.removeEventListener("scroll", requestDraw);
       window.removeEventListener("resize", requestDraw);
       reducedMotion.removeEventListener("change", requestDraw);
       renderer?.dispose();
@@ -70,7 +64,7 @@ export function usePublicHeaderBrand(
       brand.style.removeProperty("--site-brand-progress");
       brand.removeAttribute("data-rive-ready");
     };
-  }, [animated, headerRef, scroll]);
+  }, [animated, headerRef]);
 
-  return { brandRef, canvasRef, scheduleDraw };
+  return { brandRef, canvasRef };
 }

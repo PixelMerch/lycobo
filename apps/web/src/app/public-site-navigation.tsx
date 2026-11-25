@@ -15,15 +15,13 @@ import { dashboardToolPaths } from "../lib/dashboard-paths";
 import { useHoverMenu } from "../lib/use-hover-menu";
 import { shellMessages } from "./shell-messages";
 
-/** 公共顶栏显示工具目录；首页额外提供桌面与手机共用的积分价格和 FAQ 入口。 */
+/** 公共顶栏显示工具目录；首页可额外提供桌面与手机共用的 FAQ 入口。 */
 export function PublicSiteNavigation({
   onNavigate,
-  dismissVersion = 0,
-  onSection,
+  onFaq,
 }: {
   onNavigate?: () => void;
-  dismissVersion?: number;
-  onSection?: ((section: "pricing" | "faq") => void) | undefined;
+  onFaq?: (() => void) | undefined;
 }) {
   const t = useMessages(shellMessages);
   const linkEvents = onNavigate ? { onClick: onNavigate } : {};
@@ -36,43 +34,31 @@ export function PublicSiteNavigation({
         onNavigate ? (
           <PublicMobileCategory key={category.label} category={category} onNavigate={onNavigate} />
         ) : (
-          <PublicCategoryMenu
-            key={category.label}
-            category={category}
-            dismissVersion={dismissVersion}
-          />
+          <PublicCategoryMenu key={category.label} category={category} />
         ),
       )}
       <RouteLink nav end to={inspirationLibraryPath} className="nav-row" {...linkEvents}>
         {t.inspiration}
       </RouteLink>
-      {onSection &&
-        (["pricing", "faq"] as const).map((section) => (
-          <Button
-            key={section}
-            variant="ghost"
-            className="nav-row public-site-section"
-            onPress={() => {
-              onNavigate?.();
-              onSection(section);
-            }}
-          >
-            {t[section]}
-          </Button>
-        ))}
+      {onFaq && (
+        <Button
+          variant="ghost"
+          className="nav-row public-site-section"
+          onPress={() => {
+            onNavigate?.();
+            onFaq();
+          }}
+        >
+          {t.faq}
+        </Button>
+      )}
     </nav>
   );
 }
 
-function PublicCategoryMenu({
-  category,
-  dismissVersion,
-}: {
-  category: WorkspaceToolCategory;
-  dismissVersion: number;
-}) {
+function PublicCategoryMenu({ category }: { category: WorkspaceToolCategory }) {
   const { navigation } = useMessages(workspaceToolMessages);
-  const menu = useHoverMenu(100, dismissVersion);
+  const menu = useHoverMenu(100);
   const navigate = useAppNavigate();
   const entries = category.sections.flatMap((section) => section.entries);
   return (

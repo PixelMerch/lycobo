@@ -15,16 +15,14 @@ import "./header-benefits.css";
  * 悬停或点按展开积分菜单，可升级、查看余额、开通会员或打开积分明细。
  */
 export function HeaderBenefits({
-  dismissVersion,
   popoverClassName,
   popoverOffset = 4,
 }: {
-  dismissVersion?: number;
   popoverClassName?: string;
   popoverOffset?: number;
 } = {}) {
   const wallet = useWallet();
-  const menu = useHoverMenu(160, dismissVersion);
+  const menu = useHoverMenu();
   const openOverlay = useAccountOverlays((state) => state.open);
   const t = useMessages(accountMenuMessages);
   const plan = currentPlanName(useLocale());

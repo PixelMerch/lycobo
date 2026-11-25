@@ -38,21 +38,19 @@ export function HeaderLogin() {
 export function AccountMenu({
   onNavigate,
   hover = false,
-  dismissVersion,
   popoverClassName,
   popoverOffset = 8,
   variant = "footer",
 }: {
   onNavigate?: () => void;
   hover?: boolean;
-  dismissVersion?: number;
   popoverClassName?: string;
   popoverOffset?: number;
   variant?: "header" | "footer";
 }) {
   const session = useEnterpriseSession();
   const logout = useEnterpriseLogout();
-  const menu = useHoverMenu(160, dismissVersion);
+  const menu = useHoverMenu();
   const openSettings = useAccountOverlays((state) => state.openSettings);
   const openLibrary = useOpenAssetLibrary();
   const t = useMessages(accountMenuMessages);

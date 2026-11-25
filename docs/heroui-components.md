@@ -154,20 +154,8 @@ CSS 负责主题与尺寸，约定见 [Web 规则](../apps/web/AGENTS.md)。
 
 `subsets.json` 的常用字分组来自当前界面文案频率，其他字符按码点划分。文案变化不会破坏覆盖或要求重新生成；它只可能让浏览器多下载一个已有切片。切片保留源字体版权和排版元数据，来源及授权链接见字体目录的 `NOTICE.txt`。
 
-### 电商落地页隔离模板
+### 首页落地页
 
-首页落地页与主站统一使用普惠体。模板保持 sandbox 与禁止网络请求的 CSP，因此不能直接继承宿主页的字体声明。`scripts/fonts/embed-landing-fonts.py` 从已有 WOFF2 切片中提取落地页中英文文案源码字符的超集，保留字体名称与许可元数据，再以内联 data URI 写入模板；不修改主站原始切片或共享 token。
+首页由 React 渲染并继承主站的自托管普惠体。功能区标题与说明由 `LandingSectionHeading` 提供入场动画，行动链接由 `LandingActionLink` 复用路由、按钮样式和可选箭头。首屏和结束横幅使用各自的标题排版。
 
-排版源为 `apps/web/src/features/home/landing/landing-typography.css`：首页 Hero、章节标题、导航、按钮及卡片标题 500、正文 400；新版首页 Hero 行高 1.12（手机 1.14），按中英文和视口检查字距。SVG 字标保持原样。
-
-隔离 HTML 内的 FAQ 是原生 `details`／`summary` 的具名例外：由浏览器处理展开状态、同组互斥与键盘操作，不在 sandbox 内复制 React/HeroUI 运行时，也不手写按钮或焦点系统。使用 [`::details-content`](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/::details-content) 与 `interpolate-size` 渐进增强展开动画，旧浏览器仍能直接展开答案；减少动态效果时取消过渡。宿主顶栏的 FAQ 入口继续使用 HeroUI Button。
-
-Pricing 使用四张原生 `article` 卡片直接对比积分包，无单选控件或额外运行时。购买按钮沿用隔离 HTML 内具名的禁用原生 `button` 例外，支付接入前不发起订单；共享的待开放说明通过 `aria-describedby` 关联。宿主顶栏继续使用 HeroUI Button，账户充值选择继续使用官方 ToggleButtonGroup，不引入第二套运行时。
-
-修改落地页文案或排版源后，用安装了本目录固定字体依赖的隔离 Python 环境执行：
-
-```sh
-python scripts/fonts/embed-landing-fonts.py
-```
-
-只重建 `public/openart-reference/index.html` 中标记的字体块；脚本验证裁切后字形不丢失，保留页面布局与动画。随后检查中英文和手机显示，执行常规项目检查。该步骤仅在维护字体块时运行，不加入应用启动或部署流程。
+FAQ 使用 HeroUI Accordion 的展开状态和键盘交互。定位首页 FAQ 时将焦点移至标题，减少动态效果时直接显示标题与说明。

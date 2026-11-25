@@ -1,0 +1,198 @@
+/* 复刻 LTX 暗黑电影感视觉系统：纯黑 #0b0b0b 画布 + 炭灰层次 + 锐利矩形白底按钮 + 阿里普惠体 3。 */
+.lp-page {
+  --lp-bg: var(--landing-canvas);
+  --lp-surface: #141414;
+  --lp-surface-elevated: #1c1c1c;
+  --lp-border: #262626;
+  --lp-border-strong: #3b3b3b;
+  --lp-fg: #fdfdfd;
+  --lp-muted: #a3a3a3;
+
+  --lp-font:
+    "Alibaba PuHuiTi 3", "PingFang SC", "HarmonyOS Sans SC", "MiSans", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
+  --lp-gutter: var(--landing-gutter);
+  --lp-section-space: clamp(80px, 8.5vw, 136px);
+
+  position: relative;
+  min-height: 100dvh;
+  overflow-x: clip;
+  padding-top: var(--studio-header-height, 60px);
+  background-color: var(--lp-bg);
+  color: var(--lp-fg);
+  font-family: var(--lp-font);
+  font-synthesis: none;
+  color-scheme: dark;
+}
+
+body:has(.lp-page) {
+  background: var(--landing-canvas);
+}
+
+.main-content:has(> .lp-page) {
+  padding: 0;
+}
+
+.lp-page h1,
+.lp-page h2,
+.lp-page h3 {
+  margin: 0;
+  font-family: var(--lp-font);
+  color: var(--lp-fg);
+}
+
+.lp-page p {
+  margin: 0;
+}
+
+.lp-container {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: var(--lp-gutter);
+}
+
+/* 纯黑白银灰高光标题渐变，不使用彩色主题色。 */
+.lp-gradient-text {
+  background: linear-gradient(180deg, #ffffff 12%, #a6a6a6 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.lp-section-head {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 14px;
+  max-width: 720px;
+  margin: 0 auto clamp(36px, 4.5vw, 56px);
+}
+
+.lp-section-title {
+  font-size: clamp(32px, 3.8vw, 50px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.lp-section-description {
+  color: var(--lp-muted);
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* 加载成功后只淡入图像，卡片比例与按钮位置不参与动画。 */
+  .lp-page
+    :is(
+      .lp-hero-panel-img,
+      .lp-band-img,
+      .lp-style-banner-img,
+      .lp-marquee-img,
+      .lp-closing-bg
+    )[data-loaded] {
+    animation: lp-image-loaded 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+@keyframes lp-image-loaded {
+  from {
+    opacity: 0.18;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* LTX 标志性锐利矩形白底黑字主按钮与深灰描边次按钮。 */
+.lp-btn-primary.link,
+.lp-btn-secondary.link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding-inline: 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    background-color 180ms ease,
+    box-shadow 200ms ease,
+    border-color 180ms ease,
+    transform 80ms ease;
+}
+
+.lp-btn-primary.link {
+  border: 1px solid #fdfdfd;
+  background: #fdfdfd;
+  color: #0b0b0b;
+  box-shadow: 0 0 24px rgb(255 255 255 / 12%);
+}
+
+.lp-btn-secondary.link {
+  border: 1px solid var(--lp-border-strong);
+  background: rgb(255 255 255 / 4%);
+  color: var(--lp-fg);
+}
+
+.lp-btn-primary.link:active,
+.lp-btn-secondary.link:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lp-btn-primary.link:hover {
+    border-color: #d9d9d9;
+    background: #d9d9d9;
+    box-shadow: 0 0 36px rgb(255 255 255 / 22%);
+    text-decoration: none;
+  }
+
+  .lp-btn-secondary.link:hover {
+    border-color: var(--lp-muted);
+    background: rgb(255 255 255 / 8%);
+    text-decoration: none;
+  }
+}
+
+.lp-btn-primary.link:focus-visible,
+.lp-btn-secondary.link:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* 暗黑影棚画框：深灰细描边与克制顶部高光。 */
+.lp-glow-frame {
+  position: relative;
+  border: 1px solid var(--lp-border);
+  border-radius: 8px;
+  background: var(--lp-surface);
+  box-shadow: 0 24px 64px rgb(0 0 0 / 65%);
+  overflow: clip;
+}
+
+.lp-glow-frame::before {
+  position: absolute;
+  z-index: 4;
+  inset: 0 12% auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 45%), transparent);
+  pointer-events: none;
+  content: "";
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-btn-primary.link,
+  .lp-btn-secondary.link {
+    transition: none;
+  }
+
+  .lp-btn-primary.link:active,
+  .lp-btn-secondary.link:active {
+    transform: none;
+  }
+}

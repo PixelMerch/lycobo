@@ -13,17 +13,15 @@ import "./site-header-controls.css";
 
 const popoverOffset = 18;
 
-/** 首页、灵感库与创作页共用的顶栏控件，创作页可省略工作区入口。 */
+/** 公共页与创作页共用顶栏控件，公共页的语言下拉沿用站点工具菜单的材质。 */
 export function SiteHeaderControls({
   account,
-  dismissVersion = 0,
-  onLanguageChange,
   showWorkspaceLink = true,
+  publicMenus = false,
 }: {
   account: ReturnType<typeof useEnterpriseSession>["data"];
-  dismissVersion?: number;
-  onLanguageChange?: () => void;
   showWorkspaceLink?: boolean;
+  publicMenus?: boolean;
 }) {
   const t = useMessages(shellMessages);
   return (
@@ -37,10 +35,8 @@ export function SiteHeaderControls({
       </RouteLink>
       <div className="landing-language-control">
         <LanguageMenu
-          dismissVersion={dismissVersion}
           account={account}
-          homeGlass
-          {...(onLanguageChange ? { onBeforeChange: onLanguageChange } : {})}
+          homeGlass={!publicMenus}
           popoverClassName="landing-control-popover landing-language-popover"
           hoverCloseDelay={100}
           popoverOffset={popoverOffset}
@@ -50,13 +46,11 @@ export function SiteHeaderControls({
         <div className="landing-account-controls">
           {showWorkspaceLink && <WorkspaceHeaderLink />}
           <HeaderBenefits
-            dismissVersion={dismissVersion}
             popoverClassName="landing-control-popover"
             popoverOffset={popoverOffset}
           />
           <AccountMenu
             hover
-            dismissVersion={dismissVersion}
             variant="header"
             popoverClassName="landing-control-popover"
             popoverOffset={popoverOffset}

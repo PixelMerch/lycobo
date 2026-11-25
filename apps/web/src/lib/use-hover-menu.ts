@@ -4,21 +4,13 @@ import { useEffect, useRef, useState } from "react";
  * 顶部栏下拉菜单的开合状态：鼠标悬停展开、移出后稍等收起，点击与键盘仍交给 HeroUI Dropdown。
  * 悬停展开时不抢占焦点，避免用户正在输入时被打断。
  */
-export function useHoverMenu(closeDelay = 160, dismissVersion = 0) {
+export function useHoverMenu(closeDelay = 160) {
   const [isOpen, setOpen] = useState(false);
   const [openedByHover, setOpenedByHover] = useState(false);
   const hovering = useRef(false);
   const timer = useRef<number | undefined>(undefined);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    // 外部菜单接管时只关闭状态，保留按钮节点与指针事件连续性。
-    if (dismissVersion === 0) return;
-    hovering.current = false;
-    window.clearTimeout(timer.current);
-    setOpen(false);
-  }, [dismissVersion]);
 
   function cancelClose() {
     hovering.current = true;
