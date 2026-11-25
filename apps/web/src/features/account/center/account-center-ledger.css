@@ -171,24 +171,3 @@
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
 }
-.account-orders-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  margin-top: var(--space-3);
-  padding: 18px var(--space-5);
-  border: 1px dashed #ffffff1f;
-  border-radius: 20px;
-  color: var(--muted);
-}
-.account-orders-note strong {
-  color: var(--foreground);
-  font-size: var(--text-base);
-  line-height: var(--leading-base);
-  font-weight: var(--weight-medium);
-}
-.account-orders-note p {
-  margin: 2px 0 0;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}

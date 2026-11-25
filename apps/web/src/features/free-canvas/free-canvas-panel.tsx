@@ -156,7 +156,7 @@ function useCanvasGeneration({
     );
   };
 
-  return { waiting, status, submit, error: generate.error };
+  return { waiting, status, submit, error: generate.feedbackError };
 }
 
 /** 左侧浮动创作卡：提示词、模型、比例、分辨率与发送按钮。 */

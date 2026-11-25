@@ -3,14 +3,22 @@ import { motion } from "motion/react";
 import { DialogClose } from "../../../components/overlays/dialog-close";
 import { useCenteredDialogEntrance } from "../../../components/overlays/use-centered-dialog-entrance";
 import { useMessages } from "../../../i18n/messages";
+import { serverErrorMessages } from "../../../lib/server-error-messages";
 import "../../../styles/fullscreen-dialog.css";
 import { CreditPacks } from "./credit-packs";
 import { creditsMessages } from "./credits-messages";
 import "./credit-recharge.css";
 
-/** 为已登录用户展示全屏充值弹框和积分包。 */
-export function RechargeDialog({ onClose }: { onClose: () => void }) {
+/** 展示积分包，并在生成因积分不足被拒绝时说明打开原因。 */
+export function RechargeDialog({
+  insufficient,
+  onClose,
+}: {
+  insufficient: boolean;
+  onClose: () => void;
+}) {
   const t = useMessages(creditsMessages);
+  const errors = useMessages(serverErrorMessages);
   const surfaceMotion = useCenteredDialogEntrance();
   return (
     <Modal
@@ -25,7 +33,7 @@ export function RechargeDialog({ onClose }: { onClose: () => void }) {
             <motion.div className="credit-recharge-surface" {...surfaceMotion}>
               <Modal.Header className="credit-recharge-heading">
                 <Modal.Heading>{t.recharge}</Modal.Heading>
-                <p>{t.rechargeDescription}</p>
+                <p>{insufficient ? errors.codes.INSUFFICIENT_CREDITS : t.rechargeDescription}</p>
                 <DialogClose fullScreen label={t.closeRecharge} className="credit-recharge-close" />
               </Modal.Header>
               <Modal.Body className="credit-recharge-body">

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { SettingsSection } from "./settings/settings-sections";
 
-type AccountDialog = "recharge" | "usage";
+type AccountDialog = "recharge" | "recharge-insufficient" | "usage";
 export type AccountLayer = "settings" | "dialog";
 
 /** 管理账户设置、充值和积分明细的开合与焦点恢复。 */

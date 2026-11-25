@@ -44,6 +44,7 @@ function streamPromptOptimization(
   });
 }
 
+/** 校验提示词优化请求，确认积分和请求状态后开始流式返回。 */
 export function registerPromptOptimization(app: Hono<Env>, deps: ImageApiDependencies) {
   const optimizer = promptOptimization(deps);
   app.post("/prompt-optimizations", async (c) => {
@@ -56,7 +57,7 @@ export function registerPromptOptimization(app: Hono<Env>, deps: ImageApiDepende
     const scope = c.get("principal");
     const attempt = await service.begin(scope, key.data, input.data);
     if (attempt.status === "insufficient")
-      return fail(c, "INSUFFICIENT_CREDITS", "企业积分余额不足，优化提示词需要 1 积分", 409);
+      return fail(c, "INSUFFICIENT_CREDITS", "积分不足，请充值后重试", 409);
     if (attempt.status === "running" || attempt.status === "busy")
       return fail(c, "STATE_CONFLICT", "已有优化进行中或操作过于频繁，请稍后重试", 409);
     c.header("Cache-Control", "no-cache, no-transform");
