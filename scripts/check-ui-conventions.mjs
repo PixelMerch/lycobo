@@ -1,7 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import ts from "typescript";
+import ts from "@typescript/typescript6";
 
 const nativeControls = new Set(["button", "input", "select", "textarea", "a"]);
 const interactiveRoles = new Set([

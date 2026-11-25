@@ -29,6 +29,8 @@
 
 TypeScript 使用 strict 模式，并开启 `noUncheckedIndexedAccess`、`exactOptionalPropertyTypes` 等选项，见 `tsconfig.base.json`。
 
+项目用 TypeScript 7 的 `tsc` 检查类型。读取语法树的质量脚本使用 `@typescript/typescript6`，因为 TypeScript 7.0 尚未提供 JavaScript 编译器 API。
+
 ## 只减不增的规则
 
 质量棘轮会把实际扫描结果和 `scripts/code-quality-baseline.json` 比对。历史违规已清理，基线当前为 `{}`。新增违规会直接导致检查失败，`pnpm quality:update` 只会收紧基线。
