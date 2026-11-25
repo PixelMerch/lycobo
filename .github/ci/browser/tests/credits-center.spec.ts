@@ -269,6 +269,7 @@ for (const path of ["/recharge", "/membership"]) {
     await page.goto(`/en${path}`);
     const recharge = page.getByRole("article", { name: "Buy credits", exact: true });
     await expect(recharge.getByRole("listitem")).toHaveCount(5);
+    await expect(page.locator(".login-page")).toHaveCount(0);
     await expect(
       recharge.getByRole("button", { name: "Buy 102 credits", exact: true }),
     ).toBeDisabled();
