@@ -36,6 +36,8 @@
   "secrets": {
     "required": [
       "AUTH_JWT_SECRET",
+      "AUTH_PASSWORD_TURNSTILE_SITE_KEY",
+      "AUTH_PASSWORD_TURNSTILE_SECRET",
       "ASSET_SIGNING_SECRET",
       "STANDALONE_IMAGE_API_KEY",
       "DEEPSEEK_API_KEY",

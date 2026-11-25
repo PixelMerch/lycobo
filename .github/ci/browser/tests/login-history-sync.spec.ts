@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { apiFixture, mockImageApi } from "./image-api-fixture";
+import { apiFixture, mockImageApi, mockPasswordTurnstile } from "./image-api-fixture";
 
 test("login returns to the target and logout keeps the draft without a document reload", async ({
   page,
@@ -103,6 +103,7 @@ for (const layout of ["desktop", "mobile"] as const) {
     page,
   }) => {
     await mockImageApi(page);
+    await mockPasswordTurnstile(page);
     const message = "账号或密码错误";
     await page.route("**/api/v1/auth/session", (route) =>
       route.fulfill({ status: 401, json: apiFixture({}, 401) }),

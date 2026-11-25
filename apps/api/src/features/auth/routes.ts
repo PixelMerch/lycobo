@@ -48,36 +48,47 @@ function tokenResponse(
   return c.json(body);
 }
 type Env = { Variables: { requestId: string } };
+const fail = (
+  c: Context<Env>,
+  code: string,
+  message: string,
+  status: 400 | 401 | 403 | 429 | 503,
+) => c.json({ error: { code, message, requestId: c.get("requestId") } }, status);
+
+async function handlePasswordLogin(c: Context<Env>, auth?: EnterpriseAuth) {
+  if (!auth?.config.passwordTurnstile)
+    return fail(c, "AUTH_NOT_CONFIGURED", "账号密码登录暂不可用，请稍后再试。", 503);
+  const origin = c.req.header("Origin");
+  if (!origin || !trustedAuthRequest(c, auth))
+    return fail(c, "UNTRUSTED_ORIGIN", "请求来源不受信任", 403);
+  const input = enterpriseLoginSchema.safeParse(await c.req.json().catch(() => null));
+  if (!input.success) return fail(c, "VALIDATION_ERROR", "请输入有效的企业账号和密码", 400);
+  if (!(await auth.verifyLoginChallenge(input.data.captchaToken, origin)))
+    return fail(c, "LOGIN_CHALLENGE_FAILED", "人机验证未通过，请重试。", 403);
+  const result = await auth.login(input.data.account, input.data.password);
+  if (!("error" in result)) return tokenResponse(c, auth, result);
+  switch (result.error) {
+    case "ACCOUNT_LOCKED":
+      c.header("Retry-After", String(result.retryAfter));
+      return fail(c, result.error, "密码错误次数过多，账号已锁定 1 小时。请在解锁后重试。", 429);
+    case "RATE_LIMITED":
+      c.header("Retry-After", "60");
+      return fail(c, result.error, "登录尝试过于频繁，请稍后再试", 429);
+    default:
+      return fail(c, result.error, "账号或密码错误", 401);
+  }
+}
+
 /** 企业账号的登录、刷新、改密、个人偏好、会话与退出路由；未配置登录服务时统一返回 503。 */
 export function authRoutes(auth?: EnterpriseAuth) {
   const app = new Hono<Env>();
   app.route("/oauth", oauthRoutes(auth, setAuthCookies));
   app.route("/email", emailRoutes(auth, setAuthCookies));
-  const fail = (
-    c: Context<Env>,
-    code: string,
-    message: string,
-    status: 400 | 401 | 403 | 429 | 503,
-  ) => c.json({ error: { code, message, requestId: c.get("requestId") } }, status);
   app.use("*", async (c, next) => {
     if (!auth) return fail(c, "AUTH_NOT_CONFIGURED", "企业账号登录服务暂未开放，请稍后再试。", 503);
     await next();
   });
-  app.post("/enterprise/login", async (c) => {
-    if (!auth) return fail(c, "AUTH_NOT_CONFIGURED", "登录服务尚未配置", 503);
-    if (!trustedAuthRequest(c, auth)) return fail(c, "UNTRUSTED_ORIGIN", "请求来源不受信任", 403);
-    const input = enterpriseLoginSchema.safeParse(await c.req.json().catch(() => null));
-    if (!input.success) return fail(c, "VALIDATION_ERROR", "请输入有效的企业账号和密码", 400);
-    const result = await auth.login(input.data.account, input.data.password);
-    if ("error" in result) {
-      if (result.error === "RATE_LIMITED") {
-        c.header("Retry-After", "900");
-        return fail(c, result.error, "登录尝试过于频繁，请稍后再试", 429);
-      }
-      return fail(c, result.error, "账号或密码错误", 401);
-    }
-    return tokenResponse(c, auth, result);
-  });
+  app.post("/enterprise/login", (c) => handlePasswordLogin(c, auth));
   app.post("/refresh", async (c) => {
     if (!auth) return fail(c, "AUTH_NOT_CONFIGURED", "登录服务尚未配置", 503);
     if (!trustedAuthRequest(c, auth)) return fail(c, "UNTRUSTED_ORIGIN", "请求来源不受信任", 403);

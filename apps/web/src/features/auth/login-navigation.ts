@@ -13,7 +13,7 @@ export function safeLoginReturnTo(input: unknown): string {
     const path = withoutLocale(url.pathname);
     if (
       !isDashboardPath(path) &&
-      !/^\/(?:$|commerce(?:\/|$)|workspace$|assets$|video$|membership$|inspiration$|free-canvas$)/.test(
+      !/^\/(?:$|commerce(?:\/|$)|workspace$|assets$|video$|recharge$|membership$|inspiration$|free-canvas$)/.test(
         path,
       )
     )

@@ -18,6 +18,20 @@ export function apiFixture(data: unknown, status = 200) {
     error: success ? {} : { code: "AUTH_NOT_CONFIGURED" },
   };
 }
+/** 仅在隔离的浏览器测试中模拟密码登录组件。 */
+export async function mockPasswordTurnstile(page: Page) {
+  await page.route("https://challenges.cloudflare.com/turnstile/**", (route) =>
+    route.fulfill({
+      contentType: "application/javascript",
+      body: "window.turnstile={render:(_el,o)=>{setTimeout(()=>o.callback('password-fixture-token'));return 'fixture'},remove:()=>{}};",
+    }),
+  );
+  await page.route("**/api/v1/auth/oauth/providers", (route) =>
+    route.fulfill({
+      json: apiFixture({ providers: [], passwordTurnstileSiteKey: "fixture-site-key" }),
+    }),
+  );
+}
 export async function mockImageApi(page: Page, { signedIn = true } = {}) {
   const userId = crypto.randomUUID(),
     organizationId = crypto.randomUUID();

@@ -89,6 +89,7 @@ export function oauthRoutes(
     c.json({
       providers: config?.providers ?? [],
       emailTurnstileSiteKey: config?.emailTurnstileSiteKey,
+      passwordTurnstileSiteKey: auth?.config.passwordTurnstile?.siteKey,
     }),
   );
   app.post("/start", async (c) => {

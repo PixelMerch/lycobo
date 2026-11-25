@@ -11,6 +11,8 @@ import { readWebhookConfig } from "./features/images/webhooks/provider-webhook";
 type AuthBindings = {
   SUPABASE_AUTH_PUBLISHABLE_KEY?: string;
   SUPABASE_EMAIL_TURNSTILE_SITE_KEY?: string;
+  AUTH_PASSWORD_TURNSTILE_SITE_KEY?: string;
+  AUTH_PASSWORD_TURNSTILE_SECRET?: string;
 };
 
 /** 为每次请求组装 Hono API、鉴权和 Webhook 验签依赖。 */
@@ -35,6 +37,8 @@ export async function serveCloudflareApi(
       SUPABASE_AUTH_PROVIDERS: env.SUPABASE_AUTH_PROVIDERS,
       SUPABASE_AUTH_PUBLISHABLE_KEY: env.SUPABASE_AUTH_PUBLISHABLE_KEY,
       SUPABASE_EMAIL_TURNSTILE_SITE_KEY: env.SUPABASE_EMAIL_TURNSTILE_SITE_KEY,
+      AUTH_PASSWORD_TURNSTILE_SITE_KEY: env.AUTH_PASSWORD_TURNSTILE_SITE_KEY,
+      AUTH_PASSWORD_TURNSTILE_SECRET: env.AUTH_PASSWORD_TURNSTILE_SECRET,
     });
     if (!authConfig) throw new Error("AUTH_CONFIGURATION_REQUIRED");
     const auth = enterpriseAuth(authRepository, {

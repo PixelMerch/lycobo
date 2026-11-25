@@ -52,8 +52,11 @@ function loadTurnstile() {
   return loading;
 }
 
-/** 仅在用户发码时加载 Turnstile，每次请求使用新的令牌。 */
-export function useEmailTurnstile(siteKey: string | undefined) {
+/** 在用户提交登录表单时加载 Turnstile，每次请求使用新的令牌。 */
+export function useLoginTurnstile(
+  siteKey: string | undefined,
+  action: "email_login" | "password_login",
+) {
   const container = useRef<HTMLDivElement>(null);
   const cancellation = useRef<(() => void) | null>(null);
   useEffect(() => () => cancellation.current?.(), []);
@@ -72,7 +75,7 @@ export function useEmailTurnstile(siteKey: string | undefined) {
         timer = window.setTimeout(fail, 120000);
         widget = api.render(target, {
           sitekey: siteKey,
-          action: "email_login",
+          action,
           theme: "dark",
           size,
           appearance: "interaction-only",

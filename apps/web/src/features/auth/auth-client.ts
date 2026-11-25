@@ -49,10 +49,18 @@ async function authRequest(path: string, init: RequestInit = {}) {
   rememberSessionExpiry(response);
   return normalizeApiResponse(response);
 }
-async function errorMessage(response: Response) {
+/** 区分账号锁定，以便登录表单持续显示原因。 */
+export class AccountLockedError extends Error {}
+
+async function authError(response: Response) {
   const body: unknown = await response.json().catch(() => null);
   const envelope = apiErrorSchema.safeParse(body);
-  if (envelope.success) return serverErrorMessage(envelope.data);
+  if (envelope.success) {
+    const message = serverErrorMessage(envelope.data);
+    return envelope.data.error.code === "ACCOUNT_LOCKED"
+      ? new AccountLockedError(message)
+      : new Error(message);
+  }
   if (typeof body === "object" && body !== null && "error" in body) {
     const error = body.error;
     if (
@@ -61,9 +69,9 @@ async function errorMessage(response: Response) {
       "message" in error &&
       typeof error.message === "string"
     )
-      return error.message;
+      return new Error(error.message);
   }
-  return currentMessages(authMessages).serviceUnavailable;
+  return new Error(currentMessages(authMessages).serviceUnavailable);
 }
 /** 读取当前登录状态；未登录或登录服务未配置时返回 null。 */
 export function useEnterpriseSession() {
@@ -84,14 +92,15 @@ export function useEnterpriseLogin() {
   const client = useQueryClient();
   return useMutation({
     gcTime: 0,
-    mutationFn: async (input: { account: string; password: string }) => {
+    retry: false,
+    mutationFn: async (input: { account: string; password: string; captchaToken: string }) => {
       resetSessionRenewal();
       const response = await authRequest("enterprise/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
       });
-      if (!response.ok) throw new Error(await errorMessage(response));
+      if (!response.ok) throw await authError(response);
       // 浏览器通过 HttpOnly Cookie 使用凭据，前端只保留身份资料。
       return enterpriseLoginResponseSchema.parse(await response.json()).user;
     },
@@ -176,7 +185,7 @@ export function useEnterpriseAvatar() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!response.ok) throw new Error(await errorMessage(response));
+      if (!response.ok) throw await authError(response);
       // 返回内容不完整时给出通用提示，不把校验细节显示给用户。
       const user = enterpriseIdentitySchema.safeParse(await response.json());
       if (!user.success) throw new Error(currentMessages(authMessages).serviceUnavailable);
@@ -213,7 +222,7 @@ export function useEnterpriseLocale(userId?: string) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!response.ok) throw new Error(await errorMessage(response));
+      if (!response.ok) throw await authError(response);
       const user = enterpriseIdentitySchema.safeParse(await response.json());
       if (
         !user.success ||
@@ -242,7 +251,7 @@ export function useEnterprisePasswordChange() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(validated),
       });
-      if (!response.ok) throw new Error(await errorMessage(response));
+      if (!response.ok) throw await authError(response);
     },
     onSuccess: async () => {
       resetSessionRenewal();

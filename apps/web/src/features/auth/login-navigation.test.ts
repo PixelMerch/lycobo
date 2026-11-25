@@ -10,6 +10,7 @@ describe("登录后的站内跳转", () => {
     "/workspace",
     "/video",
     "/membership",
+    "/zh-CN/recharge",
     "/en/commerce/create?task=fixture#result",
     "/zh-CN/assets",
     "/zh-CN/inspiration?category=product",
