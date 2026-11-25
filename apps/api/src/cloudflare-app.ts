@@ -11,8 +11,6 @@ import { readWebhookConfig } from "./features/images/webhooks/provider-webhook";
 type AuthBindings = {
   SUPABASE_AUTH_PUBLISHABLE_KEY?: string;
   SUPABASE_EMAIL_TURNSTILE_SITE_KEY?: string;
-  AUTH_PASSWORD_TURNSTILE_SITE_KEY?: string;
-  AUTH_PASSWORD_TURNSTILE_SECRET?: string;
 };
 
 /** 为每次请求组装 Hono API、鉴权和 Webhook 验签依赖。 */
