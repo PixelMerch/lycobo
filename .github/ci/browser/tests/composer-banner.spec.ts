@@ -11,7 +11,12 @@ for (const path of ["/commerce/create", "/commerce/textile-set", "/commerce/smar
     const scroll = page.locator(".composer-scroll");
     await expect(scroll).toHaveCSS("scrollbar-width", "none");
     await expect(page.locator(".composer-panel .lycobo-page-scrollbar")).toHaveCount(0);
-    expect(await scroll.evaluate((panel) => panel.offsetWidth - panel.clientWidth)).toBe(0);
+    expect(
+      await scroll.evaluate((panel) => {
+        if (!(panel instanceof HTMLElement)) throw new Error("Missing composer scroll panel");
+        return panel.offsetWidth - panel.clientWidth;
+      }),
+    ).toBe(0);
     const hero = page.locator(".workspace-composer-hero");
     const description = hero.locator("p");
     await expect(hero).toHaveAttribute("data-collapsed", "false");

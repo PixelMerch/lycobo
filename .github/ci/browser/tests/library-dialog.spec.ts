@@ -507,7 +507,12 @@ test("我的素材 keeps filters visible while scrolling and separates the curre
   await expect(scrollbar).toBeVisible();
   await expect(scrollbar).toHaveCSS("position", "absolute");
   await expect(panel).toHaveCSS("scrollbar-width", "none");
-  expect(await panel.evaluate((element) => element.offsetWidth - element.clientWidth)).toBe(0);
+  expect(
+    await panel.evaluate((element) => {
+      if (!(element instanceof HTMLElement)) throw new Error("Missing asset library panel");
+      return element.offsetWidth - element.clientWidth;
+    }),
+  ).toBe(0);
   const filters = dialog.locator(".asset-filters");
   await expect(filters).toHaveCSS("border-bottom-width", "0px");
   await expect(filters).toHaveCSS("padding-bottom", "20px");
