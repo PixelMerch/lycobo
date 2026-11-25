@@ -1,0 +1,36 @@
+/* 轨道覆盖在页面上，正文不为原生滚动条预留宽度。 */
+html:has(> body > .lycobo-page-scrollbar) {
+  scrollbar-width: none;
+  scrollbar-gutter: auto;
+}
+html:has(> body > .lycobo-page-scrollbar)::-webkit-scrollbar {
+  display: none;
+}
+.lycobo-page-scrollbar {
+  position: fixed;
+  inset: 0 0 0 auto;
+  z-index: 10002;
+  width: 12px;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  background: transparent;
+  scrollbar-width: thin;
+  scrollbar-color: rgb(128 128 128 / 60%) transparent;
+}
+.lycobo-page-scrollbar[hidden] {
+  display: none;
+}
+.lycobo-page-scrollbar > div {
+  width: 1px;
+  pointer-events: none;
+}
+.lycobo-page-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.lycobo-page-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.lycobo-page-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(128 128 128 / 60%);
+  border-radius: 999px;
+}

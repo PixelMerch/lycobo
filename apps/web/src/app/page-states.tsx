@@ -1,5 +1,5 @@
 import { Button, EmptyState, Link } from "@heroui/react";
-import { IconAlertCircle, IconFileOff, IconRefresh } from "@tabler/icons-react";
+import { IconAlertCircle, IconFileOff, IconHome, IconRefresh } from "@tabler/icons-react";
 import { isRouteErrorResponse, useRouteError } from "react-router";
 import { UiIcon } from "../components/ui-icon";
 import { localizedPath } from "../i18n/locale-path";
@@ -26,7 +26,10 @@ function PageStatus({ canReload }: { canReload: boolean }) {
               {t.reloadPage}
             </Button>
           )}
-          <Link href={localizedPath("/", locale)}>{t.backHome}</Link>
+          <Link href={localizedPath("/", locale)}>
+            <UiIcon icon={IconHome} />
+            {t.backHome}
+          </Link>
         </div>
       </EmptyState>
     </section>

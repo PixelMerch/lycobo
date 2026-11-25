@@ -1,36 +1,57 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { apiFixture, mockImageApi } from "./image-api-fixture";
+import { apiFixture, chooseWorkspaceTool, mockImageApi } from "./image-api-fixture";
 
-const png = readFileSync(
-  new URL("../../../../apps/web/public/studio/textile-views/front.webp", import.meta.url),
-);
+const png = readFileSync(new URL("../fixtures/studio/textile-views/front.webp", import.meta.url));
 
-test("tool menu hover stays quiet while the banner retains examples and drafts survive switching", async ({
-  page,
-}) => {
+test("tool menu opens on click and drafts survive switching", async ({ page }) => {
   await mockImageApi(page);
   await page.goto("/zh-CN/commerce/create");
   const prompt = page.locator("textarea").first();
   await prompt.fill("保留当前商品草稿");
   const rail = page.getByRole("navigation", { name: "电商创作工具", exact: true });
   await expect(rail.getByRole("button", { name: "商品视频" })).toHaveCount(0);
-  // 先在工具外移动鼠标，模拟用户从输入模式切回指针模式。
-  await page.mouse.move(600, 80);
-  await rail.getByRole("button", { name: "家纺裂变", exact: true }).hover();
+  const trigger = rail.getByRole("button", { name: "商品图片", exact: true });
+  const menu = page.getByRole("menu", { name: "商品图片", exact: true });
+  const arrow = trigger.locator(".workspace-tool-chevron .ui-icon");
   const preview = page.locator(".workspace-tool-preview-card");
-  // 覆盖原来的300ms延迟，确认菜单不会稍后再弹出示例。
-  await page.waitForTimeout(450);
+  await trigger.hover();
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await expect(menu).toHaveCount(0);
+  await trigger.click();
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await expect(menu).toBeVisible();
+  await expect(page.locator("html")).toHaveCSS("overflow-y", "hidden");
+  await expect(page.locator(".composer-scroll")).toHaveCSS("overflow-y", "hidden");
+  await expect(menu).toHaveCSS("overflow-y", "auto");
+  await expect(arrow).toHaveCSS("transform", "matrix(-1, 0, 0, -1, 0, 0)");
+  await page.mouse.move(0, 0);
+  await expect(menu).toBeVisible();
+  const banner = page.locator(".workspace-composer-hero");
+  await expect(banner.locator("img")).toHaveCount(1);
+  const bannerImage = banner.getByRole("img", { name: /橙色跑鞋/ });
+  await expect(bannerImage).toBeVisible();
+  const thumbnail = page.getByRole("menuitem", { name: "商品主图", exact: true }).locator("img");
+  await expect(thumbnail).toHaveAttribute("src", (await bannerImage.getAttribute("src")) ?? "");
+  await expect(thumbnail).toHaveCSS("width", "72px");
+  await expect(thumbnail).toHaveCSS("height", "50px");
+  await trigger.click();
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await expect(menu).toHaveCount(0);
+  await expect(arrow).toHaveCSS("transform", "none");
+  await trigger.click();
+  await page.getByRole("button", { name: "关闭工具菜单", exact: true }).click();
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator("html")).not.toHaveCSS("overflow-y", "hidden");
+  await expect(trigger).toBeFocused();
+  await banner.hover();
   await expect(preview).toHaveCount(0);
-  await page.locator(".workspace-composer-hero").hover();
-  await expect(preview).toBeVisible();
-  await expect(preview).toContainText("效果示例");
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(prompt).toHaveValue("保留当前商品草稿");
   await page.keyboard.press("Escape");
-  await rail.getByRole("button", { name: "复制爆款", exact: true }).click();
+  await chooseWorkspaceTool(page, "复制爆款");
   await expect(page).toHaveURL(/\/commerce\/replica$/);
-  await rail.getByRole("button", { name: "主图制作", exact: true }).click();
+  await chooseWorkspaceTool(page, "主图制作");
   await expect(prompt).toHaveValue("保留当前商品草稿");
 });
 
@@ -75,7 +96,7 @@ test("style matching requires both slots and submits their roles without a paid 
         mimeType: "image/webp",
         buffer: readFileSync(
           new URL(
-            `../../../../apps/web/public/studio/textile-views/${
+            `../fixtures/studio/textile-views/${
               [
                 "angled-level",
                 "angled-overhead",
@@ -109,28 +130,40 @@ test("style matching requires both slots and submits their roles without a paid 
       prompt: expect.stringContaining("以第一张图为版式模板"),
     });
   expect(statusReads).toBe(0);
-  await expect(page.getByText("任务已入队，关闭页面后仍会处理。", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "已提交", exact: true })).toBeVisible();
+  await expect(page.getByText("已提交，可在生成记录中查看进度。", { exact: true })).toHaveCount(0);
 });
 
-test("reduced-motion keyboard preview is static and home hides video", async ({ page }) => {
+test("reduced-motion tool menu stays available without a duplicate banner preview", async ({
+  page,
+}) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await mockImageApi(page);
-  await page.goto("/zh-CN/commerce/create");
+  await page.goto("/zh-CN/commerce/replica");
   const button = page
     .locator(".workspace-tool-bar")
-    .getByRole("button", { name: "复制爆款", exact: true });
-  await expect(page.locator(".workspace-tool-indicator")).toHaveCSS("height", "50px");
-  await button.hover();
-  await expect
-    .poll(() => button.evaluate((element) => getComputedStyle(element, "::before").height))
-    .toBe("50px");
-  await expect(button).toHaveCSS("height", "56px");
+    .getByRole("button", { name: "商品图片", exact: true });
+  await expect(button).toHaveAttribute("data-current", "true");
   await button.focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".workspace-tool-submenu")).toBeVisible();
+  await expect(button).toHaveCSS("height", "50px");
+  await expect(button.locator(".workspace-tool-chevron .ui-icon")).toHaveCSS(
+    "transition-duration",
+    "0s",
+  );
+  await page.keyboard.press("Escape");
+  await expect(button).toBeFocused();
+  await expect(button).toHaveAttribute("aria-expanded", "false");
   await expect(page.locator(".workspace-tool-preview-card")).toHaveCount(0);
-  await page.locator(".workspace-composer-hero").focus();
-  const preview = page.locator(".workspace-tool-preview-card");
-  await expect(preview).toBeVisible();
-  await expect(preview.locator(".workspace-tool-preview-source")).toBeHidden();
+  const banner = page.locator(".workspace-composer-hero");
+  await expect(banner.getByRole("heading", { name: "复制爆款", exact: true })).toBeVisible();
+  await expect(banner.getByRole("img", { name: /橙色耳机/ })).toBeVisible();
+  await expect(banner).not.toContainText(/风格参考|我的商品|成图/);
+  await banner.hover();
+  // 覆盖旧浮层的延迟，确认离开菜单后没有第二张示例图弹出。
+  await page.waitForTimeout(450);
+  await expect(page.locator(".workspace-tool-preview-card")).toHaveCount(0);
   await page.goto("/zh-CN");
   await expect(page.getByRole("tab", { name: "商品视频" })).toHaveCount(0);
 });

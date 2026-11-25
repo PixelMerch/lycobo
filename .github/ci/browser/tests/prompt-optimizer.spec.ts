@@ -36,6 +36,8 @@ test("the focused prompt loops the wand hint and canceling never requests optimi
   const ratioTop = () => ratioHeading.evaluate((element) => element.getBoundingClientRect().top);
   await expect(prompt).toHaveCSS("padding-bottom", "48px");
   await expect(wand).toHaveText("优化");
+  await expect(wand).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(wand).toHaveCSS("color", "rgb(168, 255, 0)");
   const [editorBounds, toolbarBounds] = await Promise.all([
     prompt.boundingBox(),
     page.locator(".prompt-meta").boundingBox(),

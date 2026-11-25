@@ -1,10 +1,4 @@
-import type { ReferenceRole } from "@lycoboai/contracts";
 import { create } from "zustand";
-import {
-  roleOf,
-  submissionReferenceRoles,
-  useReferenceRoles,
-} from "../../generation/references/reference-roles";
 
 type BindingState = {
   bindings: Record<string, number[]>;
@@ -50,96 +44,46 @@ function mentionsWithin(prompt: string, count: number) {
   return [...mentionedImageNumbers(prompt)].filter((number) => number <= count);
 }
 
-/** 本次计划里参考图的用法：每张图实际按什么角色处理，以及原图是不是按提示词推断出来的。 */
-export type PlanUsage = { roles: Record<string, ReferenceRole>; inferred: boolean };
+/** 方案共用图和逐条分配的原图，编号从 1 开始。 */
+export type PlanUsage = { shared: number[]; sources: number[] };
 
 /**
- * 计划里每张参考图的实际角色。标过原图时完全按用户标的；没标时，未标角色的图按全部方案（含未勾选）的提示词推断：
- * 提到参考图的方案都提到的图共用，其余按原图逐条对应（没被任何方案提到的不发送）。
- * 例如五张图各写一条“参考图N改成9:16”，每条只发自己那张，不会都去改第一张。
+ * 按全部方案（含未勾选）的提示词推断用图：每条用图提示词都提到的图共用，其余逐条对应。
+ * 提示词都没指定编号时，每条方案沿用全部参考图。
  */
-export function planUsage(
-  references: readonly { id: string }[],
-  roles: Record<string, ReferenceRole>,
-  prompts: readonly string[],
-): PlanUsage {
-  const asMarked = { roles, inferred: false };
-  if (references.some((image) => roles[image.id] === "source")) return asMarked;
-  const mentions = prompts
-    .map((prompt) => new Set(mentionsWithin(prompt, references.length)))
+export function planUsage(referenceCount: number, items: readonly { prompt: string }[]): PlanUsage {
+  const mentions = items
+    .map(({ prompt }) => new Set(mentionsWithin(prompt, referenceCount)))
     .filter((numbers) => numbers.size > 0);
-  const unmarked = references.flatMap((image, index) => (roles[image.id] ? [] : [index + 1]));
-  // 没有方案提到参考图时 every 恒为真，结果为空；每条都提到全部未标的图时也为空，两种都沿用原来的发送方式。
-  const perItem = unmarked.filter((number) => !mentions.every((numbers) => numbers.has(number)));
-  if (!perItem.length) return asMarked;
-  const inferred = { ...roles };
-  for (const number of perItem) {
-    const image = references[number - 1];
-    if (image) inferred[image.id] = "source";
-  }
-  return { roles: inferred, inferred: true };
+  const numbers = Array.from({ length: referenceCount }, (_, index) => index + 1);
+  const shared = numbers.filter((number) => mentions.every((group) => group.has(number)));
+  return { shared, sources: numbers.filter((number) => !shared.includes(number)) };
 }
 
-/** 当前计划的参考图用法：读会话里标的角色和全部方案（含未勾选）的提示词。 */
-export function usePlanUsage(
-  references: readonly { id: string }[],
-  items: readonly { prompt: string }[],
-) {
-  const roles = useReferenceRoles((state) => state.roles);
-  return planUsage(
-    references,
-    roles,
-    items.map((item) => item.prompt),
-  );
-}
-
-/**
- * 提交时的参考图角色（与参考图顺序一致）。用户没标原图或风格时不带角色，服务端只写编号说明；
- * 标过时按本计划的实际角色提交，推断出的逐条原图按“原图”说明，不会被说成要保持颜色不变的商品图。
- */
-export function planSubmissionRoles(references: readonly { id: string }[], usage: PlanUsage) {
-  if (!submissionReferenceRoles(references)) return undefined;
-  return references.map((image) => roleOf(usage.roles, image.id));
-}
-
-/** 一条方案的用图（编号从 1 开始）：共用的商品与风格图、全部原图，以及本条对应的原图。 */
+/** 读取某条方案的共用图、候选原图和当前选中的原图。 */
 export function planImages(
-  references: readonly { id: string }[],
   usage: PlanUsage,
   prompt: string,
   override: readonly number[] | undefined,
 ) {
-  const numbered = references.map((image, index) => ({
-    role: roleOf(usage.roles, image.id),
-    number: index + 1,
-  }));
-  const shared = numbered.filter(({ role }) => role !== "source").map(({ number }) => number);
-  const sources = numbered.filter(({ role }) => role === "source").map(({ number }) => number);
-  const mentioned = mentionsWithin(prompt, references.length);
-  // 推断出的原图：没提到任何参考图的方案照旧使用全部原图，不会变成不带参考图的生成。
-  const fallback = usage.inferred && !mentioned.length ? sources : mentioned;
-  return { shared, sources, bound: new Set(override ?? fallback) };
+  const mentioned = mentionsWithin(prompt, usage.shared.length + usage.sources.length);
+  const fallback = mentioned.length ? mentioned : usage.sources;
+  return { ...usage, bound: new Set(override ?? fallback) };
 }
 
 /**
  * 提交时每条方案要发送的参考图下标（从 0 开始，保持原顺序）：共用图加本条对应的原图。
- * 没有任何原图（标的或推断的）时返回 undefined，沿用旧行为，每条方案发送全部参考图。
+ * 无需逐条分配时返回 undefined，每条方案共用全部参考图。
  */
 export function itemReferenceIndexes(
   items: readonly { id: string; prompt: string }[],
-  references: readonly { id: string }[],
   usage: PlanUsage,
   bindings: Record<string, number[]>,
 ) {
-  if (!references.some((image) => roleOf(usage.roles, image.id) === "source")) return undefined;
+  if (!usage.sources.length) return undefined;
   return Object.fromEntries(
     items.map((item) => {
-      const { shared, sources, bound } = planImages(
-        references,
-        usage,
-        item.prompt,
-        bindings[item.id],
-      );
+      const { shared, sources, bound } = planImages(usage, item.prompt, bindings[item.id]);
       const numbers = [...shared, ...sources.filter((number) => bound.has(number))];
       return [item.id, numbers.sort((left, right) => left - right).map((number) => number - 1)];
     }),

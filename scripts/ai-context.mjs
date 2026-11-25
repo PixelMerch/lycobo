@@ -16,7 +16,7 @@ function printContext() {
   console.info(
     "远端比较基于本地跟踪引用，本命令不 fetch。验证结果、文件归属及操作授权需据实填写交接记录。",
   );
-  console.info("阅读入口：AGENTS.md → docs/ai-workflow.md；交接模板：docs/templates/ai-handoff.md");
+  console.info("阅读入口：AGENTS.md → docs/README.md");
 }
 
 printContext();

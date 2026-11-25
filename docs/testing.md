@@ -8,7 +8,7 @@
 - pnpm build：实际前端和两个 Node 应用生产构建。
 - pnpm test:integration：明确 opt-in 的隔离 PostgreSQL、队列、鉴权及持久事件集成验证。
 
-关键计费、恢复、推送规则与测试证据范围见[关键业务验证索引](business-test-map.md)，其中待验证场景不代表已覆盖。
+付费任务的回归验证重点是并发扣款、认领、显式重试和迟到结果。结合隔离数据库、loopback provider 和对象存储验证回调与查询并发、存储完成后中断、数据库完成后消息重投，以及断线恢复和事件去重。报告具体断言与执行环境。
 
 ## 按改动选择验证
 
@@ -49,7 +49,7 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 ## 手动验收
 
-按 DESIGN.md 检查 390/768/1280/1440px、键盘操作、焦点返回、错误与空状态。
+按现有界面与 [Web 规则](../apps/web/AGENTS.md) 检查 390/768/1280/1440px、键盘操作、焦点返回、错误与空状态。
 真实生图需使用明确授权的测试账户和限额，记录 provider 返回和结果存储证据。
 不要把模拟完成动画或静态图称为端到端生成测试。
 
@@ -104,7 +104,7 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 浏览器 CI 通过隔离 Node API 和 Vite 运行站点。
 
-界面有简体中文与英文两种语言，页面使用 `/zh-CN` 与 `/en` 前缀，URL语言优先于本机偏好；语言路径、登录返回与草稿保留的专用回归见 `locale-routing.spec.ts`，规则见[页面语言路径](localized-routing.md)。`playwright.config.ts` 把浏览器语言固定为 `zh-CN`，现有用例按中文文案定位；英文界面由 `language.spec.ts` 单独覆盖：英文浏览器默认英文、日文浏览器回退英文、语言入口位于积分或登录左侧、切换后刷新仍保持、英文工作台，以及服务端中文错误按错误代码换成英文说明。单元测试运行在 Node 中，默认语言为英文；断言中文文案的测试在 `beforeEach` 里用 `useLocaleStore.setState({ locale: "zh-CN" })` 固定语言。
+界面有简体中文与英文两种语言，页面使用 `/zh-CN` 与 `/en` 前缀，URL语言优先于本机偏好；语言路径、登录返回与草稿保留的专用回归见 `locale-routing.spec.ts`，规则见 [Web 规则](../apps/web/AGENTS.md)。`playwright.config.ts` 把浏览器语言固定为 `zh-CN`，现有用例按中文文案定位；英文界面由 `language.spec.ts` 单独覆盖：英文浏览器默认英文、日文浏览器回退英文、语言入口位于积分或登录左侧、切换后刷新仍保持、英文工作台，以及服务端中文错误按错误代码换成英文说明。单元测试运行在 Node 中，默认语言为英文；断言中文文案的测试在 `beforeEach` 里用 `useLocaleStore.setState({ locale: "zh-CN" })` 固定语言。
 
 浏览器 CI 使用固定的 Ubuntu 24.04 和 Playwright 容器镜像，并在任务内准备与锁定依赖匹配的 Chromium。
 
@@ -140,27 +140,13 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 账户弹框拆分回归由`account-center.spec.ts`、`account-menu.spec.ts`和`account-settings.spec.ts`覆盖：账单仅保留积分明细/充值订单，设置独立打开并恢复焦点，普通成员不显示企业管理，改密不匹配不提交、错误密码不退出、成功提交后清理当前登录状态。浏览器使用接口fixture，不修改真实账号密码；服务器改密和会话撤销仍由既有鉴权单测与隔离集成覆盖。
 
-## Cloudflare Workers 迁移验证（2026-11-06）
+## Cloudflare 运行时验证
 
-当前生产以 [Cloudflare 部署](cloudflare-deployment.md) 为准。`pnpm test:integration` 使用独立本地 PostgreSQL 验证任务、outbox、鉴权和持久事件；Workers 平台行为由 `pnpm test:cloudflare` 验证。
+按 [Cloudflare 部署](releasing.md#cloudflare-运行与部署) 选择检查。`pnpm check` 包含两个 Worker 的 Wrangler dry run。`pnpm test:cloudflare` 启动独立本地 workerd，验证 scrypt、Images 解码和 WebP、R2、Queue 及提示词优化 SSE。`pnpm test:integration` 使用隔离 PostgreSQL 验证任务、计费、outbox 和持久事件。上述检查使用本地绑定和供应商 fixture。
 
-`pnpm check` 的构建已包含 `pnpm cf:build`（Wrangler dry-run）。`pnpm test:cloudflare` 启动独立、本地 fixture Worker，不使用生产 Hyperdrive、R2 或密钥，验证 workerd 内现有 scrypt 密码兼容、Images 真实本地解码与 WebP 输出、R2 写入以及 Queue handler 投递。
-
-新增 `cloudflare-uploads.test.ts` 覆盖暂存后不提前登记、上传人隔离、发送失败恢复、重复消息、存储故障、图片无效失败及登记后回执丢失恢复；`cloudflare.test.ts` 覆盖透明 PNG、展示图尺寸、标准化不重复编码、动画/超限拒绝和转换失败保留源结果。客户端测试验证等待真实素材和显式失败。`verify-cloudflare-isolation.ts` 随隔离图片集成检查素材登记幂等/内容冲突、新旧任务接管边界、旧执行不被自动过期、用户明确重试旧任务的新执行可领取，以及新任务重复领取拒绝。
-
-这些检查不调用真实付费模型，不证明 Cloudflare 远端绑定可用，也不替代真实商品图的质量、延迟和费用验收。当前 Images 模拟与生产编码器的差异需在单独授权候选部署后验证。
-
-补充本地实测：实际应用 Worker（不是简化 fixture）使用一次性 PostgreSQL、本地 Hyperdrive/R2/Images/Queue 完成登录、202 上传、队列处理、素材登记、回执查询及签名缩略图读取；临时数据库已清理。迁移期间的定向浏览器检查两项通过，覆盖未完成不提交生成及失败保留草稿/具体错误。测试未调用模型。
-
-本次远端部署验证：主页与登录弹层、JSON API、Hyperdrive 读库及不存在账号登录拒绝正常；已有素材的签名 WebP/PNG 返回 200，未签名媒体返回 403；不存在上传意图的无副作用 Queue 探测消息已投递且积压归零。线上真实账号登录和有效图片上传/转换未验证，未调用付费模型。新增 `scripts/cloudflare-consumer.test.mjs` 验证生成关闭时仍处理上传，但不执行付费消息、不扫描或结算付费任务。
-
-独立图片 Worker 的部署边界由 `scripts/cloudflare-deployment.test.mjs` 验证：主站没有 Queue/Cron handler，消费者没有 HTTP handler，复用同一持久队列、R2、Hyperdrive 和接管时间，两个配置均关闭付费执行且消费者不持有 JWT。`pnpm cf:build` 分别打包两个配置。
-
-Webhook 与无回调兼容：`scripts/cloudflare-webhook.test.mjs` 验证 Workers API 挂载来源指纹和签名配置，生成关闭时仍可接收已存在任务的通知；`cloudflare-consumer.test.mjs` 验证无回调延迟查询、丢失回调 60 秒兜底和提前回调 2 秒核查。已有 provider/outbox 和隔离集成继续验证查询原任务不再次提交付费生成。配置变更不等于真实付费生成验收。
-
-`pnpm cf:check:config` 是授权部署后的只读外部校验，不进入无凭据的默认 CI。`cloudflare-config.test.mjs` 覆盖活动版本正确但控制台草稿过期、仓库与活动版本不一致、Secret 名称缺失及完全一致的场景。
-
-`pnpm test:cloudflare` 已增加真实 workerd 下的提示词优化 fixture：由原生 Request 验证请求选项，再消费模拟供应商 SSE 并完成结算。旧 `redirect:error` 在此检查中失败，改为 `manual` 后通过；Node 单测覆盖拒绝重定向、供应商拒绝请求时只结算一次，以及 SSE 尚未结束时不提前关闭仓储。
+- `cloudflare-uploads.test.ts` 与 `cloudflare.test.ts` 覆盖上传者隔离、暂存确认、重复消息、变体、透明 PNG、无效图片与存储失败恢复。`verify-cloudflare-isolation.ts` 验证登记幂等、内容冲突、旧任务接管和认领。
+- `scripts/cloudflare-deployment.test.mjs` 检查主站和消费者职责、共享绑定和接管时间。`cloudflare-consumer.test.mjs` 与 `cloudflare-webhook.test.mjs` 覆盖签名配置、生成关闭时的未结任务通知和上传、提前回调与延迟查询。
+- 部署后经授权运行 `pnpm cf:check:config`，核对活动版本、绑定和 Secret 名称，并验证健康、鉴权、签名媒体与 WebSocket。真实供应商的质量、延迟和费用另行验收。
 
 ## Cloudflare 实时推送
 

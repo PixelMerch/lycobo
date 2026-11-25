@@ -1,9 +1,10 @@
-import { Button, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { Button } from "@heroui/react";
+import { publicImageResolutions } from "@lycoboai/contracts";
 import { useState } from "react";
 import { ReferencePrompt } from "../../../components/reference-prompt/reference-prompt";
 import { GenerateButton } from "../../generation/composer/generate-button";
-import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
-import { SelectionHighlight } from "../../generation/composer/selection-highlight";
+import { ParameterGroup } from "../../generation/composer/parameter-group";
+import { AspectRatioField } from "../../generation/composer/ratio-picker";
 import { ReferencePicker } from "../../generation/references/reference-picker";
 import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
 import { useSmartVariationDraft } from "./smart-variation-state";
@@ -29,7 +30,6 @@ export function SmartVariationPage() {
           <WorkspaceComposerTitle />
           <ReferencePicker
             compact
-            withRoles
             references={references}
             prompt={description}
             onChange={(references, description) => update({ references, description })}
@@ -50,39 +50,17 @@ export function SmartVariationPage() {
             showCount
             autoGrow
           />
-          <section className="parameter-group" aria-label={t.aspectRatio}>
-            <div className="field-title">
-              <h2>{t.aspectRatio}</h2>
-              <span className="ratio-current">{ratio}</span>
-            </div>
-            <HomeRatioPicker value={ratio} onChange={(value) => update({ ratio: value })} />
-          </section>
-          <section className="parameter-group">
-            <div className="field-title">
-              <h2>{t.resolution}</h2>
-            </div>
-            <ToggleButtonGroup
-              aria-label={t.resolution}
-              className="parameter-options"
-              isDetached
-              selectionMode="single"
-              disallowEmptySelection
-              selectedKeys={[resolution]}
-              onSelectionChange={(keys) => {
-                const value = Array.from(keys)[0];
-                if (value) update({ resolution: String(value) });
-              }}
-            >
-              {["1.5K", "2K", "4K"].map((value) => (
-                <ToggleButton key={value} id={value}>
-                  {resolution === value && (
-                    <SelectionHighlight layoutId="smart-variation-resolution" />
-                  )}
-                  <span>{value}</span>
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
-          </section>
+          <AspectRatioField
+            label={t.aspectRatio}
+            value={ratio}
+            onChange={(value) => update({ ratio: value })}
+          />
+          <ParameterGroup
+            label={t.resolution}
+            values={publicImageResolutions}
+            value={resolution}
+            onChange={(resolution) => update({ resolution })}
+          />
         </div>
         <div className="generate-area variation-submit">
           {planId && (
@@ -100,9 +78,10 @@ export function SmartVariationPage() {
             submitting={analysis.isPending}
             isDisabled={!analysis.canAnalyze}
             submittingLabel={t.generatingPlan}
-            onPress={() => {
+            successLabel={t.planReady}
+            onPress={async () => {
               setPlanOpen(true);
-              analysis.mutate();
+              return analysis.submit();
             }}
           />
         </div>

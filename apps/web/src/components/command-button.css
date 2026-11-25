@@ -1,0 +1,110 @@
+.command-button {
+  position: relative;
+  flex: none;
+  display: grid;
+  align-items: center;
+  height: var(--control-height-md);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--control-pill-radius);
+  background: var(--fill-medium);
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+.command-button[data-open="true"] {
+  width: var(--command-field-width, 300px);
+  background: var(--surface-tertiary);
+}
+.command-button[data-open="false"]:hover {
+  background: var(--fill-strong);
+}
+.command-button:has([data-focus-visible="true"], input:focus) {
+  background: var(--control-selected-fill);
+  color: var(--foreground);
+}
+.command-button-trigger > .button,
+.command-button-field > .button {
+  border: 0;
+  color: inherit;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+}
+.command-button-trigger > .button {
+  height: var(--control-height-md);
+  gap: var(--space-2);
+  padding: 0 8px 0 12px;
+  font-size: inherit;
+  font-weight: inherit;
+  white-space: nowrap;
+}
+.command-button-shortcut {
+  display: flex;
+  gap: 3px;
+  margin-inline-start: 4px;
+}
+.command-button kbd {
+  display: inline-grid;
+  min-width: 18px;
+  height: 18px;
+  place-items: center;
+  padding-inline: 4px;
+  border-radius: 4px;
+  background: var(--fill-medium);
+  font: inherit;
+  font-size: var(--text-xs);
+  line-height: 1;
+}
+.command-button kbd[data-held="true"] {
+  color: var(--foreground);
+  background: var(--fill-selected);
+}
+.command-button-field {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 7px 0 12px;
+}
+.command-button .command-button-input.input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  outline: none;
+  box-shadow: none;
+  caret-color: var(--studio-accent);
+}
+.command-button .command-button-input::placeholder {
+  color: var(--muted);
+}
+.command-button-input::-webkit-search-cancel-button {
+  display: none;
+}
+.command-button-field > .command-button-close {
+  min-width: 26px;
+  height: 26px;
+  padding: 0 2px;
+}
+.command-button-close .ui-icon {
+  display: none;
+}
+@media (max-width: 767px) {
+  .command-button-trigger > .button {
+    width: var(--control-height-md);
+    min-width: var(--control-height-md);
+    padding: 0;
+  }
+  .command-button :is(.command-button-label, .command-button-shortcut, .command-button-close kbd) {
+    display: none;
+  }
+  .command-button-close .ui-icon {
+    display: inline-block;
+  }
+}

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockImageApi, modelDisplayNames } from "./image-api-fixture";
+import { chooseWorkspaceTool, mockImageApi, modelDisplayNames } from "./image-api-fixture";
 
 test.beforeEach(async ({ page }) => {
   await mockImageApi(page);
@@ -73,6 +73,11 @@ test("current draft, references and output choices follow model switches and sur
   await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   await page.getByRole("button", { name: "电商", exact: true }).click();
   await page.getByRole("menuitem", { name: "主图制作", exact: true }).click();
+  await page
+    .locator("#commerce-composer")
+    .getByRole("link", { name: "进入工作区", exact: true })
+    .last()
+    .click();
   await expect(prompt).toHaveValue("保留我的商品草稿");
 });
 
@@ -88,11 +93,11 @@ test("invalid references and limit errors do not destroy valid images", async ({
   await input.setInputFiles({ name: "valid.png", mimeType: "image/png", buffer: png });
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   await input.setInputFiles([
-    "apps/web/public/studio/commerce-atlas.webp",
-    "apps/web/public/studio/bedroom.webp",
-    "apps/web/public/studio/lavender.webp",
-    "apps/web/public/studio/set.webp",
-    "apps/web/public/studio/bedroom-thumb.webp",
+    ".github/ci/browser/fixtures/studio/commerce-atlas.webp",
+    ".github/ci/browser/fixtures/studio/bedroom.webp",
+    ".github/ci/browser/fixtures/studio/lavender.webp",
+    ".github/ci/browser/fixtures/studio/set.webp",
+    ".github/ci/browser/fixtures/studio/bedroom-thumb.webp",
   ]);
   await expect(page.getByRole("alert")).toContainText("最多添加 5 张");
   await expect(page.locator(".reference-tile")).toHaveCount(1);
@@ -145,10 +150,7 @@ for (const width of [320, 390, 768, 1024, 1440]) {
 
 test("tool shortcuts open their workspace", async ({ page }) => {
   await page.goto("/commerce/create");
-  await page
-    .getByRole("navigation", { name: "电商创作工具" })
-    .getByRole("button", { name: "主图制作", exact: true })
-    .click();
+  await chooseWorkspaceTool(page, "主图制作");
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await expect(page.getByLabel("提示词", { exact: true })).toBeVisible();
 });
@@ -205,11 +207,11 @@ test("reference limit and clearing remain consistent when switching models", asy
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles([
-      "apps/web/public/studio/commerce-atlas.webp",
-      "apps/web/public/studio/bedroom.webp",
-      "apps/web/public/studio/lavender.webp",
-      "apps/web/public/studio/set.webp",
-      "apps/web/public/studio/bedroom-thumb.webp",
+      ".github/ci/browser/fixtures/studio/commerce-atlas.webp",
+      ".github/ci/browser/fixtures/studio/bedroom.webp",
+      ".github/ci/browser/fixtures/studio/lavender.webp",
+      ".github/ci/browser/fixtures/studio/set.webp",
+      ".github/ci/browser/fixtures/studio/bedroom-thumb.webp",
     ]);
   await expect(page.locator(".reference-tile")).toHaveCount(5);
   await expect(page.locator(".reference-number")).toHaveText(["1", "2", "3", "4", "5"]);

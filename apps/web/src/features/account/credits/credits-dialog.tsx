@@ -1,36 +1,39 @@
 import { Modal } from "@heroui/react";
-import { IconX } from "@tabler/icons-react";
-import { useDialogDismiss } from "../../../components/overlays/use-dialog-dismiss";
-import { UiIcon } from "../../../components/ui-icon";
+import { motion } from "motion/react";
+import { DialogClose } from "../../../components/overlays/dialog-close";
+import { useCenteredDialogEntrance } from "../../../components/overlays/use-centered-dialog-entrance";
 import { useMessages } from "../../../i18n/messages";
+import "../../../styles/fullscreen-dialog.css";
 import { CreditPacks } from "./credit-packs";
 import { creditsMessages } from "./credits-messages";
-import "../account-panel.css";
 import "./credit-recharge.css";
 
-/** 充值积分弹窗：积分包与订单预览；支付接入前不能下单。 */
+/** 从应用内打开全屏充值弹框，沿用独立充值页的积分包。 */
 export function RechargeDialog({ onClose }: { onClose: () => void }) {
   const t = useMessages(creditsMessages);
-  const dismiss = useDialogDismiss(onClose);
+  const surfaceMotion = useCenteredDialogEntrance();
   return (
     <Modal
-      isOpen={dismiss.isOpen}
+      isOpen
       onOpenChange={(open) => {
-        if (!open) dismiss.requestClose();
+        if (!open) onClose();
       }}
     >
-      <Modal.Backdrop onAnimationEnd={dismiss.onAnimationEnd} className="account-backdrop">
-        <Modal.Container>
-          <Modal.Dialog className="account-dialog credit-recharge-dialog">
-            <Modal.Header>
-              <Modal.Heading>{t.recharge}</Modal.Heading>
-              <Modal.CloseTrigger aria-label={t.closeRecharge}>
-                <UiIcon icon={IconX} size="action" />
-              </Modal.CloseTrigger>
-            </Modal.Header>
-            <Modal.Body>
-              <CreditPacks />
-            </Modal.Body>
+      <Modal.Backdrop className="fullscreen-dialog__backdrop credit-recharge-backdrop">
+        <Modal.Container className="fullscreen-dialog__container" size="full">
+          <Modal.Dialog className="credit-recharge-dialog">
+            <motion.div className="credit-recharge-surface" {...surfaceMotion}>
+              <Modal.Header className="credit-recharge-heading">
+                <Modal.Heading>{t.recharge}</Modal.Heading>
+                <p>{t.rechargeDescription}</p>
+                <DialogClose fullScreen label={t.closeRecharge} className="credit-recharge-close" />
+              </Modal.Header>
+              <Modal.Body className="credit-recharge-body">
+                <div className="credit-recharge-content">
+                  <CreditPacks />
+                </div>
+              </Modal.Body>
+            </motion.div>
           </Modal.Dialog>
         </Modal.Container>
       </Modal.Backdrop>

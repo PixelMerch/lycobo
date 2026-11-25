@@ -81,6 +81,8 @@ body:has(.legal-page) {
 }
 .legal-switch {
   display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
   gap: 4px;
   padding: 3px;
   border-radius: 999px;
@@ -142,6 +144,11 @@ body:has(.legal-page) {
   color: #ffffffb3;
   font-size: 15px;
   line-height: 28px;
+}
+.legal-section p > .link {
+  color: #f2f2f2;
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 /* 恢复语义列表的圆点，并与正文保持一致的中性灰。 */
 .legal-section ul {

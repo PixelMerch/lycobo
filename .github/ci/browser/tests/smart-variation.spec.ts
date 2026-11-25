@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { apiFixture, mockImageApi } from "./image-api-fixture";
+import { apiFixture, chooseWorkspaceTool, mockImageApi } from "./image-api-fixture";
 
 test.beforeEach(async ({ page }) => {
   await mockImageApi(page);
@@ -58,14 +58,8 @@ test("analysis requires text, preserves edited plans and submits only confirmed 
   await dialog.getByRole("button", { name: "删除方案 3", exact: true }).click();
   await expect(dialog).toContainText("已选 8 张");
   await dialog.getByRole("button", { name: "关闭生成计划", exact: true }).click();
-  await page
-    .getByRole("navigation", { name: "电商创作工具" })
-    .getByRole("button", { name: "主图制作", exact: true })
-    .click();
-  await page
-    .getByRole("navigation", { name: "电商创作工具" })
-    .getByRole("button", { name: "套图计划", exact: true })
-    .click();
+  await chooseWorkspaceTool(page, "主图制作");
+  await chooseWorkspaceTool(page, "套图计划");
   await page.getByRole("button", { name: "查看生成计划", exact: true }).click();
   await expect(dialog.getByRole("textbox", { name: "方案 1 名称", exact: true })).toHaveValue(
     "橙色桌面",
@@ -174,11 +168,10 @@ test("analysis shows progress, blocks repeated presses and opens normalized plan
   try {
     await expect(page.getByRole("region", { name: "正在生成套图计划", exact: true })).toBeVisible();
     await expect(button).toBeDisabled();
-    // 生成中文字不变，只出现加载图标（读屏说明“正在生成计划”），也不显示成禁用的灰色。
-    await expect(button.getByRole("status", { name: "正在生成计划" })).toBeVisible();
-    await expect(button).toContainText("立即生成");
-    await expect(button).not.toContainText("正在生成计划");
-    await expect(button).toHaveAttribute("data-submitting", "true");
+    await expect(button).toHaveAttribute("data-submit-state", "loading");
+    await expect(button.locator(".spinner")).toBeVisible();
+    await expect(button).toHaveText("");
+    await expect(page.locator(".variation-submit > [role=status]")).toHaveText("正在生成计划");
     await button.evaluate((node) => {
       if (node instanceof HTMLButtonElement) {
         node.click();
@@ -192,6 +185,8 @@ test("analysis shows progress, blocks repeated presses and opens normalized plan
   await expect(
     page.getByRole("region", { name: "确认每张图的中文提示词", exact: true }),
   ).toBeVisible();
+  await expect(button).toHaveAttribute("data-submit-state", "success");
+  await expect(button).toHaveAccessibleName("方案已生成");
   expect(calls).toBe(1);
 });
 
@@ -354,14 +349,20 @@ test("a per-image plan sends each item only its own uploaded picture", async ({ 
   await page.goto("/commerce/smart-variation");
   await page
     .getByLabel("添加参考图片", { exact: true })
-    .setInputFiles(["apps/web/public/studio/bedroom.webp", "apps/web/public/studio/lavender.webp"]);
+    .setInputFiles([
+      ".github/ci/browser/fixtures/studio/bedroom.webp",
+      ".github/ci/browser/fixtures/studio/lavender.webp",
+    ]);
   await expect(page.locator(".reference-tile")).toHaveCount(2);
+  await expect(
+    page.locator(".reference-tile").getByRole("button", { name: /更改角色/ }),
+  ).toHaveCount(0);
   await page
     .getByRole("textbox", { name: "创作需求", exact: true })
     .fill("图片比例变成9:16，其他保持不变");
   await page.getByRole("button", { name: "立即生成", exact: true }).click();
   const panel = page.getByRole("region", { name: "确认每张图的中文提示词", exact: true });
-  // 没有人标原图：方案 2 的“用图”只点亮第 2 张，第 1 张不发送。
+  // 方案 2 的“用图”按提示词只点亮第 2 张，第 1 张不发送。
   const secondImages = panel.getByRole("toolbar", { name: "方案 2 用图", exact: true });
   await expect(secondImages.getByRole("button", { name: "原图 2", exact: true })).toHaveAttribute(
     "aria-pressed",

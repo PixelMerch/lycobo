@@ -30,13 +30,14 @@ import {
 
 export const automaticVideoCost = emptyStoryboard.count * imageUnitCredits + videoUnitCredits;
 
+/** 恢复分镜草稿并管理首帧和视频生成任务的进度。 */
 export function useStoryboard(enabled: boolean, showPanel: (panel: "form" | "history") => void) {
   const owner = useEnterpriseSession().data ?? undefined;
   const scope = owner ? `${owner.organizationId}:${owner.userId}` : "";
   const draft = useStoryboardState((state) => state.drafts[scope]) ?? emptyStoryboard;
   const { progress } = draft;
   const client = useQueryClient();
-  const generation = useGenerateImage(enabled);
+  const generation = useGenerateImage({ enabled });
   const models = useImageModels(enabled);
   const videoModel = useVideoModel(enabled);
   const video = useSubmitVideo("storyboard");
@@ -106,7 +107,7 @@ export function useStoryboard(enabled: boolean, showPanel: (panel: "form" | "his
     unavailable,
     scope,
     needsResume,
-    /** The run holds its own copy from here on, so the form is free for the next draft. */
+    /** 任务已保存独立快照，表单可以编辑下一份草稿。 */
     handedOff: !!progress.batchId,
     remainingCost:
       progress.batchId || video.hasPending

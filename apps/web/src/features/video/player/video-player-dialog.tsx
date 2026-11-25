@@ -3,7 +3,7 @@ import { imageDeliverySchema } from "@lycoboai/contracts";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { useCenteredDialogMotion } from "../../../components/overlays/use-centered-dialog-motion";
+import { useCenteredDialogEntrance } from "../../../components/overlays/use-centered-dialog-entrance";
 import { useErrorToast } from "../../../lib/error-toast";
 import { imageRequest } from "../../generation/generation-client";
 import { ImagePreviewRail } from "../../image-workspace/image-preview-rail";
@@ -95,7 +95,7 @@ export function VideoPlayerDialog({
   onLoadMore?: (() => Promise<unknown>) | undefined;
 }) {
   const t = useMessages(videoPlayerMessages);
-  const { phase, requestClose, surfaceMotion } = useCenteredDialogMotion(onClose);
+  const surfaceMotion = useCenteredDialogEntrance();
   const surface = useRef<HTMLDivElement>(null);
   // 按 id 记住选中项：弹窗打开期间有任务完成，也不会改变当前选择。
   const [activeId, setActiveId] = useState(initialId);
@@ -132,18 +132,13 @@ export function VideoPlayerDialog({
     <Modal
       isOpen
       onOpenChange={(open) => {
-        if (!open) requestClose();
+        if (!open) onClose();
       }}
     >
       <Modal.Backdrop className="fullscreen-dialog__backdrop image-preview-backdrop">
         <Modal.Container size="full" className="fullscreen-dialog__container">
           <Modal.Dialog className="image-preview-dialog" aria-label={t.preview}>
-            <motion.div
-              ref={surface}
-              className="image-preview"
-              data-dialog-phase={phase}
-              {...surfaceMotion}
-            >
+            <motion.div ref={surface} className="image-preview" {...surfaceMotion}>
               <VideoPreviewStage key={active.id} video={active} />
               <VideoPreviewDetails video={active} />
               <ImagePreviewRail

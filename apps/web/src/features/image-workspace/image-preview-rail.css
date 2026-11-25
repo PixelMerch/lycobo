@@ -1,0 +1,78 @@
+/* 右侧浮动轨道覆盖在列表边缘，起点与首张缩略图平齐。 */
+.image-preview-rail-frame {
+  position: relative;
+  grid-column: 3;
+  grid-row: 1;
+  min-height: 0;
+}
+.image-preview-rail-frame > .lycobo-page-scrollbar--panel {
+  position: absolute;
+  inset-block-start: var(--image-preview-inset);
+  z-index: 1;
+}
+.image-preview-rail {
+  position: relative;
+  height: 100%;
+  padding: var(--image-preview-inset) 16px 24px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.image-preview-rail-items {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.image-preview-rail::-webkit-scrollbar {
+  display: none;
+}
+.image-preview-thumb.button {
+  width: 72px;
+  min-width: 72px;
+  height: 72px;
+  min-height: 72px;
+}
+.image-preview-thumb img {
+  display: block;
+}
+/* The selected ring also identifies keyboard focus, without a second outer ring. */
+.history-thumbnail.image-preview-thumb.button[aria-current="true"]:is(
+  :focus-visible,
+  [data-focus-visible="true"]
+) {
+  outline: none;
+  outline-offset: 0;
+}
+@media (max-width: 1279px) {
+  .image-preview-thumb.button {
+    width: 64px;
+    min-width: 64px;
+    height: 64px;
+    min-height: 64px;
+  }
+}
+@media (max-width: 1023px) {
+  .image-preview-rail-frame {
+    display: none;
+  }
+}
+@media (max-width: 767px) {
+  .image-preview-rail-frame {
+    display: block;
+    flex: none;
+    order: 2;
+  }
+  .image-preview-rail-frame > .lycobo-page-scrollbar--panel {
+    display: none;
+  }
+  .image-preview-rail {
+    height: auto;
+    padding: 0 16px 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .image-preview-rail-items {
+    flex-direction: row;
+  }
+}

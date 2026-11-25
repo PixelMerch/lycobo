@@ -1,0 +1,98 @@
+.main-content:has(> .creation-guide-page) {
+  padding: 0;
+}
+.creation-guide-page {
+  background: var(--studio-canvas);
+}
+.creation-guide-layout {
+  display: grid;
+  grid-template-columns: minmax(160px, 208px) minmax(0, 680px);
+  grid-template-areas: ". heading" "contents document";
+  justify-content: center;
+  align-items: start;
+  gap: 44px clamp(32px, 6vw, 88px);
+  width: min(1100px, 100% - 64px);
+  margin-inline: auto;
+  padding-block: clamp(36px, 6vw, 80px) clamp(64px, 9vw, 120px);
+}
+.creation-guide-heading {
+  grid-area: heading;
+}
+.creation-guide-heading h1 {
+  margin: 0;
+  font-size: clamp(32px, 4.5vw, 52px);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.025em;
+  line-height: 1.14;
+}
+.creation-guide-heading p {
+  margin: 14px 0 0;
+  color: #ababab;
+  font-size: var(--text-base);
+  line-height: 1.65;
+}
+.creation-guide-contents {
+  grid-area: contents;
+  position: sticky;
+  top: calc(var(--header-height) + 24px);
+}
+.creation-guide-contents p {
+  margin: 0 0 8px;
+  color: #ababab;
+  font-size: var(--text-sm);
+}
+.creation-guide-contents ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.creation-guide-contents .link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: var(--text-sm);
+}
+.creation-guide-document {
+  grid-area: document;
+  min-width: 0;
+}
+.creation-guide-section {
+  padding-block: 28px 32px;
+  border-top: 1px solid #ffffff24;
+}
+.creation-guide-section h2 {
+  scroll-margin-top: calc(var(--header-height) + 24px);
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  line-height: 1.4;
+}
+.creation-guide-section ol {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding-inline-start: 1.4em;
+  list-style: decimal;
+  color: #ccc;
+  font-size: var(--text-base);
+  line-height: 1.65;
+}
+.creation-guide-tool-link.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 8px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+@media (max-width: 690px) {
+  .creation-guide-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas: "heading" "contents" "document";
+    gap: 24px;
+    width: calc(100% - 40px);
+  }
+  .creation-guide-contents {
+    position: static;
+  }
+}

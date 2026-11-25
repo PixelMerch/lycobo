@@ -1,68 +1,44 @@
-import { create } from "zustand";
+import { dashboardToolPaths } from "../../lib/dashboard-paths";
+import { publicImageUrl } from "../../lib/public-image-url";
 import { useReplicaDraft } from "../commerce/replica/replica-state";
 import { useSmartVariationDraft } from "../commerce/smart-variation/smart-variation-state";
 import { useTextileSetDraft } from "../commerce/textile-set/textile-set-state";
 import { useStudioStore } from "../generation/studio-state";
 import { useVideoDraft } from "../video/video-state";
+import { workspaceToolHeroImages } from "./workspace-tool-categories";
 
 /** 四个电商工具的 id、路径和示例图；名称与用法文案在 workspace-tool-messages.ts。 */
 export const workspaceTools = [
   {
     id: "create",
-    path: "/commerce/create",
-    hero: "/studio/tool-heroes/create.webp",
-    examples: [
-      "/studio/models/image-2-1.webp",
-      "/studio/models/image-2-3.webp",
-      "/studio/models/image-2-5-2.webp",
-    ],
+    path: dashboardToolPaths.create,
+    hero: workspaceToolHeroImages.create,
   },
   {
     id: "textile",
-    path: "/commerce/textile-set",
-    hero: "/studio/tool-heroes/textile.webp",
+    path: dashboardToolPaths.textile,
     bannerImages: [
-      "/studio/textile-views/front.webp",
-      "/studio/textile-views/angled-level.webp",
-      "/studio/textile-views/pillow.webp",
-      "/studio/textile-views/bed-end.webp",
-      "/studio/textile-views/fabric.webp",
-    ],
-    examples: [
-      "/studio/textile-views/front.webp",
-      "/studio/textile-views/pillow.webp",
-      "/studio/textile-views/fabric.webp",
+      workspaceToolHeroImages.textile,
+      publicImageUrl("/landing/comforter-drape.webp"),
+      publicImageUrl("/landing/comforter-source.webp"),
+      publicImageUrl("/landing/comforter-folded.webp"),
+      publicImageUrl("/landing/comforter-stitch.webp"),
     ],
   },
   {
     id: "variation",
-    path: "/commerce/smart-variation",
-    hero: "/studio/tool-heroes/variation.webp",
-    examples: [
-      "/studio/bedroom-thumb.webp",
-      "/studio/lavender-thumb.webp",
-      "/studio/set-thumb.webp",
-    ],
+    path: dashboardToolPaths.variation,
+    hero: workspaceToolHeroImages.variation,
   },
   {
     id: "replica",
-    path: "/commerce/replica",
-    hero: "/studio/tool-heroes/create.webp",
-    examples: [
-      "/studio/textile-views/front.webp",
-      "/studio/textile-views/pillow.webp",
-      "/studio/textile-views/fabric.webp",
-    ],
+    path: dashboardToolPaths.replica,
+    hero: workspaceToolHeroImages.replica,
   },
   {
     id: "video",
-    path: "/video",
-    hero: "/studio/tool-heroes/video.webp",
-    examples: [
-      "/studio/models/image-2-5-2.webp",
-      "/studio/bedroom-thumb.webp",
-      "/studio/models/image-2-1.webp",
-    ],
+    path: dashboardToolPaths.video,
+    hero: publicImageUrl("/studio/tool-heroes/video.webp"),
   },
 ] as const;
 /** 视频未开放，创作入口只显示已启用的图片工具。 */
@@ -70,25 +46,17 @@ export const visibleWorkspaceTools = workspaceTools.filter((tool) => tool.id !==
 
 /** 根据业务路径找到当前工具。 */
 export const toolForPath = (path: string) =>
-  workspaceTools.find((tool) => tool.path === path) ?? workspaceTools[0];
-export const useWorkspaceState = create<{
-  lastPath: string;
-  setLastPath: (path: string) => void;
-}>((set) => ({
-  lastPath: "/commerce/create",
-  setLastPath: (lastPath) => set({ lastPath }),
-}));
-
+  workspaceTools.find((tool) => tool.path === path.replace(/\/+$/, "")) ?? workspaceTools[0];
 function referencesForPath(path: string) {
-  if (path === "/commerce/textile-set") {
+  if (path === dashboardToolPaths.textile) {
     const textile = useTextileSetDraft.getState();
     return [textile.mainImage, ...textile.detailImages].filter((image) => image !== null);
   }
-  if (path === "/commerce/smart-variation") return useSmartVariationDraft.getState().references;
-  if (path === "/commerce/replica") {
+  if (path === dashboardToolPaths.variation) return useSmartVariationDraft.getState().references;
+  if (path === dashboardToolPaths.replica) {
     return useReplicaDraft.getState().products;
   }
-  if (path === "/video") {
+  if (path === dashboardToolPaths.video) {
     const video = useVideoDraft.getState();
     return [video.firstFrame, video.lastFrame, ...video.extraReferences].filter(
       (image) => image !== null,
@@ -108,18 +76,18 @@ export function shareProductReference(from: string, to: string) {
   const mainImage = references[0];
   if (!mainImage) return;
   const destinationHasReferences = !!studio.drafts[studio.activeModel]?.references.length;
-  if (to === "/commerce/replica" && !useReplicaDraft.getState().products.length) {
+  if (to === dashboardToolPaths.replica && !useReplicaDraft.getState().products.length) {
     useReplicaDraft.getState().update({ products: [mainImage] });
-  } else if (to === "/commerce/create" && !destinationHasReferences) {
+  } else if (to === dashboardToolPaths.create && !destinationHasReferences) {
     studio.updateDraft(studio.activeModel, { references: references.slice(0, 5) });
-  } else if (to === "/commerce/textile-set" && !textile.mainImage) {
+  } else if (to === dashboardToolPaths.textile && !textile.mainImage) {
     textile.update({
       mainImage,
       ...(textile.detailImages.length ? {} : { detailImages: references.slice(1, 6) }),
     });
-  } else if (to === "/commerce/smart-variation" && !variation.references.length) {
+  } else if (to === dashboardToolPaths.variation && !variation.references.length) {
     variation.update({ references: references.slice(0, 5) });
-  } else if (to === "/video" && !video.firstFrame) {
+  } else if (to === dashboardToolPaths.video && !video.firstFrame) {
     video.update({ firstFrame: mainImage, reuseReferences: false });
   }
 }

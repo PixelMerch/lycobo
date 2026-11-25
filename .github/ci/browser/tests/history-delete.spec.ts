@@ -82,6 +82,7 @@ for (const path of ["/commerce/create", "/commerce/textile-set"]) {
     await button.click();
     const dialog = page.getByRole("dialog", { name: "删除这条历史记录？" });
     await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText("素材仍在素材库。进行中的任务继续，积分不退。");
     await dialog.getByRole("button", { name: "取消", exact: true }).click();
     await expect(dialog).toBeHidden();
     expect(deletions).toBe(0);

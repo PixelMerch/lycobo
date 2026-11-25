@@ -13,6 +13,7 @@ const user = {
 };
 const auth: EnterpriseAuth = {
   config: { secret: "x".repeat(40), origins: ["https://app.test"], secureCookie: true },
+  verifyLoginChallenge: async () => false,
   login: async () => ({ error: "INVALID_CREDENTIALS" as const }),
   refresh: async () => null,
   authenticate: async (token) =>

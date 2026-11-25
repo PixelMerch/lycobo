@@ -23,6 +23,22 @@ const principalRow = z.object({
   nickname: z.string().nullable(),
   social: z.boolean(),
 });
+const passwordLockSeconds = 3600;
+const passwordFailureLimit = 5;
+const passwordFailureKey = (account: string) =>
+  createHash("sha256").update(`password-login:${account}`).digest("hex");
+
+async function readPasswordLock(sql: postgres.ISql, key: string) {
+  const [row] = await sql`select ceil(extract(epoch from
+      (window_start + ${passwordLockSeconds} * interval '1 second' - clock_timestamp()))) as retry_after
+    from login_rate_limits where key=${key} and attempts>=${passwordFailureLimit}`;
+  return Math.max(0, z.coerce.number().parse(row?.retry_after ?? 0));
+}
+
+function lockPasswordState(sql: postgres.TransactionSql, key: string) {
+  // 密码哈希验证在事务外完成；只串行化失败计数与会话签发。
+  return sql`select pg_advisory_xact_lock(hashtextextended(${key}::text,0))`;
+}
 export type EnterpriseCredential = z.infer<typeof accountRow>;
 export type EnterpriseIdentity = ImagePrincipal & {
   account: string;
@@ -31,6 +47,58 @@ export type EnterpriseIdentity = ImagePrincipal & {
   avatarPreset?: string | null;
   preferredLocale?: AccountLocale | null;
 };
+function passwordLoginState(sql: postgres.Sql) {
+  return {
+    /** 对成功兑换的令牌只接收一次，覆盖验证服务的并发传播窗口。 */
+    async claimPasswordChallenge(token: string) {
+      const key = createHash("sha256").update(`password-challenge:${token}`).digest("hex");
+      const rows = await sql`insert into login_rate_limits (key,window_start,attempts)
+        values (${key},now(),1) on conflict (key) do nothing returning key`;
+      return rows.length === 1;
+    },
+    /** 返回密码登录锁的剩余秒数，以数据库时钟为准。 */
+    passwordLoginRetryAfter: (account: string) =>
+      readPasswordLock(sql, passwordFailureKey(account)),
+    /** 连续失败达到阈值时锁定，锁定期间的尝试不延长时限。 */
+    async recordPasswordFailure(account: string) {
+      const key = passwordFailureKey(account);
+      return sql.begin(async (tx) => {
+        await lockPasswordState(tx, key);
+        const retryAfter = await readPasswordLock(tx, key);
+        if (retryAfter) return retryAfter;
+        const [row] = await tx`insert into login_rate_limits (key,window_start,attempts)
+          values (${key},clock_timestamp(),1)
+          on conflict (key) do update set
+            attempts=case when login_rate_limits.window_start <= clock_timestamp()-${passwordLockSeconds}*interval '1 second'
+              then 1 else login_rate_limits.attempts+1 end,
+            window_start=clock_timestamp()
+          returning attempts`;
+        return z.coerce.number().parse(row?.attempts) >= passwordFailureLimit
+          ? passwordLockSeconds
+          : 0;
+      });
+    },
+    /** 在同一事务中确认账号未锁定、签发会话并清除连续失败记录。 */
+    async createSession(
+      id: string,
+      credential: EnterpriseCredential,
+      expiresAt: Date,
+      refreshTokenHash: string | null = null,
+    ) {
+      const key = passwordFailureKey(credential.account);
+      return sql.begin(async (tx) => {
+        await lockPasswordState(tx, key);
+        if (await readPasswordLock(tx, key)) return false;
+        const rows =
+          await tx`insert into enterprise_sessions (id,account_id,expires_at,credential_version,refresh_token_hash)
+          select ${id},id,${expiresAt},credential_version,${refreshTokenHash} from enterprise_accounts where id=${credential.id} and disabled_at is null and password_hash=${credential.password_hash} returning id`;
+        if (!rows.length) return false;
+        await tx`delete from login_rate_limits where key=${key}`;
+        return true;
+      });
+    },
+  };
+}
 /** 打开企业账号数据访问：登录限流、凭据、会话、身份、改密与个人偏好。 */
 export function openAuthRepository(url: string, edge = false) {
   const sql = postgres(url, {
@@ -51,13 +119,15 @@ export function openAuthRepository(url: string, edge = false) {
   };
   return {
     close: () => sql.end({ timeout: 5 }),
-    async allowLogin(account: string) {
+    async allowLogin(account?: string) {
       if (!(await consume("global", 60, 200))) return false;
-      // 只保存账号标识的哈希；不保存提交的密码或原始请求体。
-      const key = createHash("sha256").update(account).digest("hex");
       await sql`delete from login_rate_limits where window_start < now()-interval '1 day'`;
-      return consume(key, 900, 10);
+      return (
+        account === undefined ||
+        consume(createHash("sha256").update(account).digest("hex"), 900, 10)
+      );
     },
+    ...passwordLoginState(sql),
     /** 分别限制邮箱和连接来源，共用已有的原子计数表。 */
     async allowEmailCode(email: string, address: string, action: "send" | "verify") {
       const key = (kind: string, value: string) =>
@@ -72,17 +142,6 @@ export function openAuthRepository(url: string, edge = false) {
       const rows =
         await sql`select id,account,user_id,organization_id,password_hash from enterprise_accounts where account=${account} and disabled_at is null`;
       return rows[0] ? accountRow.parse(rows[0]) : null;
-    },
-    async createSession(
-      id: string,
-      credential: EnterpriseCredential,
-      expiresAt: Date,
-      refreshTokenHash: string | null = null,
-    ) {
-      const rows =
-        await sql`insert into enterprise_sessions (id,account_id,expires_at,credential_version,refresh_token_hash)
-        select ${id},id,${expiresAt},credential_version,${refreshTokenHash} from enterprise_accounts where id=${credential.id} and disabled_at is null and password_hash=${credential.password_hash} returning id`;
-      return rows.length === 1;
     },
     async identity(sessionId: string): Promise<EnterpriseIdentity | null> {
       const rows = await sql`select coalesce(a.account,p.email,u.uid) as account,

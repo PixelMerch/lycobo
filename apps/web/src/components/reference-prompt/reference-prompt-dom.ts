@@ -68,6 +68,7 @@ export function placeCursor(editor: HTMLElement, offset: number) {
 }
 
 export type PromptReference = { id: string; src: string; name?: string; assetId?: string };
+export type MentionInsertion = { start: number; end: number; value: string };
 
 export function referenceFor(text: string, references: readonly PromptReference[]) {
   if (!/^@图片[1-9]\d*$/.test(text)) return undefined;
@@ -109,7 +110,11 @@ function editorMatches(
   return readPrompt(editor) === value && sameChips && sameAtSigns;
 }
 
-function buildPromptFragment(parts: string[], references: readonly PromptReference[]) {
+function buildPromptFragment(
+  parts: string[],
+  references: readonly PromptReference[],
+  insertion: MentionInsertion | null,
+) {
   const fragment = document.createDocumentFragment();
   let offset = 0;
   for (const text of parts) {
@@ -133,6 +138,9 @@ function buildPromptFragment(parts: string[], references: readonly PromptReferen
     chip.contentEditable = "false";
     chip.dataset.reference = text;
     chip.dataset.imageId = image.id;
+    if (insertion && start >= insertion.start && offset <= insertion.end) {
+      chip.dataset.mentionInserted = "";
+    }
     const thumbnail = document.createElement("img");
     thumbnail.src = image.src;
     thumbnail.alt = "";
@@ -144,6 +152,7 @@ function buildPromptFragment(parts: string[], references: readonly PromptReferen
   return fragment;
 }
 
+/** 同步编辑器中的图片胶囊，仅标记本次通过选择器插入的引用。 */
 export function synchronizePrompt(
   editor: HTMLElement,
   value: string,
@@ -151,11 +160,12 @@ export function synchronizePrompt(
   references: readonly PromptReference[],
   cursor: number,
   focusPending: boolean,
+  insertion: MentionInsertion | null,
 ) {
   if (editorMatches(editor, value, parts, references)) return;
   const focused = document.activeElement === editor;
   const offset = focused ? selectionOffset(editor) : cursor;
-  editor.replaceChildren(buildPromptFragment(parts, references));
+  editor.replaceChildren(buildPromptFragment(parts, references, insertion));
   if (focused || focusPending) placeCursor(editor, offset);
 }
 

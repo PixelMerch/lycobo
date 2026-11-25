@@ -2,8 +2,9 @@ import { Button } from "@heroui/react";
 import { useState } from "react";
 import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
 import { useMessages } from "../../../i18n/messages";
+import { HistoryPromptContent } from "../../generation/history/history-prompt-content";
 import { ReferenceThumbnails } from "../../generation/references/reference-thumbnails";
-import { VideoHistoryMeta, VideoHistoryPrompt } from "../history/video-task-card";
+import { VideoHistoryMeta } from "../history/video-task-card";
 import { videoMessages } from "../video-messages";
 import type { Production } from "./video-production-progress";
 import { VideoProductionProgress } from "./video-production-progress";
@@ -38,7 +39,7 @@ export function VideoProductionCard({ production }: { production: Production }) 
         )}
       </header>
       <div className="history-prompt">
-        {description && <VideoHistoryPrompt text={description} />}
+        {description && <HistoryPromptContent text={description} />}
         {assetIds.length === references.length ? (
           <ReferenceThumbnails ids={assetIds} label={t.videoReferences} />
         ) : (

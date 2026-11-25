@@ -34,7 +34,8 @@ for (const width of [390, 1440, 1920, 2560]) {
     }
     if (mobile) {
       const menuButton = await page.locator(".mobile-menu").boundingBox();
-      expect(menuButton?.x).toBeCloseTo(12, 0);
+      const logo = await page.locator(".public-site-brand").boundingBox();
+      expect(logo && menuButton && menuButton.x >= logo.x + logo.width).toBe(true);
       // Signed in, the account lives at the foot of the navigation drawer on phones.
       await page.getByRole("button", { name: "打开导航", exact: true }).click();
     }

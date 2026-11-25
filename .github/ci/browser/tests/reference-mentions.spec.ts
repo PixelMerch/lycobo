@@ -153,8 +153,11 @@ test("mention popup stays by the green at-sign and directly inserts up to five i
   const option = menu.getByRole("option").first();
   await search.focus();
   await expect(option).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  const highlight = menu.locator(".reference-mention-highlight");
+  await expect(highlight).toHaveCSS("opacity", "0");
   await option.hover();
-  await expect(option).toHaveCSS("background-color", "rgb(60, 60, 60)");
+  await expect(option).toHaveAttribute("data-hovered", "true");
+  await expect(highlight).toHaveCSS("opacity", "1");
   await page.screenshot({ path: "/tmp/lycobo-reference-direct-mobile.png" });
   for (let index = 0; index < 5; index++) {
     if (index > 0) {
@@ -192,7 +195,10 @@ test("files stay local until generation and partial upload retries reuse success
   await page.goto("/commerce/create");
   await page
     .getByLabel("添加参考图片", { exact: true })
-    .setInputFiles(["apps/web/public/studio/bedroom.webp", "apps/web/public/studio/lavender.webp"]);
+    .setInputFiles([
+      ".github/ci/browser/fixtures/studio/bedroom.webp",
+      ".github/ci/browser/fixtures/studio/lavender.webp",
+    ]);
   await expect(page.locator(".reference-tile")).toHaveCount(2);
   expect(uploads).toBe(0);
   await page.locator(".prompt-field").getByRole("textbox").fill("保留商品，更换背景");

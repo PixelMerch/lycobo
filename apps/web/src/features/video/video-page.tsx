@@ -1,9 +1,10 @@
 import { Button, Spinner } from "@heroui/react";
 import { storyboardOriginalImageLimit, videoUnitCredits } from "@lycoboai/contracts";
-import { CreditCoin } from "../../components/credit-coin";
+import { IconSparkle } from "@tabler/icons-react";
 import { ReferencePrompt } from "../../components/reference-prompt/reference-prompt";
+import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
-import { HomeRatioPicker } from "../generation/composer/ratio-picker";
+import { AspectRatioField } from "../generation/composer/ratio-picker";
 import { revealNewestHistory } from "../generation/history/history-navigation";
 import { hasPromptDescription } from "../generation/references/prompt-description";
 import { ReferencePicker } from "../generation/references/reference-picker";
@@ -75,20 +76,15 @@ export function VideoPage() {
         />
         {!automatic && (
           <>
-            <section className="parameter-group video-ratio">
-              <div className="ratio-heading">
-                <h2>{t.aspectRatio}</h2>
-                <span className="ratio-current">{draft.ratio}</span>
-              </div>
-              <HomeRatioPicker
-                value={draft.ratio}
-                ratios={videoRatios}
-                onChange={(next) => {
-                  const ratio = videoRatios.find((value) => value === next);
-                  if (ratio) draft.update({ ratio });
-                }}
-              />
-            </section>
+            <AspectRatioField
+              label={t.aspectRatio}
+              value={draft.ratio}
+              ratios={videoRatios}
+              onChange={(next) => {
+                const ratio = videoRatios.find((value) => value === next);
+                if (ratio) draft.update({ ratio });
+              }}
+            />
             <VideoDuration
               value={draft.seconds}
               onChange={(seconds) => draft.update({ seconds })}
@@ -187,7 +183,7 @@ function VideoGeneration({
         {previousVideo ?? submitLabel}
         {!previousVideo && (
           <span className="generate-credit-cost">
-            <CreditCoin size="default" />
+            <UiIcon icon={IconSparkle} />
             {automatic ? automaticVideoCost : videoUnitCredits}
           </span>
         )}

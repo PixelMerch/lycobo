@@ -206,9 +206,9 @@ function useRepairSubmission({
 }) {
   const submissionLock = useRef(false);
   return async () => {
-    if (submissionLock.current || !ready) return;
+    if (submissionLock.current || !ready) return false;
     const prompt = repairPrompt(regions, width, height);
-    if (!ownPending && prompt.length > 9000) return;
+    if (!ownPending && prompt.length > 9000) return false;
     submissionLock.current = true;
     try {
       const submitted = await generate.mutateAsync({
@@ -232,8 +232,10 @@ function useRepairSubmission({
         },
       });
       onAccepted(submitted.id);
+      return true;
     } catch {
       /* 共享的错误提示与待提交记录会保留这次付费请求的原样，这里不再重复处理。 */
+      return false;
     } finally {
       submissionLock.current = false;
     }
@@ -258,7 +260,7 @@ function useRepairTasks(assetId: string, imageError: string | null) {
   const draft = localDraft ?? emptyRepairDraft;
   const update = useRepairDrafts((state) => state.update);
   const models = useImageModels();
-  const generate = useGenerateImage();
+  const generate = useGenerateImage({ successFeedback: "button" });
   const pending = usePendingSubmission(session.data);
   const ownPending =
     !!session.data && pending && pendingSubmissionSource(session.data) === `repair:${assetId}`;
@@ -276,7 +278,7 @@ function useRepairTasks(assetId: string, imageError: string | null) {
     const saved = latest.data?.job;
     const edit = saved?.input?.localEdit;
     if (!saved || !edit || localDraft || useRepairDrafts.getState().drafts[key]) return;
-    // A saved submission is history, not an unsaved editing draft.
+    // 已提交的任务只恢复为历史记录，编辑区从空白草稿开始。
     update(key, { regions: [], jobId: saved.id });
     setSelected(null);
   }, [latest.data, key, update, localDraft]);

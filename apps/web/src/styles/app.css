@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "@heroui/styles";
+@import "./studio-palette.css";
 @import "./studio-theme.css";
+@import "../app/site-header-appearance.css";
 @import "./studio-shell.css";
 @import "./studio-landing-and-overlays.css";
 @import "./workspace/studio-workspace-form.css";

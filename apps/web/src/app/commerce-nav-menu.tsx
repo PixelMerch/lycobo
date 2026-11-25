@@ -2,9 +2,11 @@ import { Dropdown } from "@heroui/react";
 import { IconChevronDown } from "@tabler/icons-react";
 import { UiIcon } from "../components/ui-icon";
 import {
-  shareProductReference,
-  visibleWorkspaceTools,
-} from "../features/workspace/workspace-state";
+  commercePath,
+  commerceToolFromSearch,
+  commerceToolHref,
+  commerceTools,
+} from "../features/commerce/commerce-tools";
 import { workspaceToolMessages } from "../features/workspace/workspace-tool-messages";
 import { toolIcons } from "../features/workspace/workspace-tool-symbol";
 import { useMessages } from "../i18n/messages";
@@ -12,50 +14,59 @@ import { useAppLocation, useAppNavigate } from "../i18n/use-localized-navigation
 import { useHoverMenu } from "../lib/use-hover-menu";
 import { shellMessages } from "./shell-messages";
 
-/**
- * 顶部栏“电商”入口：点击或按键展开四个创作工具，选中后进入工具，并沿用工具坞只向空图片槽带图的规则。
- * 鼠标经过不展开，免得移向工作区时弹出的菜单挡住参数栏和任务。
- */
-export function CommerceNavMenu({ active }: { active: boolean }) {
-  const { pathname } = useAppLocation();
+/** 顶部电商菜单只列出可用的电商工具。 */
+export function CommerceNavMenu({ homeGlass }: { homeGlass: boolean }) {
+  const { pathname, search } = useAppLocation();
   const navigate = useAppNavigate();
   const menu = useHoverMenu();
   const t = useMessages(shellMessages);
   const toolText = useMessages(workspaceToolMessages);
-  function openTool(key: string | number) {
-    const tool = visibleWorkspaceTools.find((item) => item.id === key);
-    if (!tool) return;
+  const active = pathname === commercePath;
+  const selected = commerceToolFromSearch(search).id;
+
+  function openEntry(key: string | number) {
     menu.close();
-    shareProductReference(pathname, tool.path);
-    void navigate(tool.path);
+    const tool = commerceTools.find(({ id }) => id === key);
+    if (tool) void navigate(commerceToolHref(tool.id));
   }
+
   return (
     <Dropdown isOpen={menu.isOpen} onOpenChange={menu.onOpenChange}>
       <Dropdown.Trigger
         ref={menu.triggerRef}
         className={`nav-row topbar-menu-trigger${active ? " active" : ""}`}
+        onHoverStart={(event) => {
+          if (event.pointerType === "mouse") menu.openOnHover();
+        }}
+        onHoverEnd={menu.closeSoon}
       >
         <span className="nav-label">{t.commerce}</span>
         <UiIcon icon={IconChevronDown} size="small" className="topbar-menu-chevron" />
       </Dropdown.Trigger>
       <Dropdown.Popover
         ref={menu.popoverRef}
-        className="topbar-menu header-menu"
+        className={`topbar-menu header-menu${homeGlass ? " home-header-glass" : ""}`}
         placement="bottom start"
         offset={4}
         isNonModal
+        onPointerEnter={menu.cancelClose}
+        onPointerLeave={menu.closeSoon}
       >
-        <Dropdown.Menu aria-label={t.commerceTools} onAction={openTool}>
-          {visibleWorkspaceTools.map((tool) => (
+        <Dropdown.Menu
+          aria-label={t.commerceTools}
+          onAction={openEntry}
+          {...(menu.openedByHover ? { autoFocus: false } : {})}
+        >
+          {commerceTools.map((tool) => (
             <Dropdown.Item
               key={tool.id}
               id={tool.id}
-              textValue={toolText.tools[tool.id].name}
+              textValue={tool.id === "replica" ? t.replica : toolText.tools[tool.id].name}
               className="topbar-menu-item"
-              data-current={pathname === tool.path || undefined}
+              data-current={(active && selected === tool.id) || undefined}
             >
               <UiIcon icon={toolIcons[tool.id]} size="navigation" />
-              <span>{toolText.tools[tool.id].name}</span>
+              <span>{tool.id === "replica" ? t.replica : toolText.tools[tool.id].name}</span>
             </Dropdown.Item>
           ))}
         </Dropdown.Menu>

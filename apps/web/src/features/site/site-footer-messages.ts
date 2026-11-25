@@ -1,25 +1,31 @@
 import { defineMessages } from "../../i18n/messages";
 
-/** 页脚链接分组、社交平台名称与版权，法律名称复用对应文案。 */
+/** 公共页脚的导航名称、分组标题与简短政策链接。 */
 export const siteFooterMessages = defineMessages({
   "zh-CN": {
-    homeLink: "Lycobo 首页",
     navigation: "页脚导航",
-    tools: "图片创作",
-    space: "工作空间",
-    socialMedia: "社交媒体",
-    socialNames: { x: "X", youtube: "YouTube", instagram: "Instagram", tiktok: "TikTok" },
-    links: { workspace: "工作区", assets: "素材库", membership: "会员订阅" },
-    copyright: (year: number) => `© ${year} Lycobo。保留所有权利。`,
+    tools: "创作工具",
+    workspace: "工作空间",
+    resources: "资源",
+    policies: "政策",
+    faq: "常见问题",
+    recharge: "积分充值",
+    terms: "用户协议",
+    privacy: "隐私政策",
+    refunds: "退款政策",
+    copyright: (year: number) => `© ${year} Lycobo`,
   },
   en: {
-    homeLink: "Lycobo home",
     navigation: "Footer navigation",
-    tools: "Create images",
-    space: "Your space",
-    socialMedia: "Social media",
-    socialNames: { x: "X", youtube: "YouTube", instagram: "Instagram", tiktok: "TikTok" },
-    links: { workspace: "Workspace", assets: "Assets", membership: "Membership" },
-    copyright: (year) => `© ${year} Lycobo. All rights reserved.`,
+    tools: "Create",
+    workspace: "Workspace",
+    resources: "Resources",
+    policies: "Policies",
+    faq: "FAQ",
+    recharge: "Buy credits",
+    terms: "Terms",
+    privacy: "Privacy",
+    refunds: "Refunds",
+    copyright: (year: number) => `© ${year} Lycobo`,
   },
 });

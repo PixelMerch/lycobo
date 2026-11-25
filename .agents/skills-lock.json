@@ -18,5 +18,15 @@
     "repository": "heroui-inc/heroui",
     "path": "skills/heroui-react",
     "commit": "2e65a8b5a9043d62a5eaf9e5425de0be53861f37"
+  },
+  {
+    "source": "user-provided",
+    "sourceType": "local",
+    "path": "skills/ecommerce-landing",
+    "filesSha256": {
+      "SKILL.md": "22719349be43f6094508f2410c487eb7f38894fb2dd676d565f4f23d317f2496",
+      "agents/openai.yaml": "557c8acf590b31e13ac7684225f0be3bfe6e5564182b37291e575304176c22b4",
+      "references/original-prompt.md": "cb957ae1f8f606f7c420c7f1c9cdc1b7e00b0ff2c9515a71e480a14f588bd7f5"
+    }
   }
 ]

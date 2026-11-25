@@ -1,0 +1,84 @@
+/* 站点顶栏与工作区共用品牌尺寸和交互配色。 */
+:root {
+  --public-site-header-gutter: clamp(20px, 2.5vw, 36px);
+  --site-header-button-fill: var(--fill-medium, #ffffff14);
+  --site-header-nav-hover-fill: #ffffff24;
+  --workspace-tool-selected-fill: #303030;
+  --site-header-scroll-background: color-mix(in srgb, var(--studio-canvas) 38%, transparent);
+  --site-header-scroll-blur: blur(8px);
+  --site-header-menu-hover-fill: #ffffff0f;
+  --site-header-menu-background: rgb(50 50 50 / 90%);
+  --site-header-menu-blur: blur(14px);
+}
+
+:is(.public-site-brand-art, .workspace-site-brand) {
+  --site-brand-art-width: 155px;
+  --site-brand-wordmark-scale: 0.88;
+  --site-brand-wordmark-offset: -3%;
+}
+.topbar.public-site-header {
+  padding-inline: 28px;
+}
+.workspace-site-brand {
+  --site-brand-wordmark-offset: 0%;
+}
+:is(.public-site-brand, .workspace-site-brand).link {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 112px;
+  height: 46px;
+}
+.public-site-brand-art > :is(img, canvas),
+.workspace-site-brand > img {
+  width: var(--site-brand-art-width);
+  max-width: none;
+  height: 100%;
+  object-fit: contain;
+}
+.public-site-wordmark,
+.workspace-site-brand > img {
+  clip-path: inset(0 0 0 24%);
+  transform-origin: left center;
+  transform: translateX(calc(-23% + var(--site-brand-wordmark-offset)));
+  scale: var(--site-brand-wordmark-scale);
+}
+@media (max-width: 767px) {
+  .topbar.public-site-header {
+    padding-inline: 8px;
+  }
+  :is(.public-site-brand, .workspace-site-brand).link {
+    width: 72px;
+    height: 36px;
+  }
+  :is(.public-site-brand-art, .workspace-site-brand) {
+    --site-brand-art-width: 122px;
+  }
+}
+@media (max-width: 374px) {
+  .topbar.public-site-header {
+    padding-inline: 4px;
+  }
+  :is(.public-site-brand, .workspace-site-brand).link {
+    width: 66px;
+  }
+  :is(.public-site-brand-art, .workspace-site-brand) {
+    --site-brand-art-width: 100px;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --site-header-scroll-background: var(--studio-canvas);
+    --site-header-scroll-blur: none;
+    --site-header-menu-background: #2b2b2b;
+    --site-header-menu-blur: none;
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  :root {
+    --site-header-scroll-background: var(--studio-canvas);
+    --site-header-menu-background: #2b2b2b;
+  }
+}

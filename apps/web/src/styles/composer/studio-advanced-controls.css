@@ -137,8 +137,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .generation-submit .spinner,
-  .variation-generate .spinner {
+  .generation-submit .spinner {
     animation: none;
   }
 }
@@ -186,8 +185,7 @@
 .home-ratio-track .toggle-button .ratio-preview {
   margin: 0;
 }
-.composer-panel .home-ratio-track .toggle-button,
-.home-settings-options .home-ratio-track .toggle-button {
+.composer-panel .home-ratio-track .toggle-button {
   padding: 0;
   background: transparent;
 }

@@ -3,7 +3,7 @@
   background: transparent;
   backdrop-filter: none;
 }
-/* 纯黑遮罩单独淡出，与图片一起退场。 */
+/* 纯黑遮罩与图片浏览层一起入场。 */
 .browse-image-backdrop::before {
   content: "";
   position: absolute;
@@ -11,9 +11,6 @@
   pointer-events: none;
   background: var(--image-preview-background);
   animation: browse-image-backdrop-in 300ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
-}
-.modal__backdrop.browse-image-backdrop[data-dialog-phase="closed"]::before {
-  animation: browse-image-backdrop-out var(--dialog-close-duration) var(--dialog-close-ease) both;
 }
 @keyframes browse-image-backdrop-in {
   from {
@@ -23,25 +20,15 @@
     opacity: 1;
   }
 }
-@keyframes browse-image-backdrop-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-/* HeroUI's own 150ms/100ms backdrop timeline would double-fade the layer. */
-.modal__backdrop.browse-image-backdrop[data-entering="true"],
-.modal__backdrop.browse-image-backdrop[data-exiting="true"] {
+/* 浏览器的黑色遮罩单独入场，避免和 HeroUI 默认动画叠加。 */
+.modal__backdrop.browse-image-backdrop[data-entering="true"] {
   animation: none;
   opacity: 1;
 }
 .modal__container.browse-image-container {
   position: relative;
 }
-.modal__container.browse-image-container[data-entering="true"],
-.modal__container.browse-image-container[data-exiting="true"] {
+.modal__container.browse-image-container[data-entering="true"] {
   animation: none;
   opacity: 1;
   transform: none;
@@ -259,8 +246,7 @@
   .browse-image-picture {
     transition: none;
   }
-  .browse-image-backdrop::before,
-  .modal__backdrop.browse-image-backdrop[data-dialog-phase="closed"]::before {
+  .browse-image-backdrop::before {
     animation: none;
     opacity: 1;
   }

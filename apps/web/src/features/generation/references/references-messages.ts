@@ -7,14 +7,6 @@ import { defineMessages } from "../../../i18n/messages";
 export const referencesMessages = defineMessages({
   "zh-CN": {
     imageName: (number: number) => `图片${number}`,
-    roles: { product: "商品", source: "原图", style: "风格" },
-    roleHints: {
-      product: "保持商品外观不变",
-      source: "要处理的图，每条方案对应自己的原图",
-      style: "只借鉴光线、色调和构图",
-    },
-    chooseRole: (name: string) => `${name}的角色`,
-    roleOfImage: (name: string, role: string) => `${name}：${role}，更改角色`,
     processingFailed: "参考图处理失败，请重新导出为 PNG、JPEG 或 WebP 后重试。",
     stillProcessing: "参考图仍在处理中，请稍后在素材库查看后重试。",
     cannotDecode: (position: number) =>
@@ -79,14 +71,6 @@ export const referencesMessages = defineMessages({
   },
   en: {
     imageName: (number) => `Image ${number}`,
-    roles: { product: "Product", source: "Source", style: "Style" },
-    roleHints: {
-      product: "Keep the product exactly as it looks",
-      source: "An image to process; each plan item uses its own source",
-      style: "Borrow only lighting, color and composition",
-    },
-    chooseRole: (name) => `Role of ${name}`,
-    roleOfImage: (name, role) => `${name}: ${role}. Change role`,
     processingFailed:
       "The reference image couldn't be processed. Export it again as PNG, JPEG or WebP and retry.",
     stillProcessing:

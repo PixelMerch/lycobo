@@ -10,7 +10,6 @@ import { queryClient } from "./lib/query-client";
 // 普惠体随站点自托管，按字重和字符切片，浏览器只下载实际用到的字。
 import "./styles/fonts/puhuiti.css";
 import "./styles/app.css";
-import "./styles/loading.css";
 import "./styles/toast.css";
 
 const container = document.getElementById("root");

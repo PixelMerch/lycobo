@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router";
 import { PageLoading } from "../../app/page-loading";
+import { useCenteredDialogEntrance } from "../../components/overlays/use-centered-dialog-entrance";
 import { UiIcon } from "../../components/ui-icon";
 import { parseLocale } from "../../i18n/locale";
 import { localizedPath } from "../../i18n/locale-path";
@@ -15,18 +16,18 @@ import { legalMessages } from "../legal/legal-messages";
 import { useEnterpriseSession } from "./auth-client";
 import { authMessages } from "./auth-messages";
 import { EnterpriseLogin } from "./enterprise-login";
-import { LoginBackdrop } from "./login-backdrop";
 import { LoginMethods } from "./login-methods";
 import { safeLoginReturnTo } from "./login-navigation";
-import "../../styles/brand.css";
 import "./login-page.css";
 
-/** 独立全屏登录页：丝绸背景上居中一张登录卡片，以翻面切换登录方式，不叠加两套表单。 */
+/** 独立登录页在桌面展示双栏卡片，并处理登录成功和关闭后的导航。 */
 export function LoginPage() {
   const session = useEnterpriseSession();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const locale = useLocale();
+  const surfaceMotion = useCenteredDialogEntrance();
+  const backdropPress = useRef<{ id: number; x: number; y: number } | null>(null);
   const returnTo = safeLoginReturnTo(params.get("returnTo"));
   const destination = (user: EnterpriseIdentity) =>
     localizedPath(returnTo, parseLocale(user.preferredLocale) ?? locale);
@@ -38,20 +39,59 @@ export function LoginPage() {
         socialSignedIn={params.get("oauth") === "success"}
       />
     );
+  const closeLogin = () => {
+    void navigate(localizedPath("/", locale), { replace: true });
+  };
   return (
-    <main className="login-page" aria-labelledby="login-title">
-      <LoginBackdrop />
-      <LoginCard
-        returnTo={localizedPath(returnTo, locale)}
-        socialFailed={params.get("oauth") === "failed"}
-        onClose={() => {
-          void navigate(localizedPath("/", locale), { replace: true });
-        }}
-        onLoginSuccess={(user) => {
-          void navigate(destination(user), { replace: true });
-        }}
-      />
+    <main
+      className="login-page"
+      aria-labelledby="login-title"
+      onPointerDownCapture={(event) => {
+        backdropPress.current =
+          event.target === event.currentTarget && event.button === 0
+            ? { id: event.pointerId, x: event.clientX, y: event.clientY }
+            : null;
+      }}
+      onPointerUpCapture={(event) => {
+        const start = backdropPress.current;
+        backdropPress.current = null;
+        // 只有在卡片外按下并轻点释放才返回，避免拖选内容时误关。
+        if (
+          start?.id === event.pointerId &&
+          event.target === event.currentTarget &&
+          Math.hypot(event.clientX - start.x, event.clientY - start.y) < 4
+        )
+          closeLogin();
+      }}
+      onPointerCancelCapture={() => {
+        backdropPress.current = null;
+      }}
+    >
+      <motion.div className="login-shell" {...surfaceMotion}>
+        <LoginMediaPanel />
+        <section className="login-stage">
+          <LoginCard
+            returnTo={localizedPath(returnTo, locale)}
+            socialFailed={params.get("oauth") === "failed"}
+            onClose={closeLogin}
+            onLoginSuccess={(user) => {
+              void navigate(destination(user), { replace: true });
+            }}
+          />
+        </section>
+      </motion.div>
     </main>
+  );
+}
+
+/** 在桌面登录卡片左侧轮播三张装饰图片。 */
+function LoginMediaPanel() {
+  return (
+    <aside className="login-media" aria-hidden="true">
+      <div className="login-media-slide login-media-slide--portrait" />
+      <div className="login-media-slide login-media-slide--starry-night" />
+      <div className="login-media-slide login-media-slide--cat" />
+    </aside>
   );
 }
 
@@ -70,7 +110,7 @@ function SignedInRedirect({ to, socialSignedIn }: { to: string; socialSignedIn: 
   return <Navigate to={to} replace />;
 }
 
-/** 固定尺寸的登录卡片：正面依次为 Google、Apple、邮箱与企业账号入口，翻面后只显示企业账号表单。 */
+/** 右侧登录容器：正面依次为 Google、Apple、邮箱与企业账号入口，切换后显示企业账号表单。 */
 function LoginCard({
   returnTo,
   socialFailed,
@@ -103,14 +143,14 @@ function LoginCard({
         <motion.div
           key={enterprise ? "enterprise" : "personal"}
           className="login-face"
-          initial={{ opacity: 0, rotateY: reduceMotion ? 0 : 80 }}
-          animate={{ opacity: 1, rotateY: 0 }}
-          exit={{ opacity: 0, rotateY: reduceMotion ? 0 : -80 }}
-          transition={{ duration: reduceMotion ? 0 : 0.16, ease: "easeInOut" }}
+          initial={{ opacity: 0, y: reduceMotion ? 0 : 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: reduceMotion ? 0 : -8 }}
+          transition={{ duration: reduceMotion ? 0 : 0.18, ease: "easeOut" }}
         >
           <header className="login-header">
             <span className="login-logo-badge" aria-hidden="true">
-              <img src="/brand/lycobo-reveal-mark.svg" alt="" width="56" height="56" />
+              <img src="/brand/lycobo-focus-mark.svg" alt="" width="48" height="48" />
             </span>
             <h1 id="login-title">{enterprise ? t.enterpriseTitle : t.title}</h1>
           </header>

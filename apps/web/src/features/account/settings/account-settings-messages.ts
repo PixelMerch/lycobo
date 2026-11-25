@@ -1,21 +1,17 @@
 import { defineMessages } from "../../../i18n/messages";
 
-/** 账户设置的文案：左侧身份与分区，账户、套餐与用量、登录与安全、企业成员四个分区。 */
+/** 账户设置四个分区的双语文案。 */
 export const accountSettingsMessages = defineMessages({
   "zh-CN": {
     title: "账户设置",
     close: "关闭账户设置",
     sections: {
       account: "账户",
-      plan: "套餐与用量",
+      plan: "积分与账单",
       security: "登录与安全",
       members: "企业成员",
     },
     members: "企业成员",
-    currentPlan: "当前套餐",
-    /** 会员状态接入前统一显示免费版，与顶部积分胶囊一致。 */
-    freePlan: "免费版",
-    upgrade: "升级",
     balance: "企业共享积分",
     perImage: (unit: number) => `每张 ${unit} 积分`,
     imagesLeft: (count: string) => ` · 约可生成 ${count} 张`,
@@ -79,14 +75,11 @@ export const accountSettingsMessages = defineMessages({
     close: "Close account settings",
     sections: {
       account: "Account",
-      plan: "Plan & usage",
+      plan: "Credits & billing",
       security: "Sign-in & security",
       members: "Team members",
     },
     members: "Team members",
-    currentPlan: "Current plan",
-    freePlan: "Free",
-    upgrade: "Upgrade",
     balance: "Team credits",
     perImage: (unit) => `${unit} ${unit === 1 ? "credit" : "credits"} per image`,
     imagesLeft: (count) => ` · ~${count} images`,

@@ -1,43 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { useReferenceRoles } from "../../generation/references/reference-roles";
 import {
   itemReferenceIndexes,
   mentionedImageNumbers,
   planImages,
-  planSubmissionRoles,
   planUsage,
 } from "./plan-image-bindings";
 
 const references = [{ id: "product" }, { id: "first" }, { id: "second" }];
-const roles = { first: "source", second: "source" } as const;
-const marked = planUsage(references, roles, []);
+const pairedItems = [
+  { id: "a", prompt: "参考图1为商品，翻译参考图2的文案" },
+  { id: "b", prompt: "参考图1为商品，翻译@图片3的文案" },
+];
 
-/** 没标角色时，按全部方案的提示词算出每条要发送的参考图下标。 */
-function unmarkedIndexes(
+/** 按全部方案的提示词算出每条要发送的参考图下标。 */
+function inferredIndexes(
   images: readonly { id: string }[],
   items: readonly { id: string; prompt: string }[],
 ) {
-  const usage = planUsage(
-    images,
-    {},
-    items.map((item) => item.prompt),
-  );
-  return itemReferenceIndexes(items, images, usage, {});
+  return itemReferenceIndexes(items, planUsage(images.length, items), {});
 }
 
 describe("plan image bindings", () => {
   it("binds each item to the shared images and the sources its prompt mentions", () => {
-    const items = [
-      { id: "a", prompt: "把参考图2中的文案翻译成西班牙语" },
-      { id: "b", prompt: "把@图片3中的文案翻译成西班牙语" },
-    ];
-    expect(itemReferenceIndexes(items, references, marked, {})).toEqual({ a: [0, 1], b: [0, 2] });
+    const usage = planUsage(references.length, pairedItems);
+    expect(itemReferenceIndexes(pairedItems, usage, {})).toEqual({ a: [0, 1], b: [0, 2] });
   });
 
   it("uses a manual choice instead of the prompt mentions", () => {
-    const items = [{ id: "a", prompt: "把参考图2翻译" }];
-    expect(itemReferenceIndexes(items, references, marked, { a: [3] })).toEqual({ a: [0, 2] });
-    expect(itemReferenceIndexes(items, references, marked, { a: [] })).toEqual({ a: [0] });
+    const usage = planUsage(references.length, pairedItems);
+    const selected = pairedItems.slice(0, 1);
+    expect(itemReferenceIndexes(selected, usage, { a: [3] })).toEqual({ a: [0, 2] });
+    expect(itemReferenceIndexes(selected, usage, { a: [] })).toEqual({ a: [0] });
   });
 
   it("reads both the planner and the user mention styles", () => {
@@ -53,7 +46,7 @@ describe("plan image bindings", () => {
   });
 });
 
-describe("unmarked references matched from the plan", () => {
+describe("references matched from the plan", () => {
   const five = ["a", "b", "c", "d", "e"].map((id) => ({ id }));
 
   it("sends each per-image item only its own picture", () => {
@@ -62,7 +55,7 @@ describe("unmarked references matched from the plan", () => {
       id: `plan-${index + 1}`,
       prompt: `将参考图${index + 1}调整为9:16竖版构图，其他保持不变。`,
     }));
-    expect(unmarkedIndexes(five, items)).toEqual({
+    expect(inferredIndexes(five, items)).toEqual({
       "plan-1": [0],
       "plan-2": [1],
       "plan-3": [2],
@@ -76,7 +69,7 @@ describe("unmarked references matched from the plan", () => {
       id: `scene-${scene}`,
       prompt: `把参考图1的商品放进参考图${scene}的场景`,
     }));
-    expect(unmarkedIndexes(five, items)).toEqual({
+    expect(inferredIndexes(five, items)).toEqual({
       "scene-2": [0, 1],
       "scene-3": [0, 2],
       "scene-4": [0, 3],
@@ -88,7 +81,7 @@ describe("unmarked references matched from the plan", () => {
       { id: "red", prompt: "参考图2换成红色" },
       { id: "blue", prompt: "参考图2换成蓝色" },
     ];
-    expect(unmarkedIndexes(references, items)).toEqual({ red: [1], blue: [1] });
+    expect(inferredIndexes(references, items)).toEqual({ red: [1], blue: [1] });
   });
 
   it("keeps sending every image when the plan does not tell the images apart", () => {
@@ -96,8 +89,8 @@ describe("unmarked references matched from the plan", () => {
       { id: "a", prompt: "以参考图1-3中的商品为准，放在卧室" },
       { id: "b", prompt: "参考图1、参考图2、参考图3的商品放在客厅" },
     ];
-    expect(unmarkedIndexes(references, together)).toBe(undefined);
-    expect(unmarkedIndexes(references, [{ id: "a", prompt: "生成白底主图" }])).toBe(undefined);
+    expect(inferredIndexes(references, together)).toBe(undefined);
+    expect(inferredIndexes(references, [{ id: "a", prompt: "生成白底主图" }])).toBe(undefined);
   });
 
   it("gives an item that names no picture every image, so it never loses its references", () => {
@@ -106,7 +99,7 @@ describe("unmarked references matched from the plan", () => {
       { id: "second", prompt: "参考图2改为竖版" },
       { id: "mood", prompt: "整体氛围图" },
     ];
-    expect(unmarkedIndexes(references, items)).toEqual({
+    expect(inferredIndexes(references, items)).toEqual({
       first: [0],
       second: [1],
       mood: [0, 1, 2],
@@ -118,42 +111,13 @@ describe("unmarked references matched from the plan", () => {
       id: `plan-${number}`,
       prompt: `参考图${number}改为竖版`,
     }));
-    expect(unmarkedIndexes(five, items)).toEqual({ "plan-1": [0], "plan-2": [1], "plan-3": [2] });
-  });
-
-  it("keeps marked product and style images shared and leaves explicit sources to the user", () => {
-    const items = [
-      { id: "b", prompt: "参考图1的风格，参考图2改为竖版" },
-      { id: "c", prompt: "参考图1的风格，参考图3改为竖版" },
-    ];
-    const styled = planUsage(
-      references,
-      { product: "style" },
-      items.map((item) => item.prompt),
-    );
-    expect(styled.inferred).toBe(true);
-    expect(itemReferenceIndexes(items, references, styled, {})).toEqual({ b: [0, 1], c: [0, 2] });
-    const explicit = planUsage(
-      references,
-      { first: "source" },
-      items.map((item) => item.prompt),
-    );
-    expect(explicit).toEqual({ roles: { first: "source" }, inferred: false });
-  });
-
-  it("submits roles only when the user marked a style, describing inferred pictures as sources", () => {
-    const prompts = ["参考图1的风格，参考图2改为红色", "参考图1的风格，参考图3改为红色"];
-    useReferenceRoles.setState({ roles: {} });
-    expect(planSubmissionRoles(references, planUsage(references, {}, prompts))).toBe(undefined);
-    useReferenceRoles.setState({ roles: { product: "style" } });
-    const styled = planUsage(references, { product: "style" }, prompts);
-    expect(planSubmissionRoles(references, styled)).toEqual(["style", "source", "source"]);
+    expect(inferredIndexes(five, items)).toEqual({ "plan-1": [0], "plan-2": [1], "plan-3": [2] });
   });
 
   it("shows inferred pictures as per-item choices on the plan card", () => {
-    const prompts = ["参考图1改为竖版", "参考图2改为竖版"];
-    const usage = planUsage(references, {}, prompts);
-    const card = planImages(references, usage, "参考图2改为竖版", undefined);
+    const items = [{ prompt: "参考图1改为竖版" }, { prompt: "参考图2改为竖版" }];
+    const usage = planUsage(references.length, items);
+    const card = planImages(usage, "参考图2改为竖版", undefined);
     expect(card.shared).toEqual([]);
     expect(card.sources).toEqual([1, 2, 3]);
     expect([...card.bound]).toEqual([2]);

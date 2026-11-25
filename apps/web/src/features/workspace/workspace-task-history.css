@@ -267,3 +267,16 @@
     grid-row: 3;
   }
 }
+.workspace[data-tool="create"] .infinite-load .spinner {
+  color: var(--foreground);
+}
+.workspace[data-tool="create"] .history-batch-toggle.button {
+  background: var(--surface-secondary);
+}
+.workspace[data-tool="create"] .history-batch-toggle.button:is(:hover, [data-hovered="true"]) {
+  background: var(--surface-tertiary);
+}
+.workspace .prompt-toggle.button,
+.workspace .history-batch-toggle.button[aria-expanded="false"] {
+  color: var(--studio-accent);
+}

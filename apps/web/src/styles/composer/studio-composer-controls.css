@@ -56,59 +56,35 @@
 .composer-panel .parameter-group {
   padding: var(--space-3);
   border-radius: 8px;
-  background: var(--composer-group);
 }
 .composer-panel .parameter-group legend {
   float: left;
   width: 100%;
 }
-.composer-panel .parameter-options {
-  clear: both;
-  background: var(--surface);
-}
-.composer-panel .parameter-options :is(.button, .toggle-button)[data-selected="true"] {
-  background: var(--composer-selected);
-}
 /* HeroUI ToggleButtonGroup keeps the approved compact track geometry. */
 .parameter-options.toggle-button-group {
   width: 100%;
-}
-.ratio-options .toggle-button-group {
-  display: flex;
-  flex: 5 1 0;
-  gap: 2px;
-  min-width: 0;
-}
-.ratio-options .toggle-button {
-  flex: 1;
-}
-.ratio-options .ratio-more {
-  flex: 1;
-}
-.composer-panel .model-select {
-  background: var(--surface-tertiary);
 }
 .composer-panel .generate-area {
   padding-top: 0;
 }
 /* Workspace parameter palette mirrors the home model settings. */
-.composer-panel .parameter-group {
-  background: var(--fill-faint);
-}
 .composer-panel .parameter-options {
+  clear: both;
   background: var(--fill-soft);
-  border-radius: 20px;
-}
-.composer-panel .parameter-options.ratio-options {
-  background: var(--fill-soft);
+  border-radius: var(--control-radius);
 }
 .composer-panel .parameter-options :is(.button, .toggle-button) {
   color: #aaa;
-  border-radius: 18px;
+  border-radius: var(--control-radius);
 }
 .composer-panel .parameter-options :is(.button, .toggle-button)[data-selected="true"] {
-  color: #eee;
+  color: var(--control-selected-foreground);
   background: var(--control-selected-fill);
+}
+.composer-panel .parameter-options.parameter-options-pill,
+.composer-panel .parameter-options.parameter-options-pill > .toggle-button {
+  border-radius: var(--control-pill-radius);
 }
 /* Unified workspace groups and model menu. */
 .composer-panel .reference-picker,
@@ -120,29 +96,22 @@
 .composer-panel .model-select {
   color: #eee;
   background: var(--fill-soft);
-  border-radius: 18px;
 }
 .model-menu .model-options {
   color: #ddd;
 }
 .main-content:has(> .workspace) {
   --content-padding: var(--workspace-padding);
-  padding: var(--content-padding);
+  padding-block: var(--content-padding);
+  padding-inline: var(--public-site-header-gutter);
 }
 
-.parameter-options.ratio-options :is(.button, .toggle-button) {
-  flex-direction: column;
-  gap: 2px;
-  height: 64px;
-  min-height: 64px;
-  padding: 6px 2px;
-  line-height: var(--leading-xs);
-}
 .ratio-preview {
   display: block;
   width: 32px;
   height: 32px;
   flex: none;
+  max-width: 100%;
 }
 
 .composer-scroll {
@@ -151,9 +120,12 @@
   gap: 12px;
   min-height: 0;
   min-width: 0;
+  scrollbar-width: none;
 }
-.ratio-heading,
-.ratio-popover-heading {
+.composer-scroll::-webkit-scrollbar {
+  display: none;
+}
+.ratio-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -161,54 +133,10 @@
   margin-bottom: 8px;
 }
 .ratio-heading h2 {
+  margin: 0;
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
   font-weight: var(--weight-medium);
-}
-.ratio-heading .ratio-expand {
-  min-height: 28px;
-  height: 28px;
-  min-width: 0;
-  padding: 0 2px 0 8px;
-  background: transparent;
-  color: var(--muted);
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
-.ratio-preview {
-  max-width: 100%;
-}
-.ratio-more-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.ratio-popover {
-  width: min(368px, calc(100vw - 24px));
-  padding: 0;
-  background: var(--overlay);
-  border: 0;
-  border-radius: 12px;
-}
-.ratio-popover .ratio-popover-dialog {
-  position: relative;
-  padding: 12px;
-}
-.ratio-extra-options {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(44px, 1fr));
-  gap: 6px;
-  padding: 0;
-  background: transparent;
-  overflow-x: auto;
-  scrollbar-width: thin;
-}
-.ratio-popover .ratio-extra-options :is(.button, .toggle-button) {
-  width: 100%;
-  min-width: 44px;
-}
-.ratio-popover .parameter-options :is(.button, .toggle-button)[data-selected="true"] {
-  background: var(--control-selected-fill);
 }
 @media (min-width: 768px) {
   .composer-panel {
@@ -223,9 +151,6 @@
     flex: 1;
     overflow-y: auto;
     overscroll-behavior-y: contain;
-    scrollbar-width: thin;
-    scrollbar-color: var(--surface-tertiary) transparent;
-    scrollbar-gutter: stable;
   }
   .composer-scroll > * {
     flex-shrink: 0;
@@ -234,34 +159,6 @@
     flex: none;
     margin-top: 12px;
   }
-}
-
-.ratio-popover-heading .popover__heading {
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-  font-weight: var(--weight-medium);
-}
-.composer-panel .ratio-options {
-  background: transparent;
-}
-.parameter-options.ratio-options :is(.button, .toggle-button) {
-  background: var(--surface-secondary);
-}
-.composer-panel .parameter-options.ratio-options :is(.button, .toggle-button) {
-  background: transparent;
-}
-.parameter-options.ratio-options .button[data-selected="true"] {
-  color: var(--link);
-  background: var(--control-selected-fill);
-}
-.composer-panel
-  .parameter-options.ratio-options
-  :is(.button, .toggle-button)[data-selected="true"] {
-  color: #eee;
-  background: var(--control-selected-fill);
-}
-.ratio-popover {
-  box-shadow: var(--overlay-shadow);
 }
 
 .composer-panel .model-field {
@@ -288,35 +185,6 @@
   margin-left: auto;
 }
 
-.ratio-popover-heading {
-  align-items: flex-start;
-  min-height: 28px;
-  padding-right: 36px;
-}
-.ratio-popover .ratio-close {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 44px;
-  height: 44px;
-  min-height: 44px;
-  padding: 0;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: #ffffff;
-}
-@media (hover: hover) {
-  .parameter-options.ratio-options :is(.button, .toggle-button):hover {
-    background: color-mix(in srgb, var(--surface-tertiary) 92%, var(--foreground));
-    color: var(--foreground);
-  }
-}
-.ratio-popover .ratio-close:active,
-.ratio-popover .ratio-close[data-pressed="true"] {
-  background: transparent;
-}
-
 /* Compact model menu: text rows and a restrained corner radius. */
 .composer-panel .model-field {
   padding-block: 4px;
@@ -328,7 +196,7 @@
   height: 36px;
   min-height: 36px;
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: var(--control-pill-radius);
   background: var(--field-background);
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
@@ -338,7 +206,7 @@
   width: max-content;
   min-width: var(--trigger-width);
   max-width: calc(100vw - 24px);
-  padding: 0;
+  padding: var(--choice-menu-inset);
   border: 0;
   background: var(--field-background);
   box-shadow: var(--overlay-shadow);
@@ -352,7 +220,7 @@
   margin-top: 0;
 }
 .model-menu .model-options {
-  padding: 8px 10px;
+  padding: 8px var(--control-padding-md);
   border-radius: 0;
   background: transparent;
   color: var(--foreground);

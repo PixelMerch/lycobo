@@ -129,6 +129,8 @@ test("我的素材 opens on the current tool and filters source, time and favori
   expect(queries.at(-1)?.get("kind")).toBe("output");
   expect(queries.at(-1)?.get("tool")).toBe("textile");
   expect(queries.at(-1)?.get("type")).toBe("image");
+  expect(queries.at(-1)?.has("includeVideo")).toBe(false);
+  await expect(dialog.getByRole("radio", { name: /^(图片|视频)$/ })).toHaveCount(0);
   // 全部时间是一整片瀑布流：不显示日期，也没有模型、密度和“已加载”数量。
   await expect(dialog.locator(".asset-day")).toHaveCount(0);
   await expect(dialog.getByText(/已加载/)).toHaveCount(0);
@@ -142,11 +144,9 @@ test("我的素材 opens on the current tool and filters source, time and favori
   await expect(options.nth(0)).toHaveText("全部来源");
   await expect(options.nth(1)).toHaveText("我上传的");
   await expect(options.nth(2)).toHaveText("全部 AI 生成");
+  await expect(page.getByRole("option", { name: "商品视频", exact: true })).toHaveCount(0);
   await expect(page.getByRole("option", { name: /家纺裂变/ })).toContainText("当前");
-  // 菜单压在图片网格上打开，用不透明底，不透出图片的颜色。
-  const menu = page.locator(".asset-filter-menu");
-  await expect(menu).toHaveCSS("background-color", "rgb(31, 31, 31)");
-  await expect(menu).toHaveCSS("backdrop-filter", "none");
+  await expect(page.getByRole("listbox", { name: "素材来源" })).toBeVisible();
   await page.getByRole("option", { name: "全部来源" }).click();
   await expect(tiles).toHaveCount(3);
   expect(queries.at(-1)?.has("kind")).toBe(false);
@@ -173,8 +173,9 @@ test("我的素材 opens on the current tool and filters source, time and favori
   // 切回看过的筛选时直接用缓存，列表回到不分日期的一整片瀑布流。
   await expect(dialog.locator(".asset-day")).toHaveCount(0);
 
-  await dialog.getByRole("radio", { name: "视频" }).click();
-  await expect(dialog.getByText("暂无视频素材")).toBeVisible();
+  const favoritesLabel = dialog.getByText("仅看收藏", { exact: true });
+  await favoritesLabel.click();
+  await expect(dialog.getByText("还没有收藏的素材")).toBeVisible();
   const empty = dialog.locator(".asset-empty");
   await expect(empty.locator("p")).toHaveCount(1);
   await expect(empty.locator("h2, button")).toHaveCount(0);
@@ -189,7 +190,7 @@ test("我的素材 opens on the current tool and filters source, time and favori
       ),
     ).toBeLessThan(3);
   }
-  await dialog.getByRole("radio", { name: "图片" }).click();
+  await favoritesLabel.click();
   await expect(tiles).toHaveCount(2);
 
   // Favorites are saved on the server; 仅看收藏 then asks the API for them only.
@@ -292,11 +293,55 @@ test("灵感库 inside the workspace library fills the prompt and closes the lib
   await page.goto("/commerce/create");
   await page.getByRole("button", { name: "打开素材库", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "素材库", exact: true });
+  const entryTabs = dialog.getByRole("tablist", { name: "素材库", exact: true });
+  const underline = entryTabs.locator(".selection-pill");
+  await expect(underline).toHaveCSS("visibility", "visible");
+  const initialUnderline = await underline.evaluate((line) => getComputedStyle(line).clipPath);
   await dialog.getByRole("tab", { name: "灵感库" }).click();
   await expect(dialog.getByText("挑一张喜欢的画面")).toHaveCount(0);
-  await dialog.getByRole("button", { name: "查看灵感：水光香氛", exact: true }).focus();
+  await expect(dialog.locator(".asset-library-head .tabs__list")).toHaveCSS(
+    "border-bottom-width",
+    "0px",
+  );
+  await expect(entryTabs).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(underline).not.toHaveCSS("clip-path", initialUnderline);
+  await expect(entryTabs).toHaveCSS("height", "44px");
+  await expect(dialog.locator(".home-inspiration-bar .pill-tab-list")).toHaveCSS("height", "44px");
+  await expect(dialog.locator(".home-inspiration-card").first()).toHaveCSS("border-radius", "6px");
+  await expect(dialog.locator(".home-inspiration-grid")).toHaveCSS("gap", "4px");
+  await expect(dialog.locator(".home-inspiration-bar .selection-pill")).toHaveCSS(
+    "visibility",
+    "visible",
+  );
+  await dialog.getByRole("button", { name: "搜索灵感", exact: true }).click();
+  const searchbox = dialog.getByRole("searchbox", { name: "搜索灵感" });
+  await searchbox.fill("水光香氛");
+  await expect(dialog.locator(".home-inspiration-card")).toHaveCount(1);
+  await searchbox.press("Escape");
+  await expect(dialog).toBeVisible();
+  const cards = dialog.locator(".home-inspiration-card");
+  await expect.poll(() => cards.count()).toBeGreaterThan(1);
+  await expect(dialog.locator(".home-inspiration-tile").first()).not.toHaveAttribute(
+    "style",
+    /opacity|transform/,
+  );
+  const inspiration = dialog.getByRole("button", { name: "查看灵感：水光香氛", exact: true });
+  const useInspiration = dialog.getByRole("button", { name: "做同款：水光香氛", exact: true });
+  await inspiration.focus();
   await page.keyboard.press("Tab");
-  await expect(dialog.getByRole("button", { name: "做同款：水光香氛", exact: true })).toBeFocused();
+  await expect(useInspiration).toBeFocused();
+  await expect(useInspiration).toHaveCSS("opacity", "1");
+  const imageBounds = await inspiration.boundingBox();
+  const actionBounds = await useInspiration.boundingBox();
+  if (!imageBounds || !actionBounds) throw new Error("Missing inspiration card or action bounds");
+  expect(actionBounds.x).toBeGreaterThan(imageBounds.x);
+  expect(actionBounds.y).toBeGreaterThan(imageBounds.y);
+  expect(actionBounds.x + actionBounds.width).toBeLessThanOrEqual(
+    imageBounds.x + imageBounds.width,
+  );
+  expect(actionBounds.y + actionBounds.height).toBeLessThanOrEqual(
+    imageBounds.y + imageBounds.height,
+  );
   await page.keyboard.press("Enter");
   await expect(dialog).toHaveCount(0);
   await expect(page).toHaveURL(/\/commerce\/create$/);
@@ -457,15 +502,46 @@ test("我的素材 keeps filters visible while scrolling and separates the curre
   const dialog = page.getByRole("dialog", { name: "素材库", exact: true });
   await expect(dialog.locator(".asset-tile")).toHaveCount(48);
   await expect(dialog.locator(".library-shell")).toHaveCSS("transform", "none");
+  const panel = dialog.locator(".asset-library-panel");
+  const scrollbar = dialog.locator(".lycobo-page-scrollbar--panel");
+  await expect(scrollbar).toBeVisible();
+  await expect(scrollbar).toHaveCSS("position", "absolute");
+  await expect(panel).toHaveCSS("scrollbar-width", "none");
+  expect(
+    await panel.evaluate((element) => {
+      if (!(element instanceof HTMLElement)) throw new Error("Missing asset library panel");
+      return element.offsetWidth - element.clientWidth;
+    }),
+  ).toBe(0);
   const filters = dialog.locator(".asset-filters");
+  await expect(filters).toHaveCSS("border-bottom-width", "0px");
+  await expect(filters).toHaveCSS("padding-bottom", "20px");
   const before = await filters.boundingBox();
+  const gridAtRest = await dialog.locator(".asset-grid").boundingBox();
+  if (!before || !gridAtRest) throw new Error("Missing asset filters or grid");
+  expect(gridAtRest.y).toBeCloseTo(before.y + before.height);
   await dialog.locator(".asset-tile").first().hover();
   await page.mouse.wheel(0, 600);
+  await expect.poll(() => panel.evaluate((el) => el.scrollTop)).toBeGreaterThan(100);
   await expect
-    .poll(() => dialog.locator(".asset-library-panel").evaluate((el) => el.scrollTop))
-    .toBeGreaterThan(100);
-  const after = await filters.boundingBox();
-  expect(after?.y).toBeCloseTo(before?.y ?? -1, 0);
+    .poll(async () =>
+      Math.abs(
+        (await panel.evaluate((el) => el.scrollTop)) -
+          (await scrollbar.evaluate((el) => el.scrollTop)),
+      ),
+    )
+    .toBeLessThanOrEqual(1);
+  await scrollbar.evaluate((element) => {
+    element.scrollTop = 160;
+  });
+  await expect.poll(() => panel.evaluate((el) => el.scrollTop)).toBe(160);
+  expect(await filters.boundingBox()).toEqual(before);
+  expect(
+    await filters.evaluate((element, x) => {
+      const { bottom } = element.getBoundingClientRect();
+      return document.elementFromPoint(x, bottom - 8) === element;
+    }, gridAtRest.x + 8),
+  ).toBe(true);
   await dialog.getByRole("button", { name: "家纺裂变 素材来源", exact: true }).click();
   const selected = page.getByRole("option", { name: /家纺裂变/ });
   await expect(selected).toHaveAttribute("aria-selected", "true");

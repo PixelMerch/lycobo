@@ -33,11 +33,17 @@ export function revealNewestHistory() {
     window.scrollTo({ top: 0, behavior: "instant" });
 }
 
-export function scrollToHistoryTask(id: string) {
-  const target = document.getElementById(`job-${id}`);
+/** 定位到指定的历史卡片，计入当前吸顶工具栏占用的空间。 */
+export function scrollToHistoryCard(elementId: string) {
+  const target = document.getElementById(elementId);
   if (!target) return;
   window.scrollTo({
     top: Math.max(0, window.scrollY + target.getBoundingClientRect().top - historyContentTop()),
     behavior: "instant",
   });
+}
+
+/** 用图片任务 ID 定位对应的历史卡片。 */
+export function scrollToHistoryTask(id: string) {
+  scrollToHistoryCard(`job-${id}`);
 }

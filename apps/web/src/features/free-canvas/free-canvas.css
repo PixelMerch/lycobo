@@ -1,0 +1,192 @@
+/* 自由画布：深色画布工作台，浮动创作卡与底部工具条。 */
+.main-content:has(> .fc-page) {
+  padding: 0;
+}
+
+.fc-page {
+  --fc-bg: #0b0b0b;
+  --fc-panel: #141414;
+  --fc-panel-hover: #1c1c1c;
+  --fc-line: #ffffff14;
+  --fc-text: #f2f2f2;
+  --fc-muted: #a8a8a8;
+  --fc-quiet: #808080;
+  --fc-accent: var(--brand);
+  position: relative;
+  height: calc(100dvh - var(--header-height, 64px));
+  overflow: hidden;
+  background: var(--fc-bg);
+  color: var(--fc-text);
+  color-scheme: dark;
+}
+
+.fc-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.free-canvas-stage {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+}
+
+.fc-empty {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--fc-quiet);
+  font-size: 13px;
+  line-height: 1.6;
+  pointer-events: none;
+}
+
+.fc-hint {
+  position: absolute;
+  bottom: 20px;
+  left: 376px;
+  color: var(--fc-quiet);
+  font-size: 11px;
+  pointer-events: none;
+}
+
+/* 顶部筛选条：与画布留出 12px 透明边距。 */
+.fc-topbar {
+  position: absolute;
+  z-index: 3;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.fc-topbar > * {
+  pointer-events: auto;
+}
+
+.fc-filters {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--fc-line);
+  border-radius: 999px;
+  background: #141414e6;
+}
+
+.fc-filters .toggle-button {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #ffffffb3;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.fc-filters .toggle-button:is(:hover, [data-hovered="true"]) {
+  background: #ffffff0f;
+  color: #fff;
+}
+
+.fc-filters .toggle-button[data-selected="true"] {
+  background: #ffffff1f;
+  color: #fff;
+}
+
+.fc-filters .toggle-button:focus-visible {
+  outline: 2px solid var(--fc-accent);
+  outline-offset: 2px;
+}
+
+.fc-upload.button {
+  height: 40px;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--fc-line);
+  border-radius: 999px;
+  background: #141414e6;
+  background-image: none;
+  color: #ffffffb3;
+  font-size: 13px;
+  font-weight: 500;
+  --button-bg: #141414e6;
+  --button-bg-hover: #1c1c1c;
+  --button-bg-pressed: #1c1c1c;
+  --button-fg: #ffffffb3;
+  --button-fg-hover: #ffffff;
+}
+
+.fc-upload.button:hover,
+.fc-upload.button * {
+  color: #fff;
+}
+
+.fc-zoom {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  padding: 4px;
+  border: 1px solid var(--fc-line);
+  border-radius: 999px;
+  background: #141414e6;
+}
+
+.fc-zoom-button.button {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  background-image: none;
+  color: #ffffffb3;
+  --button-bg: transparent;
+  --button-bg-hover: #ffffff0f;
+  --button-bg-pressed: #ffffff0f;
+  --button-fg: #ffffffb3;
+  --button-fg-hover: #ffffff;
+}
+
+.fc-zoom-button.button:hover {
+  background: #ffffff0f;
+  color: #fff;
+}
+
+.fc-zoom-value {
+  min-width: 42px;
+  color: #ffffffb3;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.fc-zoom-reset.button {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  background-image: none;
+  color: #ffffffb3;
+  font-size: 12px;
+  --button-bg: transparent;
+  --button-bg-hover: #ffffff0f;
+  --button-bg-pressed: #ffffff0f;
+  --button-fg: #ffffffb3;
+  --button-fg-hover: #ffffff;
+}
+
+.fc-zoom-reset.button:hover {
+  color: #fff;
+}

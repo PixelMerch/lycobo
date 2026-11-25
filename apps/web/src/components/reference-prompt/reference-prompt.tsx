@@ -6,10 +6,12 @@ import { ReferenceMentionOptions } from "../../features/generation/references/re
 import { usePromptOptimizer } from "../../features/generation/references/use-prompt-optimizer";
 import type { ReferenceImage } from "../../features/generation/studio-state";
 import "./reference-prompt.css";
+import "./mention-motion.css";
 import "../studio-control-feedback.css";
 
 import { useMessages } from "../../i18n/messages";
 import { componentsMessages } from "../components-messages";
+import { mentionMotionStyle } from "./mention-motion";
 import type { PromptReference } from "./reference-prompt-dom";
 import { RichReferencePrompt } from "./rich-reference-prompt";
 import { useReferencePrompt } from "./use-reference-prompt";
@@ -97,6 +99,7 @@ export function ReferencePrompt({
         )}
         <div
           className="prompt-editor"
+          style={mentionMotionStyle}
           data-count={showCount ? "" : undefined}
           data-auto-grow={autoGrow ? "" : undefined}
           data-optimizable={optimizeTool ? "" : undefined}
@@ -201,21 +204,18 @@ function PromptMentionPopover({
         shouldFlip
         offset={8}
         className="reference-mention-popover"
+        style={mentionMotionStyle}
       >
         <Popover.Dialog aria-label={t.insertImage}>
-          {mention && (
-            <ReferenceMentionOptions
-              maxReferences={maxReferences}
-              references={references}
-              usedIds={
-                unavailableReferenceIds
-                  ? new Set([...usedIds, ...unavailableReferenceIds])
-                  : usedIds
-              }
-              onSelect={insert}
-              allowHistory={allowHistory}
-            />
-          )}
+          <ReferenceMentionOptions
+            maxReferences={maxReferences}
+            references={references}
+            usedIds={
+              unavailableReferenceIds ? new Set([...usedIds, ...unavailableReferenceIds]) : usedIds
+            }
+            onSelect={insert}
+            allowHistory={allowHistory}
+          />
         </Popover.Dialog>
       </Popover.Content>
     </Popover>

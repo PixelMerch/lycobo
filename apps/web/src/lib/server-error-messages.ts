@@ -19,6 +19,8 @@ export const serverErrorMessages = defineMessages({
       FORBIDDEN: "没有访问权限。",
       UNTRUSTED_ORIGIN: "请求来源不受信任，请刷新页面后重试。",
       RATE_LIMITED: "操作过于频繁，请稍后重试。",
+      ACCOUNT_LOCKED: "密码错误次数过多，账号已锁定 1 小时。请在解锁后重试。",
+      LOGIN_CHALLENGE_FAILED: "人机验证未通过，请重试。",
       NOT_FOUND: "内容不存在或已被删除。",
       IDEMPOTENCY_CONFLICT: "这次提交与之前的提交冲突，请刷新后再提交。",
       INSUFFICIENT_CREDITS: "企业积分余额不足。",
@@ -45,6 +47,9 @@ export const serverErrorMessages = defineMessages({
       FORBIDDEN: "You don't have access to this.",
       UNTRUSTED_ORIGIN: "The request came from an untrusted page. Refresh and try again.",
       RATE_LIMITED: "Too many requests. Please wait a moment and try again.",
+      ACCOUNT_LOCKED:
+        "Too many incorrect passwords. This account is locked for 1 hour. Try again once it unlocks.",
+      LOGIN_CHALLENGE_FAILED: "Verification failed. Please try again.",
       NOT_FOUND: "This item doesn't exist or was deleted.",
       IDEMPOTENCY_CONFLICT:
         "This submission conflicts with an earlier one. Refresh before submitting again.",

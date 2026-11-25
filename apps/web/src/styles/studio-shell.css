@@ -91,7 +91,7 @@
   outline-offset: -1px;
 }
 /*
- * 顶部栏按用户指定的 vidmuse 首页复刻：左侧 Logo 与导航，右侧圆形工具按钮、积分胶囊和头像。
+ * 顶部栏按用户指定的参考站首页复刻：左侧 Logo 与导航，右侧圆形工具按钮、积分胶囊和头像。
  * 页面在顶部时透明；一离开顶部就收窄 4px 并铺半透明磨砂，下方 4px 外边距抵消收窄，页面内容不跳动。
  */
 .topbar {
@@ -130,7 +130,7 @@
   background: rgb(30 35 29 / 38%);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
-  box-shadow: 0 3.45px 29.785px rgb(168 255 0 / 3%);
+  box-shadow: 0 3.45px 29.785px color-mix(in srgb, var(--brand) 3%, transparent);
 }
 /* 工作区：顶部栏始终是页面底色的实色，不随滚动收窄或变磨砂，下方吸顶的参数栏和工具栏位置固定。 */
 .topbar[data-solid="true"]::before {
@@ -149,8 +149,26 @@
     backdrop-filter: none;
   }
 }
+.topbar[data-landing="true"] {
+  margin-bottom: calc(-1 * var(--header-height));
+}
+.topbar[data-landing="true"][data-scrolled="true"] {
+  margin-bottom: calc(4px - var(--header-height));
+}
+.topbar[data-landing="true"] + .main-content .lp-hero {
+  padding-top: calc(72px + var(--header-height));
+}
 .topbar .brand {
   flex: none;
+}
+.topbar[data-commerce-header="true"] .brand {
+  align-items: center;
+  height: 36px;
+  display: flex;
+}
+.topbar[data-commerce-header="true"] .brand .lycobo-logo {
+  width: 90px;
+  transform: translateY(-2px);
 }
 .topbar-nav {
   display: flex;
@@ -164,7 +182,7 @@
   min-height: 36px;
   padding: 0 20px;
   gap: 4px;
-  border-radius: 999px;
+  border-radius: var(--control-pill-radius);
   background: transparent;
   color: #ffffff99;
   font-size: var(--text-base);
@@ -174,12 +192,11 @@
 .topbar-nav .nav-row::before {
   display: none;
 }
-.topbar-nav .nav-row:is(:hover, [data-hovered="true"], [aria-expanded="true"]) {
-  background: #ffffff0a;
+.topbar-nav .nav-row:is(:hover, [data-hovered="true"], [aria-expanded="true"], :focus-visible) {
+  background: var(--site-header-nav-hover-fill);
   color: #ffffffcc;
 }
 .topbar-nav .nav-row:is(.active, [aria-current="page"]) {
-  background: transparent;
   color: #fff;
   font-weight: var(--weight-semibold);
 }
@@ -239,14 +256,14 @@
   height: var(--shell-pill-height);
   min-height: var(--shell-pill-height);
   border-radius: 50%;
-  background: #ffffff14;
+  background: var(--site-header-button-fill);
   color: #ffffffcc;
 }
 .header-news .account-footer-action.button:is(:hover, [data-hovered="true"]) {
-  background: #ffffff24;
+  background: var(--site-header-nav-hover-fill);
   color: #fff;
 }
-/* 未登录时顶部栏右侧只放“登录领积分”胶囊。 */
+/* 登录按钮沿用品牌主色。 */
 .topbar .header-login.button {
   height: 40px;
   min-height: 40px;
@@ -271,6 +288,40 @@
   gap: 12px;
   flex: none;
   margin-inline-start: auto;
+}
+.topbar[data-commerce-header="true"] .header-login.button {
+  height: 36px;
+  min-height: 36px;
+}
+.topbar[data-commerce-header="true"]
+  :is(.language-trigger, .header-credits, .header-login.button, .header-news .button) {
+  border-radius: 12px;
+}
+.topbar[data-commerce-header="true"]
+  .topbar-nav
+  .nav-row:is(:hover, [data-hovered="true"], [aria-expanded="true"]),
+.topbar[data-commerce-header="true"]
+  :is(.language-trigger, .header-credits, .header-news .button):is(
+    :hover,
+    [data-hovered="true"],
+    [aria-expanded="true"]
+  ) {
+  background-color: #ffffff1f;
+  backdrop-filter: blur(16px);
+}
+:root :is(.topbar-menu, .choice-menu, .popover).home-header-glass {
+  --glass-tint: rgb(27 25 24 / 54%);
+  --glass-blur: blur(32px);
+  border-radius: 12px;
+}
+:root :is(.topbar-menu, .choice-menu).home-header-glass {
+  --glass-fill: linear-gradient(#ffffff1f, #ffffff1f);
+}
+@media (prefers-reduced-transparency: reduce) {
+  :root :is(.topbar-menu, .popover).home-header-glass {
+    --glass-tint: var(--glass-fallback);
+    --glass-blur: none;
+  }
 }
 .mobile-menu {
   display: none;
@@ -329,5 +380,8 @@
   }
   .topbar .brand .lycobo-logo {
     width: 96px;
+  }
+  .topbar[data-commerce-header="true"] .brand .lycobo-logo {
+    width: 90px;
   }
 }

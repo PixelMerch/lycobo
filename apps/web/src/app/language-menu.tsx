@@ -11,11 +11,23 @@ import { shellMessages } from "./shell-messages";
 import "./language-menu.css";
 
 /** 切换当前页面的语言路径，保留参数、历史状态与滚动位置。 */
-export function LanguageMenu({ account }: { account: EnterpriseIdentity | null | undefined }) {
+export function LanguageMenu({
+  account,
+  homeGlass = false,
+  popoverClassName = "",
+  hoverCloseDelay,
+  popoverOffset = 4,
+}: {
+  account: EnterpriseIdentity | null | undefined;
+  homeGlass?: boolean;
+  popoverClassName?: string;
+  hoverCloseDelay?: number;
+  popoverOffset?: number;
+}) {
   const locale = useLocaleStore((state) => state.locale);
   const { changeLanguage, isSaving } = useAccountLanguage(account ?? undefined);
   const t = useMessages(shellMessages);
-  const menu = useHoverMenu();
+  const menu = useHoverMenu(hoverCloseDelay);
   function select(keys: Selection) {
     menu.close();
     if (keys === "all") return;
@@ -30,10 +42,12 @@ export function LanguageMenu({ account }: { account: EnterpriseIdentity | null |
         className="language-trigger"
         isDisabled={isSaving}
         aria-label={t.language(localeNames[locale])}
-        onHoverStart={(event) => {
+        onPointerEnter={(event) => {
           if (event.pointerType === "mouse") menu.openOnHover();
         }}
-        onHoverEnd={menu.closeSoon}
+        onPointerLeave={(event) => {
+          if (event.pointerType === "mouse") menu.closeSoon();
+        }}
       >
         <UiIcon icon={IconWorld} size="navigation" />
         <span className="language-trigger-name">{localeShortNames[locale]}</span>
@@ -41,9 +55,9 @@ export function LanguageMenu({ account }: { account: EnterpriseIdentity | null |
       </Dropdown.Trigger>
       <Dropdown.Popover
         ref={menu.popoverRef}
-        className="choice-menu"
+        className={`choice-menu${homeGlass ? " home-header-glass" : ""} ${popoverClassName}`}
         placement="bottom end"
-        offset={4}
+        offset={popoverOffset}
         isNonModal
         onPointerEnter={menu.cancelClose}
         onPointerLeave={menu.closeSoon}

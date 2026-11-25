@@ -1,10 +1,10 @@
-import { imageUnitCredits } from "@lycoboai/contracts";
+import { imageUnitCredits, publicImageResolutions } from "@lycoboai/contracts";
 import { ReferencePrompt } from "../../../components/reference-prompt/reference-prompt";
 import { useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import { GenerateButton } from "../../generation/composer/generate-button";
 import { ParameterGroup } from "../../generation/composer/parameter-group";
-import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
+import { AspectRatioField } from "../../generation/composer/ratio-picker";
 import {
   ImageApiError,
   pendingSubmissionSource,
@@ -34,7 +34,7 @@ export function ReplicaPage() {
   const common = useMessages(generationMessages);
   const models = useImageModels();
   const session = useImageSession();
-  const generate = useGenerateImage();
+  const generate = useGenerateImage({ successFeedback: "button" });
   const anyPending = usePendingSubmission(session.data);
   const pending =
     anyPending && !!session.data && pendingSubmissionSource(session.data) === "replica";
@@ -76,19 +76,16 @@ export function ReplicaPage() {
           showCount
           autoGrow
         />
-        <section className="parameter-group ratio-group" aria-label={common.aspectRatio}>
-          <div className="ratio-heading">
-            <h2>{common.aspectRatio}</h2>
-            <span>{draft.ratio}</span>
-          </div>
-          <HomeRatioPicker value={draft.ratio} onChange={(ratio) => patchDraft({ ratio })} />
-        </section>
+        <AspectRatioField
+          label={common.aspectRatio}
+          value={draft.ratio}
+          onChange={(ratio) => patchDraft({ ratio })}
+        />
         <ParameterGroup
           label={common.resolution}
-          values={["1.5K", "2K", "4K"]}
+          values={publicImageResolutions}
           value={draft.resolution}
-          selectionId="replica-resolution"
-          disabledValues={["1.5K", "2K", "4K"].filter(
+          disabledValues={publicImageResolutions.filter(
             (value) => !capabilities?.enabledResolutions.some((enabled) => enabled === value),
           )}
           onChange={(resolution) => patchDraft({ resolution })}
@@ -118,9 +115,9 @@ function useReplicaSubmission(
 ) {
   const { draft, target, products, update } = state;
   const t = useMessages(replicaMessages);
-  const submit = () => {
-    if (!pending && !valid) return;
-    generate.mutate(
+  return async () => {
+    if (!pending && !valid) return false;
+    await generate.mutateAsync(
       {
         model: replicaModel,
         source: "replica",
@@ -148,6 +145,6 @@ function useReplicaSubmission(
         },
       },
     );
+    return true;
   };
-  return submit;
 }

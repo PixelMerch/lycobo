@@ -18,6 +18,20 @@ export function apiFixture(data: unknown, status = 200) {
     error: success ? {} : { code: "AUTH_NOT_CONFIGURED" },
   };
 }
+/** 仅在隔离的浏览器测试中模拟密码登录组件。 */
+export async function mockPasswordTurnstile(page: Page) {
+  await page.route("https://challenges.cloudflare.com/turnstile/**", (route) =>
+    route.fulfill({
+      contentType: "application/javascript",
+      body: "window.turnstile={render:(_el,o)=>{setTimeout(()=>o.callback('password-fixture-token'));return 'fixture'},remove:()=>{}};",
+    }),
+  );
+  await page.route("**/api/v1/auth/oauth/providers", (route) =>
+    route.fulfill({
+      json: apiFixture({ providers: [], passwordTurnstileSiteKey: "fixture-site-key" }),
+    }),
+  );
+}
 export async function mockImageApi(page: Page, { signedIn = true } = {}) {
   const userId = crypto.randomUUID(),
     organizationId = crypto.randomUUID();
@@ -79,4 +93,23 @@ export async function mockImageApi(page: Page, { signedIn = true } = {}) {
 /** 为实时测试提供模型能力，传输始终使用共享 WebSocket fixture。 */
 export async function mockImageEvents(page: Page) {
   await mockImageApi(page);
+}
+
+// 通过工具类别打开侧边菜单，再切换到真实工作区。
+export async function chooseWorkspaceTool(
+  page: Page,
+  tool: "主图制作" | "复制爆款" | "家纺裂变" | "套图计划",
+) {
+  const group = tool === "家纺裂变" ? "家纺裂变" : "商品图片";
+  const labels = {
+    主图制作: "商品主图",
+    复制爆款: "复制爆款",
+    家纺裂变: "家纺套图",
+    套图计划: "商品套图",
+  };
+  await page
+    .getByRole("navigation", { name: "电商创作工具" })
+    .getByRole("button", { name: group, exact: true })
+    .click();
+  await page.getByRole("menuitem", { name: labels[tool], exact: true }).click();
 }

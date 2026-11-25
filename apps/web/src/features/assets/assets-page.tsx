@@ -1,6 +1,6 @@
 import { useSearchParams } from "react-router";
 import { useMessages } from "../../i18n/messages";
-import { HomeInspirationGallery } from "../home/home-inspiration-gallery";
+import { HomeInspirationGallery } from "../inspiration/home-inspiration-gallery";
 import { AssetBrowser } from "./asset-browser";
 import { filtersFromSearch, filtersToSearch } from "./asset-library-client";
 import { AssetLibraryTabs, assetLibraryTab } from "./asset-library-tabs";
@@ -30,7 +30,7 @@ export function AssetsPage() {
             onChange={(next) => setSearch(filtersToSearch(next), { replace: true })}
           />
         }
-        inspiration={<HomeInspirationGallery library />}
+        inspiration={<HomeInspirationGallery />}
       />
     </section>
   );

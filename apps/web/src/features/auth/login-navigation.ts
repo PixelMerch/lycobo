@@ -1,3 +1,7 @@
+import type { Locale } from "../../i18n/locale";
+import { localeFromPath, localizedPath, withoutLocale } from "../../i18n/locale-path";
+import { isDashboardPath } from "../../lib/dashboard-paths";
+
 const loginOrigin = "https://lycobo.invalid";
 
 /** 登录后只允许返回当前产品的站内页面，保留查询参数和定位。 */
@@ -6,9 +10,11 @@ export function safeLoginReturnTo(input: unknown): string {
   try {
     const url = new URL(input, loginOrigin);
     if (url.origin !== loginOrigin) return "/";
+    const path = withoutLocale(url.pathname);
     if (
-      !/^\/(?:$|commerce(?:\/|$)|workspace$|assets$|video$|membership$|inspiration$)/.test(
-        withoutLocale(url.pathname),
+      !isDashboardPath(path) &&
+      !/^\/(?:$|commerce(?:\/|$)|workspace$|assets$|video$|recharge$|membership$|inspiration$|free-canvas$)/.test(
+        path,
       )
     )
       return "/";
@@ -25,6 +31,3 @@ export function loginHref(
 ): string {
   return `${localizedPath("/login", locale)}?returnTo=${encodeURIComponent(safeLoginReturnTo(returnTo))}`;
 }
-
-import type { Locale } from "../../i18n/locale";
-import { localeFromPath, localizedPath, withoutLocale } from "../../i18n/locale-path";

@@ -1,11 +1,12 @@
-import { Button, Popover, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import { Button, Popover } from "@heroui/react";
 import { imageUnitCredits, publicImageResolutions } from "@lycoboai/contracts";
 import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { type RefObject, useId, useRef, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
+import { publicImageUrl } from "../../../lib/public-image-url";
 import { GenerateButton } from "../../generation/composer/generate-button";
-import { HomeRatioPicker } from "../../generation/composer/ratio-picker";
-import { SelectionHighlight } from "../../generation/composer/selection-highlight";
+import { ParameterGroup } from "../../generation/composer/parameter-group";
+import { AspectRatioField } from "../../generation/composer/ratio-picker";
 import { WorkspaceComposerTitle } from "../../workspace/workspace-tool-symbol";
 
 import { TextileImageField } from "./textile-image-field";
@@ -39,7 +40,7 @@ export function TextileSetPage() {
             label={t.mainImage}
             required
             description={t.mainImageHint}
-            exampleSrc="/studio/bedroom-thumb.webp"
+            exampleSrc={publicImageUrl("/studio/bedroom-thumb.webp")}
             value={mainImage ? [mainImage] : []}
             onChange={(images) => update({ mainImage: images[0] ?? null })}
             number={1}
@@ -47,48 +48,27 @@ export function TextileSetPage() {
           <TextileImageField
             label={t.detailImages}
             description={t.detailImagesHint}
-            exampleSrc="/studio/textile-views/fabric.webp"
+            exampleSrc={publicImageUrl("/studio/textile-views/fabric.webp")}
             value={detailImages}
             maxImages={5}
             onChange={(images) => update({ detailImages: images })}
             number={2}
           />
           <TextileViewField views={views} update={update} viewsAnchor={viewsAnchor} />
-          <section className="parameter-group" aria-label={t.aspectRatio}>
-            <div className="ratio-heading">
-              <h2>{t.aspectRatio}</h2>
-              <span className="muted">{ratio}</span>
-            </div>
-            <HomeRatioPicker value={ratio} onChange={(value) => update({ ratio: value })} />
-          </section>
-          <fieldset className="parameter-group">
-            <legend>{t.resolution}</legend>
-            <ToggleButtonGroup
-              aria-label={t.resolution}
-              className="parameter-options"
-              isDetached
-              disallowEmptySelection
-              selectionMode="single"
-              selectedKeys={[resolution]}
-              onSelectionChange={(keys) => {
-                const next = publicImageResolutions.find((value) => keys.has(value));
-                if (next) update({ resolution: next });
-              }}
-            >
-              {publicImageResolutions.map((value) => (
-                <ToggleButton
-                  key={value}
-                  id={value}
-                  isDisabled={!generation.resolutions.includes(value)}
-                >
-                  {value === resolution && (
-                    <SelectionHighlight layoutId="textile-resolution-selection" />
-                  )}
-                  <span>{value}</span>
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
-          </fieldset>
+          <AspectRatioField
+            label={t.aspectRatio}
+            value={ratio}
+            onChange={(value) => update({ ratio: value })}
+          />
+          <ParameterGroup
+            label={t.resolution}
+            values={publicImageResolutions}
+            value={resolution}
+            disabledValues={publicImageResolutions.filter(
+              (value) => !generation.resolutions.includes(value),
+            )}
+            onChange={(resolution) => update({ resolution })}
+          />
         </div>
         <div className="generate-area">
           <GenerateButton

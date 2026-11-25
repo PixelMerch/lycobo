@@ -1,6 +1,7 @@
 import { imageResolutionSchema, mainImageModelIds } from "@lycoboai/contracts";
 import { useState } from "react";
 import { useAppNavigate } from "../../i18n/use-localized-navigation";
+import { dashboardToolPaths } from "../../lib/dashboard-paths";
 import { shiftReplicaPromptReferences, useReplicaDraft } from "../commerce/replica/replica-state";
 import { useSmartVariationDraft } from "../commerce/smart-variation/smart-variation-state";
 import { useTextileSetDraft } from "../commerce/textile-set/textile-set-state";
@@ -20,7 +21,7 @@ export function useWorkspaceRestore(setMobilePanel: (value: string) => void) {
         target: draft.references[0] ?? null,
         products: draft.references.slice(1),
       });
-      void navigate("/commerce/replica");
+      void navigate(dashboardToolPaths.replica);
     } else if (variation) {
       useSmartVariationDraft.getState().update({
         planId: variation.planId,
@@ -30,7 +31,7 @@ export function useWorkspaceRestore(setMobilePanel: (value: string) => void) {
         resolution: draft.resolution,
         items: variation.items.map((item) => ({ ...item, selected: true })),
       });
-      void navigate("/commerce/smart-variation");
+      void navigate(dashboardToolPaths.variation);
     } else if (textileSet) {
       useTextileSetDraft.getState().update({
         mainImage: draft.references[0] ?? null,
@@ -39,7 +40,7 @@ export function useWorkspaceRestore(setMobilePanel: (value: string) => void) {
         ratio: draft.ratio,
         resolution: imageResolutionSchema.parse(draft.resolution),
       });
-      void navigate("/commerce/textile-set");
+      void navigate(dashboardToolPaths.textile);
     } else {
       const studio = useStudioStore.getState();
       const targetModel = mainImageModelIds.some((id) => id === model)
@@ -48,7 +49,7 @@ export function useWorkspaceRestore(setMobilePanel: (value: string) => void) {
       // 旧型号仍可浏览；重新创作时只带回草稿，使用当前可选型号。
       studio.updateDraft(targetModel, draft);
       studio.setActiveModel(targetModel);
-      void navigate("/commerce/create");
+      void navigate(dashboardToolPaths.create);
     }
     setRestorePending(null);
     setMobilePanel("form");

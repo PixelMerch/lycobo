@@ -23,20 +23,34 @@
   flex-direction: column;
   min-height: 0;
   height: 100%;
-  background: #0b0b0b;
+  --library-background: #0b0b0b;
+  background: var(--library-background);
   will-change: transform;
 }
 .library-shell .asset-library-tabs {
   flex: 1;
   min-height: 0;
 }
-/* 标签行与应用顶部栏同高，关闭按钮在“我的素材 / 灵感库”左侧，与下方内容的左边界对齐。 */
+.library-shell:has(.asset-library-tabs[data-library-tab="inspiration"]) {
+  --library-background: var(--studio-canvas);
+}
+/* 标签行与应用顶部栏同高，关闭按钮靠右。 */
 .library-shell .asset-library-head {
   padding: 0 var(--space-6);
 }
 .modal__close-trigger.library-close {
-  /* 按钮外扩，让 28px 的图形本身而不是按钮框与下方内容的左边界对齐。 */
-  margin-inline-start: -12px;
+  margin-inline-start: auto;
+}
+.library-shell .asset-library-panels {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.library-shell .lycobo-page-scrollbar--panel {
+  position: absolute;
+  z-index: 3;
 }
 /* 当前标签的内容是滚动区域，筛选行吸在顶部，用同色不透明底遮住滚过的图片。 */
 .library-shell .asset-library-panel {
@@ -46,12 +60,17 @@
   min-height: 0;
   padding: 0 var(--space-6) var(--space-6);
   overflow-y: auto;
+  scrollbar-width: none;
+  scrollbar-gutter: auto;
 }
-.library-shell .asset-filters {
+.library-shell .asset-library-panel::-webkit-scrollbar {
+  display: none;
+}
+.library-shell :is(.asset-filters, .home-inspiration-bar) {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: #0b0b0b;
+  background: var(--library-background);
 }
 @media (max-width: 767px) {
   .library-shell .asset-library-head {

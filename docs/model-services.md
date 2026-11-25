@@ -38,7 +38,7 @@ MODEL_CREDENTIAL_SECRET 必须为 32 字节随机数的 Base64，独立后台 AP
 
 明确失败逐项退款；结果不确定、查询停止或总等待超时转待核对，不自动重复付费提交。连续查询网络／限流／服务错误最多五次后停止。显式用户重试沿用原账务与审计语义。刷新后台、改配置、队列重复投递不重复扣款。
 
-未实现自动跨站重试、自动价格同步或任意新增前台模型。图片完成回调见[图片 Webhook](image-webhooks.md)。
+未实现自动跨站重试、自动价格同步或任意新增前台模型。图片完成回调见[图片 Webhook](image-generation-api.md#图片-webhook-与延迟查询)。
 
 ## 验证和后台规范
 
@@ -60,7 +60,7 @@ provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 
 
 共享本地库已通过 db:migrate 升级；独立后台 init.sql 含同等基线，详细操作见相邻 lycobo-admin/docs/model-services.md。发布须先完成数据库迁移，再更新读取新表/列的服务。
 
-模型目录新增 nullable logo_url，仅保存公开 Logo 对象地址；上传和展示由独立 admin 负责，共享追加迁移 0027。Logo 的公开桶与主站生成图片私有桶隔离，见 [私有 S3 存储](s3-storage.md)。
+模型目录新增 nullable logo_url，仅保存公开 Logo 对象地址；上传和展示由独立 admin 负责，共享追加迁移 0027。Logo 的公开桶与主站生成图片私有桶隔离，见 [私有 S3 存储](development.md#本地-s3-存储)。
 
 0028 曾引入目录 upstream_model，目前仅保留旧版本兼容；实际调用名称按中转站保存在渠道 settings.upstreamModel，目录不再提供统一调用模型输入。主站按默认渠道解析，任务快照不变。
 
@@ -80,7 +80,7 @@ provider-adapters.ts 定义实际请求协议注册表；configured-provider.ts 
 
 ## Gemini 原生图片协议
 
-按 [FluxPort Gemini 文档](https://uselg.top/docs?model=gemini-3.1-flash-image-preview) 对接 `gemini-native`：POST `/v1beta/models/{upstreamModel}:generateContent`，Bearer 鉴权，提示词和参考图放入 `contents[].parts`（不透明参考图发送前压缩为 JPEG，透明图保持 PNG，`mimeType` 按实际内容声明，见[图片处理](cloudflare-deployment.md#图片处理)）；比例、1K／2K／4K 使用 `generationConfig.imageConfig.aspectRatio/imageSize`。不发送 Images API 的 n、quality、async 或像素 size。Gemini 的 4K 使用供应商档位，不套用 Images API 最长边 3840 的尺寸计算。
+按 [FluxPort Gemini 文档](https://uselg.top/docs?model=gemini-3.1-flash-image-preview) 对接 `gemini-native`：POST `/v1beta/models/{upstreamModel}:generateContent`，Bearer 鉴权，提示词和参考图放入 `contents[].parts`（不透明参考图发送前压缩为 JPEG，透明图保持 PNG，`mimeType` 按实际内容声明，见[图片处理](releasing.md#图片处理)）；比例、1K／2K／4K 使用 `generationConfig.imageConfig.aspectRatio/imageSize`。不发送 Images API 的 n、quality、async 或像素 size。Gemini 的 4K 使用供应商档位，不套用 Images API 最长边 3840 的尺寸计算。
 
 同步解析 candidates 中的 inlineData 或 fileData；纯文字、空图片结果不视为成功。异步 202 的 task_id/status_url/result_url 继续使用持久化查询流程，查询返回的原生结果同样解析，不重新付费 POST。结果文件仍需通过现有来源白名单、大小限制与真实图片校验，入私有存储后才能完成任务。
 
@@ -120,7 +120,7 @@ Grok 与 Seedream 已从可选目录和新任务路由移除，已有任务与�
 
 `STANDALONE_MODELS=true` 时，套图计划固定直连 DeepSeek 官方 `https://api.deepseek.com/chat/completions`，模型 `deepseek-flash`，不读取后台语言渠道或使用语言中转站。`DEEPSEEK_API_KEY` 使用 DeepSeek 官方 Key，仅在 API 服务端配置；图片生成仍用独立的 `STANDALONE_IMAGE_API_KEY`。保留后台表和其他协议适配供后续管理功能使用。
 
-规划请求只发送文字需求和参考图编号，不发送图片内容，不虚构商品视觉分析，见[套图计划](product-variation-plan.md)。依据[思考模式文档](https://api-docs.deepseek.com/guides/thinking_mode/)显式 `thinking.type=disabled`，避免默认开启思考；使用 JSON 输出、`max_tokens=8192`、单轮请求和简短独立提示词来控制费用。最多20条，按用户指定的张数或颜色、场景、视角等目标列表确定数量；如“红色、蓝色、白色”为3条，“换成红色，白色部分不变”为1条，未指定数量或变化项时只生成1条；不为省成本减少用户要求的方案数。保留60秒超时、取消、幂等、严格结果校验，不自动重发。
+规划请求只发送文字需求和参考图编号，不发送图片内容，不虚构商品视觉分析，见[套图计划](image-generation-api.md#套图计划)。依据[思考模式文档](https://api-docs.deepseek.com/guides/thinking_mode/)显式 `thinking.type=disabled`，避免默认开启思考；使用 JSON 输出、`max_tokens=8192`、单轮请求和简短独立提示词来控制费用。最多20条，按用户指定的张数或颜色、场景、视角等目标列表确定数量；如“红色、蓝色、白色”为3条，“换成红色，白色部分不变”为1条，未指定数量或变化项时只生成1条；不为省成本减少用户要求的方案数。保留60秒超时、取消、幂等、严格结果校验，不自动重发。
 
 ## 提示词优化
 
