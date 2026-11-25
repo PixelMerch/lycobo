@@ -1,47 +1,55 @@
+import { imageUnitCredits } from "@lycoboai/contracts";
 import { defineMessages } from "../../../i18n/messages";
 
-/** 首页常见问题说明已接通的创作流程与积分规则，购买档位由独立 Pricing 区承载。 */
+/** 首页问答覆盖创作准备、积分充值、任务退款和图片访问。 */
 export const landingFaqMessages = defineMessages({
   "zh-CN": {
     faqTitle: "常见问题",
-    faqImagesQuestion: "需要准备什么样的商品图？",
-    faqImagesAnswer:
-      "选择清晰、主体完整的商品图。需要呈现面料、花型或局部细节时，可以补充对应的参考图。",
-    faqToolsQuestion: "商品套图和家纺裂变有什么区别？",
+    faqToolsQuestion: "一张商品图能做出哪些效果？",
     faqToolsAnswer:
-      "商品套图根据你的用途规划主图、场景和细节图；家纺裂变围绕一款床品，按选定的俯拍、正面、面料特写等视角生成图片。",
-    faqPlanQuestion: "可以先看方案，再生成图片吗？",
+      "可以制作商品主图、场景图或细节图，也可以参考另一张图的风格。床品还有专门的多视角工具，可以选择俯拍、正面或面料特写。",
+    faqImagesQuestion: "上传什么样的商品图效果更好？",
+    faqImagesAnswer:
+      "用光线均匀、商品完整入镜的清晰图片。需要突出花纹、材质或细节时，可以补充特写图。用自己的话描述想要的画面即可。",
+    faqPlanQuestion: "可以先看方案，再生成吗？",
     faqPlanAnswer:
-      "可以。商品套图会先生成计划，你可以修改每张图的提示词、调整参考图，再勾选需要的方案进行生成。",
-    faqPromptQuestion: "不会写提示词，也能用吗？",
-    faqPromptAnswer:
-      "先用自己的话描述想要的画面，再使用 AI 优化补充构图、光线和商品呈现方式。优化后的文字可以继续编辑，也可以撤销。",
-    faqCreditsQuestion: "创作时如何扣除积分？",
-    faqCreditsAnswer:
-      "提交前会显示本次所需积分。批量生成按选中的图片数量计算，AI 提示词优化单独确认消耗；实际扣费可以在积分明细中查看。",
-    faqFailureQuestion: "生成失败，积分会退回吗？",
+      "可以。商品套图会先列出预计生成的画面。你可以修改每张图的描述和参考图，只生成勾选的项目。",
+    faqCreditsQuestion: "一次生成要用多少积分？",
+    faqCreditsAnswer: `图片生成每张 ${imageUnitCredits} 积分，批量按所选张数计算。提示词 AI 优化单独显示费用。提交前可查看本次所需积分，实际扣费可在「积分明细」核对。`,
+    faqRechargeQuestion: "在哪里查看充值积分包？",
+    faqRechargeAnswer: "登录后点击顶栏积分余额旁的「特惠充值」，即可查看当前可选的积分包与价格。",
+    refundLink: "查看退款政策",
+    faqFailureQuestion: "生成失败后，积分会退回吗？",
     faqFailureAnswer:
-      "任务确认失败后，对应积分退回原钱包；多张图片部分失败时，只退回失败部分。结果仍在核对中的任务，请先查看任务状态与积分明细。",
+      "已扣费的任务确认失败后，积分会退回原扣款账户。批量任务部分失败时，只退回失败图片对应的积分。你可以在「积分明细」核对。",
+    faqPrivacyQuestion: "上传的图片谁能看到？",
+    faqPrivacyAnswer:
+      "图片保存在私有存储，按工作区和权限访问。提交生成后，相关提示词和参考图会交给该任务的模型服务方处理。",
+    privacyLink: "查看隐私政策",
   },
   en: {
     faqTitle: "Frequently asked questions",
-    faqImagesQuestion: "What kind of product photos should I upload?",
-    faqImagesAnswer:
-      "Use a clear photo with the whole product visible. Add reference images when you need to show fabric, patterns, or specific details.",
-    faqToolsQuestion: "How are image sets different from textile variations?",
+    faqToolsQuestion: "What can I create from one product photo?",
     faqToolsAnswer:
-      "Image sets plan hero images, scenes, and details around your brief. Textile variations create selected views of the same bedding, such as overhead shots, front views, and fabric close-ups.",
-    faqPlanQuestion: "Can I review the plan before generating?",
+      "Make a main image, a lifestyle scene, or a detail shot. You can also match the look of a reference image. For bedding, choose views such as overhead, front, and fabric close-up.",
+    faqImagesQuestion: "What kind of product photo works best?",
+    faqImagesAnswer:
+      "Start with a sharp, evenly lit photo that shows the whole product. Add a close-up if a pattern, material, or detail matters. Describe the result you want in your own words.",
+    faqPlanQuestion: "Can I review and edit a plan before generating?",
     faqPlanAnswer:
-      "Yes. The image set planner creates a plan first. Edit each prompt, adjust its reference images, then select the images you want to generate.",
-    faqPromptQuestion: "Do I need to know how to write prompts?",
-    faqPromptAnswer:
-      "Describe your idea in your own words. AI optimization adds composition, lighting, and product presentation details. You can keep editing the result or undo it.",
-    faqCreditsQuestion: "How are credits charged?",
-    faqCreditsAnswer:
-      "The credit cost is shown before you submit. Batch generation counts the selected images, and AI prompt optimization has a separate cost confirmation. Check Credit history for actual charges.",
-    faqFailureQuestion: "Are credits returned if generation fails?",
+      "Yes. The image set planner lists the proposed shots first. You can edit the description and references for each shot, then generate only the ones you select.",
+    faqCreditsQuestion: "How many credits does a generation cost?",
+    faqCreditsAnswer: `Image generation costs ${imageUnitCredits} credits per image. Batches are charged for the number you select. AI prompt optimization shows its own cost. You’ll see the total before submitting and can verify the charge in Credit history.`,
+    faqRechargeQuestion: "Where can I see the credit packs?",
+    faqRechargeAnswer:
+      "Sign in and select Top up next to your credit balance to see the current packs and prices.",
+    refundLink: "Read the Refund Policy",
+    faqFailureQuestion: "Do I get my credits back if generation fails?",
     faqFailureAnswer:
-      "Once a task is confirmed failed, its credits return to the original wallet. If only some images fail, only those are refunded. For results still being checked, refer to the task status and Credit history.",
+      "If a task you were charged for is confirmed to have failed, the credits go back to the account that was charged. If only part of a batch fails, credits are returned for the images that failed. Check Credit history for the return.",
+    faqPrivacyQuestion: "Who can see the images I upload?",
+    faqPrivacyAnswer:
+      "Images are kept in private storage, with access controlled by workspace and permissions. When you submit a generation, the model provider processes the relevant prompts and reference images.",
+    privacyLink: "Read the Privacy Policy",
   },
 });

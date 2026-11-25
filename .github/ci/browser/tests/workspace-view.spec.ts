@@ -75,7 +75,7 @@ test("desktop keeps the tools in a left rail beside the settings panel and stack
   expect(composer.x - (dock.x + dock.width)).toBe(12);
   await expect(
     page.getByRole("navigation", { name: "电商创作工具" }).getByRole("button"),
-  ).toHaveCount(5);
+  ).toHaveCount(4);
   await expect(page.getByRole("heading", { name: "生成记录", exact: true })).toBeVisible();
   // 任务卡保持上方信息、下方结果，单张结果高 320px。
   const first = page.locator(".generation-job").first();
@@ -97,6 +97,34 @@ test("desktop keeps the tools in a left rail beside the settings panel and stack
   await page.reload();
   const compact = await first.locator(".generation-results > div").first().boundingBox();
   expect(compact?.height).toBeCloseTo(240, 0);
+});
+
+test("workspace shortcuts open the same library on the requested tab", async ({ page }) => {
+  await mockImageApi(page);
+  await page.goto("/zh-CN/dashboard/commerce/create");
+  const draft = page.getByLabel("提示词", { exact: true });
+  await draft.fill("保留在工作区的草稿");
+  const sidebar = page.locator("#workspace-tool-navigation");
+  await expect(sidebar.getByRole("button", { name: "自由画布", exact: true })).toHaveCount(0);
+  const inspiration = sidebar.getByRole("button", { name: "灵感库", exact: true });
+  const assets = sidebar.getByRole("button", { name: "素材库", exact: true });
+  const dialog = page.getByRole("dialog", { name: "素材库", exact: true });
+  await inspiration.click();
+  await expect(dialog.getByRole("tab", { name: "灵感库", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page).toHaveURL(/\/zh-CN\/dashboard\/commerce\/create$/);
+  await dialog.getByRole("button", { name: "关闭素材库", exact: true }).click();
+  await expect(inspiration).toBeFocused();
+  await assets.click();
+  await expect(dialog.getByRole("tab", { name: "我的素材", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await dialog.getByRole("button", { name: "关闭素材库", exact: true }).click();
+  await expect(assets).toBeFocused();
+  await expect(draft).toHaveValue("保留在工作区的草稿");
 });
 
 test("the tool rail collapses to icons while the settings panel stays", async ({ page }) => {

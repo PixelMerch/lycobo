@@ -29,6 +29,12 @@ body:has(.lp-page) {
   background: var(--landing-canvas);
 }
 
+/* 打开前景面板时隐藏页面轨道，保留浮动覆盖所用的页面宽度。 */
+body:has(.lp-page):has(.modal__backdrop, .drawer__backdrop, .account-menu)
+  > .lycobo-page-scrollbar {
+  visibility: hidden;
+}
+
 .main-content:has(> .lp-page) {
   padding: 0;
 }

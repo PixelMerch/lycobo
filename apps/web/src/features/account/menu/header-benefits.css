@@ -1,16 +1,39 @@
 /* 顶栏积分胶囊与语言入口共用半透明底色。 */
-.header-credits {
+.header-credit-controls {
+  --header-credit-divider-gap: 8px;
+  --header-account-control-radius: 8px;
+  position: relative;
+  isolation: isolate;
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 8px;
+  min-width: 0;
+}
+.header-credit-controls::before {
+  position: absolute;
+  z-index: -1;
+  inset: 50% 0 auto;
+  height: var(--landing-control-fill-height, var(--shell-pill-height));
+  border-radius: var(--header-account-control-radius);
+  background: var(--site-header-button-fill);
+  content: "";
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.header-credits {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
   height: var(--shell-pill-height);
   min-width: 0;
   max-width: 240px;
-  padding: 0 12px;
+  padding-inline: 10px var(--header-credit-divider-gap);
   border: 0;
-  border-radius: 999px;
-  background: var(--site-header-button-fill);
+  border-radius: var(--header-account-control-radius);
+  background: transparent;
   color: #ffffffcc;
   font-family: var(--shell-font-family);
   font-size: var(--text-base);
@@ -18,10 +41,11 @@
   line-height: 20px;
   cursor: pointer;
   outline: none;
-  transition: background-color 200ms ease;
 }
-.header-credits:is(:hover, [data-hovered="true"], [aria-expanded="true"]) {
-  background: var(--site-header-nav-hover-fill);
+.header-credits .ui-icon {
+  flex: none;
+  color: var(--studio-accent);
+  fill: currentColor;
 }
 .header-credits[data-focus-visible="true"] {
   outline: 1px solid #ffffff66;
@@ -33,18 +57,62 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  color: #fff;
+  transition: color 150ms ease;
 }
-.header-credits-divider {
-  flex: none;
-  width: 1px;
-  height: 15px;
-  background: #ffffff1f;
+.header-credits:is(:hover, [data-hovered="true"]) .header-credits-value {
+  color: #ffffffcc;
 }
-.header-credits-plan {
+.header-credit-purchase.button {
+  position: relative;
   flex: none;
+  gap: 5px;
+  height: var(--landing-control-height, var(--shell-pill-height));
+  min-width: 44px;
+  padding-inline: calc(var(--header-credit-divider-gap) + 1px) 8px;
+  border-radius: var(--header-account-control-radius);
+  background: transparent;
+  color: #fff;
+  font-size: var(--text-sm);
+  box-shadow: none;
   white-space: nowrap;
+  transition: color 150ms ease;
 }
-
+.header-credit-purchase.button::before {
+  position: absolute;
+  inset: 50% auto auto 0;
+  width: 1px;
+  height: 14px;
+  background: #ffffff38;
+  content: "";
+  transform: translateY(-50%);
+}
+.header-credit-purchase-tag {
+  padding: 2px 5px;
+  border-radius: 6px;
+  background: var(--studio-accent-gradient);
+  color: #142000;
+  font-size: 11px;
+  font-weight: var(--weight-semibold);
+  line-height: 1.15;
+  animation: credit-offer-pulse 2.4s ease-in-out 3;
+}
+.header-credit-purchase.button:is(:hover, [data-hovered="true"]) .header-credit-purchase-tag {
+  filter: brightness(1.1);
+}
+.header-credit-purchase.button:is(:hover, [data-hovered="true"]) {
+  background: transparent;
+  color: #ffffffcc;
+}
+.header-credit-purchase.button:is(:focus-visible, [data-focus-visible="true"]) {
+  outline: 2px solid #fafafa;
+  outline-offset: 2px;
+}
+@keyframes credit-offer-pulse {
+  50% {
+    opacity: 0.72;
+  }
+}
 /* 积分菜单：最小 215px 宽、8px 内边距、12px 圆角，各行间距 4px。 */
 .credits-menu {
   min-width: 215px;
@@ -62,38 +130,6 @@
   flex-direction: column;
   gap: 4px;
   padding: 0;
-}
-/* 会员等级行沿用统一高亮底板，右侧保留青柠“升级”胶囊。 */
-.credits-menu .credits-menu-plan {
-  --menu-row-fill: var(--fill-medium);
-  --menu-row-hover-fill: var(--fill-strong);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 12px;
-  color: #fff;
-  font-size: var(--text-base);
-  font-weight: var(--weight-medium);
-  line-height: 20px;
-  cursor: pointer;
-}
-.credits-menu-upgrade {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  height: 28px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: var(--app-primary-gradient);
-  color: var(--accent-foreground);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-medium);
-  line-height: 16px;
-  transition: filter 200ms ease;
-}
-.credits-menu-plan:is([data-hovered="true"], [data-focused="true"]) .credits-menu-upgrade {
-  filter: brightness(1.06);
 }
 /* 余额行只展示数字：左侧 #FFFFFF80 标签，右侧白色等宽数字。 */
 .credits-menu .credits-menu-balance {
@@ -120,7 +156,7 @@
   gap: 12px;
   padding: 0 16px;
   background: transparent;
-  color: #ffffff66;
+  color: #ffffffb3;
   font-size: var(--text-base);
   font-weight: var(--weight-medium);
   line-height: 20px;
@@ -128,12 +164,13 @@
   transition: color 200ms ease;
 }
 .credits-menu .credits-menu-action:is([data-hovered="true"], [data-focused="true"]) {
-  color: #ffffffcc;
+  color: #fff;
 }
 
-/* 手机只显示积分图标与余额（同参考站），触控目标不小于 44px。 */
+/* 窄屏及触屏保留 44px 的点击热区。 */
 @media (max-width: 767px), (pointer: coarse) {
-  .header-credits {
+  .header-credits,
+  .header-credit-purchase.button {
     min-height: 44px;
   }
 }
@@ -143,15 +180,29 @@
     min-width: 0;
   }
 }
-/* 768–1023px 的窄桌面也只显示积分数，不显示会员等级，给顶部导航让位（顶部导航加了“灵感”）。 */
-@media (max-width: 1023px) {
-  .header-credits :is(.header-credits-divider, .header-credits-plan) {
-    display: none;
+@media (max-width: 380px) {
+  .header-credit-controls {
+    --header-credit-divider-gap: 5px;
+  }
+  .header-credits {
+    max-width: 60px;
+    padding-inline-start: 5px;
+  }
+  .header-credit-controls > .header-credit-purchase.button {
+    gap: 3px;
+    padding-inline: calc(var(--header-credit-divider-gap) + 1px) 5px;
+    font-size: var(--text-xs);
+  }
+  .header-credit-purchase-tag {
+    padding-inline: 3px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .header-credits,
-  .credits-menu-upgrade,
+  .header-credit-purchase-tag {
+    animation: none;
+  }
+  .header-credits-value,
+  .header-credit-purchase.button,
   .credits-menu .credits-menu-action {
     transition: none;
   }

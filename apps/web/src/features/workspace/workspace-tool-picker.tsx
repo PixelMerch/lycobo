@@ -1,6 +1,5 @@
 import { Button, CloseButton, Dropdown, Header, Tooltip } from "@heroui/react";
 import {
-  IconBrush,
   IconChevronDown,
   IconChevronRight,
   IconFolder,
@@ -14,9 +13,7 @@ import { shellMessages } from "../../app/shell-messages";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
 import { useAppLocation, useAppNavigate } from "../../i18n/use-localized-navigation";
-import { freeCanvasPath } from "../../lib/dashboard-paths";
 import { useOpenAssetLibrary } from "../assets/asset-library-store";
-import { inspirationLibraryPath } from "../inspiration/inspiration-path";
 import { workspaceRailLabelStyle } from "./workspace-rail-motion";
 import { shareProductReference, visibleWorkspaceTools } from "./workspace-state";
 import { type WorkspaceToolCategory, workspaceToolCategories } from "./workspace-tool-categories";
@@ -33,9 +30,8 @@ function subscribeToDockLayout(change: () => void) {
   return () => query.removeEventListener("change", change);
 }
 
-/** 工作区沿用首页的工具分类，通过点击或键盘展开。 */
+/** 工作区提供工具分类和素材弹窗入口，保持当前创作页面。 */
 export function WorkspaceToolPicker() {
-  const navigate = useAppNavigate();
   const t = useMessages(workspaceToolMessages);
   const shell = useMessages(shellMessages);
   const wideViewport = useSyncExternalStore(subscribeToDockLayout, isSideDock);
@@ -45,19 +41,12 @@ export function WorkspaceToolPicker() {
   const [openCategory, setOpenCategory] = useState<WorkspaceToolCategory["label"] | null>(null);
   const shortcuts = [
     {
-      id: "inspiration",
+      tab: "inspiration",
       icon: IconSparkles,
       label: shell.inspiration,
-      action: () => void navigate(inspirationLibraryPath),
     },
-    {
-      id: "canvas",
-      icon: IconBrush,
-      label: shell.freeCanvas,
-      action: () => void navigate(freeCanvasPath),
-    },
-    { id: "assets", icon: IconFolder, label: shell.assets, action: () => openLibrary() },
-  ];
+    { tab: "mine", icon: IconFolder, label: shell.assets },
+  ] as const;
 
   return (
     <nav id="workspace-tool-navigation" className="workspace-tool-bar" aria-label={t.toolBar}>
@@ -71,15 +60,15 @@ export function WorkspaceToolPicker() {
           setOpenCategory={setOpenCategory}
         />
       ))}
-      {shortcuts.map(({ id, icon, label, action }, index) => (
-        <Tooltip key={id} delay={300} closeDelay={0} isDisabled={!showShortcutTooltips}>
+      {shortcuts.map(({ tab, icon, label }, index) => (
+        <Tooltip key={tab} delay={300} closeDelay={0} isDisabled={!showShortcutTooltips}>
           <Button
             size="sm"
             variant="tertiary"
             className="workspace-tool-shortcut"
             style={workspaceRailLabelStyle(firstShortcutIndex + index)}
             aria-label={label}
-            onPress={action}
+            onPress={(event) => openLibrary(event.target, tab)}
           >
             <UiIcon icon={icon} size="navigation" />
             <span className="workspace-tool-label">{label}</span>

@@ -16,8 +16,11 @@
   --site-brand-wordmark-scale: 0.88;
   --site-brand-wordmark-offset: -3%;
 }
-:is(.topbar.public-site-header, .workspace-site-header) {
+.topbar.public-site-header {
   padding-inline: 28px;
+}
+.workspace-site-brand {
+  --site-brand-wordmark-offset: 0%;
 }
 :is(.public-site-brand, .workspace-site-brand).link {
   position: relative;
@@ -41,7 +44,7 @@
   scale: var(--site-brand-wordmark-scale);
 }
 @media (max-width: 767px) {
-  :is(.topbar.public-site-header, .workspace-site-header) {
+  .topbar.public-site-header {
     padding-inline: 8px;
   }
   :is(.public-site-brand, .workspace-site-brand).link {
@@ -53,7 +56,7 @@
   }
 }
 @media (max-width: 374px) {
-  :is(.topbar.public-site-header, .workspace-site-header) {
+  .topbar.public-site-header {
     padding-inline: 4px;
   }
   :is(.public-site-brand, .workspace-site-brand).link {

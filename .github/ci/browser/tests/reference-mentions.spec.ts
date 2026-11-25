@@ -195,7 +195,10 @@ test("files stay local until generation and partial upload retries reuse success
   await page.goto("/commerce/create");
   await page
     .getByLabel("添加参考图片", { exact: true })
-    .setInputFiles(["apps/web/public/studio/bedroom.webp", "apps/web/public/studio/lavender.webp"]);
+    .setInputFiles([
+      ".github/ci/browser/fixtures/studio/bedroom.webp",
+      ".github/ci/browser/fixtures/studio/lavender.webp",
+    ]);
   await expect(page.locator(".reference-tile")).toHaveCount(2);
   expect(uploads).toBe(0);
   await page.locator(".prompt-field").getByRole("textbox").fill("保留商品，更换背景");

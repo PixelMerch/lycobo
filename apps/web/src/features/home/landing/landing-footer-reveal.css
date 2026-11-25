@@ -1,0 +1,15 @@
+@media (prefers-reduced-motion: no-preference) {
+  /* 正文盖住后层页脚，继续滚动时由正文底边逐步露出页脚。 */
+  .lp-page {
+    z-index: 1;
+  }
+
+  .lp-footer-reveal:not(:has(:focus-visible)) {
+    position: sticky;
+    /* 高页脚在顶栏下释放停驻，接着沿文档流滚动。 */
+    inset-block-end: min(
+      0px,
+      calc(100dvh - var(--studio-header-height, 60px) - var(--lp-footer-height))
+    );
+  }
+}

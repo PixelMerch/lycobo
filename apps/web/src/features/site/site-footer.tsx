@@ -1,6 +1,8 @@
+import { Link } from "@heroui/react";
 import { RouteLink } from "../../components/router-link";
 import { useLocale } from "../../i18n/locale-store";
 import { useMessages } from "../../i18n/messages";
+import { siteSupportEmail } from "./site-contact";
 import { siteFooterMessages } from "./site-footer-messages";
 import { siteFooterGroups } from "./site-footer-navigation";
 import "./site-footer.css";
@@ -17,6 +19,9 @@ export function SiteFooter() {
         <div className="site-footer-identity">
           <img className="site-footer-brand" {...wordmark} alt="Lycobo" />
           <p>{t.copyright(new Date().getFullYear())}</p>
+          <Link href={`mailto:${siteSupportEmail}`} className="site-footer-support">
+            {siteSupportEmail}
+          </Link>
         </div>
         <nav className="site-footer-groups" aria-label={t.navigation}>
           {groups.map(({ title, links }) => (

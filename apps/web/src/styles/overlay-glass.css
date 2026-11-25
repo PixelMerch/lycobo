@@ -11,8 +11,7 @@
     .tooltip,
     .alert-dialog,
     .toast
-  ):not(.membership-dialog, .browse-image-dialog, .account-news-popover),
-:root .login-panel {
+  ):not(.membership-dialog, .browse-image-dialog, .account-news-popover) {
   background: var(--glass-fill), var(--glass-tint);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
@@ -65,13 +64,9 @@
     --glass-tint: var(--glass-fallback);
     --glass-dark-tint: var(--glass-fallback);
   }
-  :root .login-panel {
-    --glass-tint: var(--glass-fallback);
-  }
 }
 @media (prefers-reduced-transparency: reduce) {
-  :root,
-  :root .login-panel {
+  :root {
     --glass-fill: linear-gradient(transparent, transparent);
     --glass-tint: var(--glass-fallback);
     --glass-dark-tint: var(--glass-fallback);

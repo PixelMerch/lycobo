@@ -1,6 +1,10 @@
-/* 首页与灵感库共用顶栏布局。 */
+/* 公共页面共用顶栏布局。 */
 .topbar.public-site-header {
   gap: 16px;
+}
+/* 阅读区滚动到吸顶导航后方时，实色底板遮住正文与目录。 */
+.studio-app:has(.legal-page) > .topbar.public-site-header {
+  background: #000;
 }
 .topbar.public-site-header[data-landing-header] {
   position: fixed;
@@ -78,11 +82,12 @@
   font-weight: 500;
 }
 @media (max-width: 1159px) {
-  .public-site-header[data-landing-header] .mobile-menu {
+  .public-site-header:is([data-landing-header], .studio-app:has(.legal-page) > *) .mobile-menu {
     display: inline-flex;
     flex: none;
   }
-  .public-site-header[data-landing-header] .public-site-desktop-nav {
+  .public-site-header:is([data-landing-header], .studio-app:has(.legal-page) > *)
+    .public-site-desktop-nav {
     display: none;
   }
 }
@@ -107,11 +112,11 @@
   font-weight: var(--weight-semibold);
   white-space: nowrap;
 }
-.topbar.public-site-header:is([data-landing-header], .studio-app:has(.inspiration-library) > *) {
+.topbar.public-site-header:is(
+  [data-landing-header],
+  .studio-app:has(:is(.inspiration-library, .legal-page)) > *
+) {
   padding-inline: var(--public-site-header-gutter);
-  .landing-header-controls {
-    --landing-control-fill-radius: var(--control-radius);
-  }
   .public-site-brand-art {
     --site-brand-wordmark-offset: 0%;
   }

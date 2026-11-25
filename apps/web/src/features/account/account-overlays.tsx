@@ -1,14 +1,13 @@
 import { lazy, Suspense, useEffect } from "react";
 import { type AccountLayer, useAccountOverlays } from "./account-overlay-store";
-import { RechargeDialog } from "./credits/credits-dialog";
 
 const AccountSettingsDialog = lazy(() =>
   import("./settings/account-settings-dialog").then((module) => ({
     default: module.AccountSettingsDialog,
   })),
 );
-const MembershipDialog = lazy(() =>
-  import("./membership/membership-page").then((module) => ({ default: module.MembershipDialog })),
+const RechargeDialog = lazy(() =>
+  import("./credits/credits-dialog").then((module) => ({ default: module.RechargeDialog })),
 );
 const CreditUsageDialog = lazy(() =>
   import("./credits/credit-usage-dialog").then((module) => ({
@@ -27,7 +26,7 @@ function useReturnFocus(layer: AccountLayer, isOpen: boolean) {
   }, [isOpen, layer, opener, release]);
 }
 
-/** 统一挂载账户相关弹层（账户设置及叠在其上的充值、会员、积分明细），关闭后各自把焦点还给打开它的入口。 */
+/** 按需挂载账户设置、充值和积分明细，并在关闭后恢复入口焦点。 */
 export function AccountOverlayHost() {
   const settings = useAccountOverlays((state) => state.settings);
   const dialog = useAccountOverlays((state) => state.dialog);
@@ -44,10 +43,9 @@ export function AccountOverlayHost() {
           <AccountSettingsDialog section={settings} onClose={() => close("settings")} />
         </Suspense>
       )}
-      {dialog === "recharge" && <RechargeDialog onClose={() => close("dialog")} />}
-      {dialog === "membership" && (
+      {dialog === "recharge" && (
         <Suspense fallback={null}>
-          <MembershipDialog onClose={() => close("dialog")} />
+          <RechargeDialog onClose={() => close("dialog")} />
         </Suspense>
       )}
       {dialog === "usage" && (

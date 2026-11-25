@@ -12,6 +12,7 @@ import { Navigate, Outlet } from "react-router";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
 import { AccountOverlayHost } from "../features/account/account-overlays";
+import { rechargePath } from "../features/account/credits/recharge-navigation";
 import { AccountMenu, HeaderLogin } from "../features/account/menu/account-menu";
 import { HeaderBenefits } from "../features/account/menu/header-benefits";
 import { AccountMessages } from "../features/account/notifications/account-messages";
@@ -46,6 +47,8 @@ const publicPaths = new Set<string>([
   legalPaths.terms,
   legalPaths.privacy,
   legalPaths.refunds,
+  rechargePath,
+  "/membership",
 ]);
 
 const studioLogo = { src: "/brand/lycobo-landing.svg", width: 120, height: 35 };
@@ -57,12 +60,10 @@ export function StudioShell() {
   const t = useMessages(shellMessages);
   const workspace = isDashboardPath(pathname);
   const isLanding = pathname === commercePath;
-  const publicNavigation =
-    isLanding || pathname === inspirationLibraryPath || pathname === creationGuidePath;
+  const publicNavigation = publicPaths.has(pathname);
   const session = useEnterpriseSession();
   const signedIn = !!session.data;
-  const protectedRoute = !publicPaths.has(pathname);
-  const routeNeedsLogin = protectedRoute && !signedIn;
+  const routeNeedsLogin = !publicNavigation && !signedIn;
   if (routeNeedsLogin && !session.isPending)
     return (
       <Navigate

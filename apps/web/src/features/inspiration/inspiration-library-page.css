@@ -7,6 +7,11 @@
     var(--space-3)
   );
 }
+.studio-app:has(.inspiration-library)
+  > .public-site-header
+  :is(.account-trigger .account-avatar, .account-avatar .avatar__fallback) {
+  border-radius: var(--control-radius);
+}
 .studio-app:has(.inspiration-library) > .topbar.public-site-header::before {
   background: var(--studio-canvas);
   -webkit-backdrop-filter: none;
@@ -26,12 +31,24 @@
   padding: calc(var(--inspiration-toolbar-height) + var(--space-3)) 28px 40px;
 }
 .inspiration-library .home-inspiration-bar {
+  --inspiration-search-height: calc(var(--control-height-md) + 2 * var(--space-1));
   position: fixed;
   top: var(--header-height);
   inset-inline: 0;
   z-index: 14;
   padding-inline: 28px;
   background: var(--studio-canvas);
+}
+.inspiration-library .command-button {
+  height: var(--inspiration-search-height);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+.inspiration-library .command-button:where(:not(:hover, :focus-within)) {
+  background: var(--fill-soft);
+}
+.inspiration-library .command-button-trigger > .button {
+  height: var(--inspiration-search-height);
 }
 .inspiration-library > .site-footer {
   margin-top: auto;
@@ -44,6 +61,10 @@
     padding: calc(var(--inspiration-toolbar-height) + var(--space-3)) 12px 32px;
   }
   .inspiration-library .home-inspiration-bar {
+    --inspiration-search-height: calc(var(--dismiss-target) + 2 * var(--space-1));
     padding-inline: 12px;
+  }
+  .inspiration-library .command-button-trigger > .button {
+    width: var(--inspiration-search-height);
   }
 }

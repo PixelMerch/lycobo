@@ -19,13 +19,15 @@ import { assetsMessages } from "./assets-messages";
  */
 export function LibraryDialog({
   tool,
+  initialTab = "mine",
   onClose,
 }: {
   tool?: AssetTool | undefined;
+  initialTab?: AssetLibraryTab;
   onClose: () => void;
 }) {
   const [filters, setFilters] = useState(() => toolAssetFilters(tool));
-  const [tab, setTab] = useState<AssetLibraryTab>("mine");
+  const [tab, setTab] = useState<AssetLibraryTab>(initialTab);
   const [selecting, setSelecting] = useState(false);
   const t = useMessages(assetsMessages);
   const surfaceMotion = useCenteredDialogEntrance();

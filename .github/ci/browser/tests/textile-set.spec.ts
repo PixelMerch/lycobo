@@ -343,7 +343,7 @@ test("corner replacement opens the file chooser without opening preview and keep
   ).toBeTruthy();
   const [chooser] = await Promise.all([page.waitForEvent("filechooser"), replace.click()]);
   expect(chooser.isMultiple()).toBe(false);
-  await chooser.setFiles("apps/web/public/studio/set-thumb.webp");
+  await chooser.setFiles(".github/ci/browser/fixtures/studio/set-thumb.webp");
   await expect(image).not.toHaveAttribute("src", previous ?? "");
   await expect(field.locator(".reference-tile")).toHaveCount(1);
   await expect(page.getByRole("dialog", { name: "图片浏览", exact: true })).toBeHidden();
@@ -402,7 +402,7 @@ test("detail images append up to five, replace individually and clear together",
     first.getByRole("button", { name: "替换参考图：图片2", exact: true }).click(),
   ]);
   expect(chooser.isMultiple()).toBe(false);
-  await chooser.setFiles("apps/web/public/studio/set-thumb.webp");
+  await chooser.setFiles(".github/ci/browser/fixtures/studio/set-thumb.webp");
   await expect(first.locator(".reference-preview img")).not.toHaveAttribute("src", original ?? "");
   await expect(field.locator(".reference-tile")).toHaveCount(5);
   await first.getByRole("button", { name: "查看参考图片：图片2", exact: true }).click();

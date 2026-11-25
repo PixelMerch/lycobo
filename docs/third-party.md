@@ -13,15 +13,11 @@
   同时归档至 .agents/licenses/heroui-react.txt。
 
 来源和准确 SHA 见 .agents/skills-lock.json，未经审查不变更原始材料。
-`apps/web/public/studio` 下的样例图由内置 image_gen 生成，不代表真实客户商品或生成结果。参考站研究不构成品牌素材授权。
+公开素材 R2 中的工作台样例图由内置 image_gen 生成，不代表真实客户商品或生成结果。参考站研究不构成品牌素材授权。
 
 页脚的社媒图标取自项目已安装的 Tabler Icons 3.51.0。MIT 许可原文随 [SVG](../apps/web/public/brand/lycobo-footer-socials.svg) 保留。
 
 全局加载动画使用 [react-spinners](https://github.com/davidhu2000/react-spinners) 0.17.1 的 `HashLoader`，依赖遵循 MIT 许可。
-
-## React Bits Silk
-
-登录页背景的着色器来自 [React Bits Silk](https://github.com/DavidHDev/react-bits/tree/ed33ebe4acfe29e60fb759bcccc70a138ce2dcef/src/ts-default/Backgrounds/Silk)，实现位于 `apps/web/src/features/auth/silk/`。使用 MIT + Commons Clause，保留 David Haz (2026) 的版权及[许可原文](#react-bits-许可原文)。
 
 ## DesignBookmark Command button
 
@@ -29,7 +25,11 @@
 
 ## 首页展示素材与历史参考
 
-2026-11-25 首页已改为参考 LTX 暗黑电影感布局实现，视觉演示素材来自本地录制包 `page-take/recordings/ltx/source/resources/` 并存放于 `apps/web/public/landing/ltx/`，仅供本地开发与页面结构演示使用，不代表客户商品或生产生成任务；先前生成的 `apps/web/public/landing/campaign/` 与 `showcase/` 素材已全部清理。
+2026-11-25 首页 Hero 的相机棚拍、琥珀精华瓶套图和模特眼镜广告由同级 `gen-image` CLI 生成，使用本项目生成的皮包棚拍作为布光参考。配图发布格式为 WebP，发布于 R2 的 `site-20261125/landing/hero/`。图片用于功能示例。
+
+首页功能区、工作台导览、商品图片灵感与底部创作横幅使用 `gen-image` CLI 生成的 WebP，发布于 R2 的 `site-20261125/landing/examples/`。同商品和床品的不同视角使用本项目已生成的商品图作参考。工作台采用 React 组合示例图和双语文字，按 Lycobo 已有功能展示。
+
+登录页图片发布于 R2 的 `site-20261125/auth/`。暖光模特图以用户提供的截图为布光参考，猫咪油画为原创，两张都由同级 `gen-image` CLI 生成。梵高 1889 年《星空》使用 Wikimedia Commons 标记为公有领域的 Google Arts & Culture 数字复本，转换为 WebP 后在页面内裁切。[Wikimedia Commons 文件与授权](https://commons.wikimedia.org/wiki/File:Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg)
 
 ## 阿里巴巴普惠体 3.0
 
@@ -72,3 +72,5 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+灵感库的九张模型入口示例于 2026-10-21 由 image_gen 分格生成。六张商品样图于 2026-11-10 从 image_gen 示例图集切出，图集仅供浏览器测试使用。两组均为示例素材。

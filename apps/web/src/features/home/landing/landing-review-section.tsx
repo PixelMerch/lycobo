@@ -1,5 +1,6 @@
 import { useReducedMotion } from "motion/react";
 import { useMessages } from "../../../i18n/messages";
+import { publicImageUrl } from "../../../lib/public-image-url";
 import { inspirationLibraryPath } from "../../inspiration/inspiration-path";
 import { LandingActionLink } from "./landing-action-link";
 import { landingReviewMessages } from "./landing-review-messages";
@@ -12,18 +13,42 @@ interface ShowcaseFrame {
   caption: string;
 }
 
-/** 首页复刻 LTX 宽银幕横向无缝滚动成片展示带，悬停自动暂停并可直达灵感库。 */
+/** 展示按商品摄影题材策划的灵感案例，并提供进入灵感库的入口。 */
 export function LandingReviewSection() {
   const t = useMessages(landingReviewMessages);
   const reducedMotion = Boolean(useReducedMotion());
 
   const frames: ShowcaseFrame[] = [
-    { id: "show-1", image: "/landing/ltx/show-1.avif", caption: t.shotOne },
-    { id: "show-2", image: "/landing/ltx/show-2.avif", caption: t.shotTwo },
-    { id: "show-3", image: "/landing/ltx/show-3.avif", caption: t.shotThree },
-    { id: "show-4", image: "/landing/ltx/show-4.avif", caption: t.shotFour },
-    { id: "show-5", image: "/landing/ltx/show-5.avif", caption: t.shotFive },
-    { id: "show-6", image: "/landing/ltx/show-6.avif", caption: t.shotSix },
+    {
+      id: "show-1",
+      image: publicImageUrl("/landing/examples/show-clean.webp"),
+      caption: t.shotOne,
+    },
+    {
+      id: "show-2",
+      image: publicImageUrl("/landing/examples/show-sport.webp"),
+      caption: t.shotTwo,
+    },
+    {
+      id: "show-3",
+      image: publicImageUrl("/landing/examples/show-model.webp"),
+      caption: t.shotThree,
+    },
+    {
+      id: "show-4",
+      image: publicImageUrl("/landing/examples/show-detail.webp"),
+      caption: t.shotFour,
+    },
+    {
+      id: "show-5",
+      image: publicImageUrl("/landing/examples/show-contrast.webp"),
+      caption: t.shotFive,
+    },
+    {
+      id: "show-6",
+      image: publicImageUrl("/landing/examples/show-outdoors.webp"),
+      caption: t.shotSix,
+    },
   ];
 
   const loopFrames = reducedMotion

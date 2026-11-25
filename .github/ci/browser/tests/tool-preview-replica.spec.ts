@@ -2,9 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { apiFixture, chooseWorkspaceTool, mockImageApi } from "./image-api-fixture";
 
-const png = readFileSync(
-  new URL("../../../../apps/web/public/studio/textile-views/front.webp", import.meta.url),
-);
+const png = readFileSync(new URL("../fixtures/studio/textile-views/front.webp", import.meta.url));
 
 test("tool menu opens on click and drafts survive switching", async ({ page }) => {
   await mockImageApi(page);
@@ -98,7 +96,7 @@ test("style matching requires both slots and submits their roles without a paid 
         mimeType: "image/webp",
         buffer: readFileSync(
           new URL(
-            `../../../../apps/web/public/studio/textile-views/${
+            `../fixtures/studio/textile-views/${
               [
                 "angled-level",
                 "angled-overhead",

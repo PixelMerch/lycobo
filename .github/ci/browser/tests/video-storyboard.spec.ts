@@ -74,7 +74,7 @@ async function startFlow(page: Page, { planStatus = 200, width = 1440 }: FlowOpt
   );
   await page.route("**/api/v1/image-assets/*/content*", (route) =>
     route.fulfill({
-      path: "apps/web/public/studio/textile-views/front.webp",
+      path: ".github/ci/browser/fixtures/studio/textile-views/front.webp",
       contentType: "image/webp",
     }),
   );
@@ -159,7 +159,9 @@ async function startFlow(page: Page, { planStatus = 200, width = 1440 }: FlowOpt
   await composer
     .getByLabel("添加参考图片")
     .setInputFiles(
-      ["front.webp", "close-up.webp"].map((name) => `apps/web/public/studio/textile-views/${name}`),
+      ["front.webp", "close-up.webp"].map(
+        (name) => `.github/ci/browser/fixtures/studio/textile-views/${name}`,
+      ),
     );
   await expect(composer.locator(".reference-image-card")).toHaveCount(2);
   const descriptionInput = composer.getByRole("textbox", { name: "场景描述" });
@@ -264,9 +266,9 @@ test("a run stays one history entry from first click to a failed video", async (
 
 // 参考图并行上传、到达顺序不固定；三张示例图宽度各不相同，按宽度认出每次上传是第几张。
 const storyboardReferences = [
-  { path: "apps/web/public/studio/textile-views/front.webp", width: 480 },
-  { path: "apps/web/public/studio/bedroom.webp", width: 960 },
-  { path: "apps/web/public/studio/commerce-atlas.webp", width: 1774 },
+  { path: ".github/ci/browser/fixtures/studio/textile-views/front.webp", width: 480 },
+  { path: ".github/ci/browser/fixtures/studio/bedroom.webp", width: 960 },
+  { path: ".github/ci/browser/fixtures/studio/commerce-atlas.webp", width: 1774 },
 ];
 
 /** 在页面里解码一次上传并返回宽度；压缩会改变字节，但不会改变这些示例图的尺寸。 */
@@ -353,7 +355,7 @@ async function verifyStoryboard(page: Page, originalCount: number, legacy = fals
   });
   await page.route("**/api/v1/image-assets/*/content*", (route) =>
     route.fulfill({
-      path: "apps/web/public/studio/textile-views/front.webp",
+      path: ".github/ci/browser/fixtures/studio/textile-views/front.webp",
       contentType: "image/webp",
     }),
   );

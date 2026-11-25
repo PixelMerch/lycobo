@@ -187,6 +187,7 @@
 }
 
 .lp-style-banner-shell {
+  position: relative;
   margin: 0;
   aspect-ratio: 21 / 9;
   overflow: clip;
@@ -201,6 +202,23 @@
   height: 100%;
   object-fit: cover;
   transition: transform 640ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lp-style-banner-labels {
+  position: absolute;
+  inset: auto 0 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  padding: 24px clamp(12px, 2.5vw, 32px) 12px;
+  background: linear-gradient(transparent, rgb(11 11 11 / 88%));
+  color: var(--lp-fg);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.lp-style-banner-labels span:nth-child(2) {
+  padding-inline-start: 12px;
 }
 
 @media (hover: hover) and (pointer: fine) {

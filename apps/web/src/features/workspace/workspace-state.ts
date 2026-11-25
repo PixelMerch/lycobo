@@ -1,4 +1,5 @@
 import { dashboardToolPaths } from "../../lib/dashboard-paths";
+import { publicImageUrl } from "../../lib/public-image-url";
 import { useReplicaDraft } from "../commerce/replica/replica-state";
 import { useSmartVariationDraft } from "../commerce/smart-variation/smart-variation-state";
 import { useTextileSetDraft } from "../commerce/textile-set/textile-set-state";
@@ -18,10 +19,10 @@ export const workspaceTools = [
     path: dashboardToolPaths.textile,
     bannerImages: [
       workspaceToolHeroImages.textile,
-      "/landing/comforter-drape.webp",
-      "/landing/comforter-source.webp",
-      "/landing/comforter-folded.webp",
-      "/landing/comforter-stitch.webp",
+      publicImageUrl("/landing/comforter-drape.webp"),
+      publicImageUrl("/landing/comforter-source.webp"),
+      publicImageUrl("/landing/comforter-folded.webp"),
+      publicImageUrl("/landing/comforter-stitch.webp"),
     ],
   },
   {
@@ -37,7 +38,7 @@ export const workspaceTools = [
   {
     id: "video",
     path: dashboardToolPaths.video,
-    hero: "/studio/tool-heroes/video.webp",
+    hero: publicImageUrl("/studio/tool-heroes/video.webp"),
   },
 ] as const;
 /** 视频未开放，创作入口只显示已启用的图片工具。 */

@@ -93,7 +93,10 @@ test("model selectors load local logos and retain image-error fallbacks", async 
   await mockImageApi(page);
   await page.goto("/");
   const trigger = page.getByRole("button", { name: "选择创作模型", exact: true });
-  await expect(trigger.locator("img")).toHaveAttribute("src", "/model-logos/openai.svg");
+  await expect(trigger.locator("img")).toHaveAttribute(
+    "src",
+    /https:\/\/static\.lycobo\.com\/.*\/model-logos\/openai\.svg$/,
+  );
   await page.route("**/model-logos/openai.svg", (route) => route.fulfill({ status: 404 }));
   await page.reload();
   await trigger.click();

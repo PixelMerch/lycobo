@@ -67,6 +67,10 @@
   font-size: 13px;
   line-height: 1.5;
 }
+.site-footer .site-footer-support {
+  color: #ababab;
+  font-size: 13px;
+}
 .site-footer-signature {
   grid-area: signature;
   align-self: end;

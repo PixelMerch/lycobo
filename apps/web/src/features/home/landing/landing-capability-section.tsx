@@ -2,8 +2,10 @@ import { motion, useMotionValue, useReducedMotion, useSpring } from "motion/reac
 import { useState } from "react";
 import { useMessages } from "../../../i18n/messages";
 import { dashboardToolPaths } from "../../../lib/dashboard-paths";
+import { publicImageUrl } from "../../../lib/public-image-url";
 import { LandingActionLink } from "./landing-action-link";
 import { landingCapabilityMessages } from "./landing-capability-messages";
+import { landingImageSetExamples } from "./landing-example-assets";
 import { LandingSectionHeading } from "./landing-section-heading";
 import "./landing-capability-section.css";
 
@@ -63,7 +65,31 @@ function CapabilityGridBand({ cards, onMediaHover }: GridBandProps) {
   );
 }
 
-/** 首页复刻 LTX 滚动粘性层叠卡片（GEN SPACE → CONTROL → STYLE → ELEMENTS）与圆形跟随光标。 */
+/** 展示风格匹配的前后示例。 */
+function StyleComparison({ onMediaHover }: Pick<GridBandProps, "onMediaHover">) {
+  const t = useMessages(landingCapabilityMessages);
+  return (
+    <figure
+      className="lp-style-banner-shell"
+      onMouseEnter={() => onMediaHover(true)}
+      onMouseLeave={() => onMediaHover(false)}
+    >
+      <img
+        src={publicImageUrl("/landing/examples/lamp-style-comparison.webp")}
+        alt={t.styleBannerAlt}
+        className="lp-style-banner-img"
+        loading="lazy"
+        decoding="async"
+      />
+      <figcaption className="lp-style-banner-labels">
+        <span>{t.styleBefore}</span>
+        <span>{t.styleAfter}</span>
+      </figcaption>
+    </figure>
+  );
+}
+
+/** 用商品、风格和床品示例展示各创作工具的可用场景。 */
 export function LandingCapabilitySection() {
   const t = useMessages(landingCapabilityMessages);
   const reducedMotion = Boolean(useReducedMotion());
@@ -75,23 +101,51 @@ export function LandingCapabilitySection() {
   const cursorX = useSpring(mouseX, { stiffness: 420, damping: 34, mass: 0.5 });
   const cursorY = useSpring(mouseY, { stiffness: 420, damping: 34, mass: 0.5 });
 
-  const genCards: VisualCard[] = [
-    { id: "gen-1", image: "/landing/ltx/gen-1.avif", title: t.genOneTitle },
-    { id: "gen-2", image: "/landing/ltx/gen-2.webp", title: t.genTwoTitle },
-    { id: "gen-3", image: "/landing/ltx/gen-3.webp", title: t.genThreeTitle },
-    { id: "gen-4", image: "/landing/ltx/gen-4.webp", title: t.genFourTitle },
+  const productCards: VisualCard[] = [
+    {
+      id: "espresso",
+      image: publicImageUrl("/landing/examples/product-espresso.webp"),
+      title: t.productStudioTitle,
+    },
+    {
+      id: "bag",
+      image: publicImageUrl("/landing/examples/product-bag-model.webp"),
+      title: t.productModelTitle,
+    },
+    {
+      id: "skincare",
+      image: publicImageUrl("/landing/examples/product-skincare-detail.webp"),
+      title: t.productDetailTitle,
+    },
+    {
+      id: "runner",
+      image: publicImageUrl("/landing/examples/product-runner-campaign.webp"),
+      title: t.productCampaignTitle,
+    },
   ];
 
-  const controlCards: VisualCard[] = [
-    { id: "ctrl-1", image: "/landing/ltx/ctrl-1.webp", title: t.ctrlOneTitle },
-    { id: "ctrl-2", image: "/landing/ltx/ctrl-2.webp", title: t.ctrlTwoTitle },
-    { id: "ctrl-3", image: "/landing/ltx/ctrl-3.webp", title: t.ctrlThreeTitle },
-  ];
+  const setCards = landingImageSetExamples.map(({ id, image, titleKey }) => ({
+    id,
+    image,
+    title: t[titleKey],
+  }));
 
   const elementCards: VisualCard[] = [
-    { id: "elem-1", image: "/landing/ltx/elem-1.webp", title: t.elemOneTitle },
-    { id: "elem-2", image: "/landing/ltx/elem-2.webp", title: t.elemTwoTitle },
-    { id: "elem-3", image: "/landing/ltx/elem-3.webp", title: t.elemThreeTitle },
+    {
+      id: "elem-1",
+      image: publicImageUrl("/landing/examples/navy-bedding-room.webp"),
+      title: t.elemOneTitle,
+    },
+    {
+      id: "elem-2",
+      image: publicImageUrl("/landing/examples/navy-bedding-overhead.webp"),
+      title: t.elemTwoTitle,
+    },
+    {
+      id: "elem-3",
+      image: publicImageUrl("/landing/examples/navy-bedding-weave.webp"),
+      title: t.elemThreeTitle,
+    },
   ];
 
   const bands: (BandHeaderProps & { cards?: VisualCard[] })[] = [
@@ -100,14 +154,14 @@ export function LandingCapabilitySection() {
       description: t.bandOneDescription,
       actionLabel: t.bandOneAction,
       actionTo: dashboardToolPaths.create,
-      cards: genCards,
+      cards: productCards,
     },
     {
       title: t.bandTwoTitle,
       description: t.bandTwoDescription,
       actionLabel: t.bandTwoAction,
       actionTo: dashboardToolPaths.variation,
-      cards: controlCards,
+      cards: setCards,
     },
     {
       title: t.bandThreeTitle,
@@ -167,19 +221,7 @@ export function LandingCapabilitySection() {
               {cards ? (
                 <CapabilityGridBand cards={cards} onMediaHover={setCursorExpanded} />
               ) : (
-                <figure
-                  className="lp-style-banner-shell"
-                  onMouseEnter={() => setCursorExpanded(true)}
-                  onMouseLeave={() => setCursorExpanded(false)}
-                >
-                  <img
-                    src="/landing/ltx/style-banner.webp"
-                    alt={t.styleBannerAlt}
-                    className="lp-style-banner-img"
-                    loading="lazy"
-                    decoding="async"
-                  />
-                </figure>
+                <StyleComparison onMediaHover={setCursorExpanded} />
               )}
             </div>
           ))}

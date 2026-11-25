@@ -93,11 +93,11 @@ test("invalid references and limit errors do not destroy valid images", async ({
   await input.setInputFiles({ name: "valid.png", mimeType: "image/png", buffer: png });
   await expect(page.locator(".reference-tile")).toHaveCount(1);
   await input.setInputFiles([
-    "apps/web/public/studio/commerce-atlas.webp",
-    "apps/web/public/studio/bedroom.webp",
-    "apps/web/public/studio/lavender.webp",
-    "apps/web/public/studio/set.webp",
-    "apps/web/public/studio/bedroom-thumb.webp",
+    ".github/ci/browser/fixtures/studio/commerce-atlas.webp",
+    ".github/ci/browser/fixtures/studio/bedroom.webp",
+    ".github/ci/browser/fixtures/studio/lavender.webp",
+    ".github/ci/browser/fixtures/studio/set.webp",
+    ".github/ci/browser/fixtures/studio/bedroom-thumb.webp",
   ]);
   await expect(page.getByRole("alert")).toContainText("最多添加 5 张");
   await expect(page.locator(".reference-tile")).toHaveCount(1);
@@ -207,11 +207,11 @@ test("reference limit and clearing remain consistent when switching models", asy
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles([
-      "apps/web/public/studio/commerce-atlas.webp",
-      "apps/web/public/studio/bedroom.webp",
-      "apps/web/public/studio/lavender.webp",
-      "apps/web/public/studio/set.webp",
-      "apps/web/public/studio/bedroom-thumb.webp",
+      ".github/ci/browser/fixtures/studio/commerce-atlas.webp",
+      ".github/ci/browser/fixtures/studio/bedroom.webp",
+      ".github/ci/browser/fixtures/studio/lavender.webp",
+      ".github/ci/browser/fixtures/studio/set.webp",
+      ".github/ci/browser/fixtures/studio/bedroom-thumb.webp",
     ]);
   await expect(page.locator(".reference-tile")).toHaveCount(5);
   await expect(page.locator(".reference-number")).toHaveText(["1", "2", "3", "4", "5"]);

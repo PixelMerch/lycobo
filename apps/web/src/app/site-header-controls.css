@@ -8,7 +8,6 @@
 /* 账户与语言控件用于公共顶栏和工作区顶栏。 */
 .landing-header-controls {
   --landing-control-gap: 8px;
-  --landing-control-fill-radius: var(--control-pill-radius);
   --landing-text-control-padding: 12px;
   --landing-control-color: #ffffffcc;
   --landing-control-hover-color: #fff;
@@ -28,9 +27,6 @@
   justify-content: flex-end;
   gap: var(--landing-control-gap);
   min-width: 0;
-}
-.landing-account-controls .header-credits {
-  flex-shrink: 1;
 }
 .header-workspace.link {
   display: inline-flex;
@@ -93,7 +89,7 @@
   ) {
   height: var(--landing-control-height);
   min-height: var(--landing-control-height);
-  border-radius: var(--landing-control-fill-radius);
+  border-radius: var(--header-account-control-radius, var(--landing-control-fill-radius));
   background: transparent;
   color: inherit;
   font-size: var(--landing-control-font-size);
@@ -107,11 +103,11 @@
   position: relative;
   isolation: isolate;
 }
-.landing-header-controls :is(.language-trigger, .header-credits, .header-workspace) {
+.landing-header-controls :is(.language-trigger, .header-workspace) {
   padding-inline: var(--landing-text-control-padding);
 }
 .landing-header-controls
-  :is(.language-trigger, .header-credits, .header-creation-guide.link, .header-workspace)::before {
+  :is(.language-trigger, .header-creation-guide.link, .header-workspace)::before {
   position: absolute;
   z-index: -1;
   inset-inline: 0;
@@ -163,7 +159,7 @@
   transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .landing-header-controls
-  :is(.language-trigger, .header-credits, .header-creation-guide.link, .header-workspace):is(
+  :is(.language-trigger, .header-creation-guide.link, .header-workspace):is(
     :hover,
     [data-hovered="true"],
     [aria-expanded="true"]
@@ -172,7 +168,7 @@
   color: var(--landing-control-hover-color);
 }
 .landing-header-controls
-  :is(.language-trigger, .header-credits, .header-creation-guide.link, .header-workspace):is(
+  :is(.language-trigger, .header-creation-guide.link, .header-workspace):is(
     :hover,
     [data-hovered="true"],
     [aria-expanded="true"],
@@ -258,13 +254,12 @@
   .landing-header-controls:has(.landing-account-controls) .landing-language-control {
     flex-basis: 40px;
   }
-  .landing-header-controls .header-creation-guide {
+  .landing-header-controls .header-creation-guide.link {
     display: none;
   }
 }
 @media (max-width: 399px) {
-  .landing-header-controls:has(.landing-account-controls):not(.workspace-site-header *)
-    .header-creation-guide {
+  .landing-header-controls:has(.landing-account-controls) .header-creation-guide.link {
     display: none;
   }
 }
@@ -306,7 +301,7 @@
       .header-workspace
     ),
   .landing-header-controls
-    :is(.language-trigger, .header-credits, .header-creation-guide.link, .header-workspace)::before,
+    :is(.language-trigger, .header-creation-guide.link, .header-workspace)::before,
   .landing-language-control .language-trigger-chevron,
   :root .landing-control-popover :is(.menu-item, .account-menu-row)::before {
     transition: none;
@@ -326,8 +321,22 @@
   justify-content: space-between;
   gap: 12px;
   height: var(--header-height);
+  padding-inline: var(--public-site-header-gutter);
   background: var(--studio-canvas);
+}
+@media (max-width: 374px) {
+  .workspace-site-header .header-credit-purchase-tag {
+    display: none;
+  }
 }
 .workspace-site-header > .landing-header-controls {
   min-width: 0;
+}
+@media (max-width: 380px) {
+  .workspace-site-header {
+    gap: 4px;
+  }
+  .workspace-site-header > .landing-header-controls {
+    --landing-control-gap: 3px;
+  }
 }

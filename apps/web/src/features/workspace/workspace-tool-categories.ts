@@ -1,11 +1,12 @@
+import { publicImageUrl } from "../../lib/public-image-url";
 import type { CommerceToolId } from "../commerce/commerce-tools";
 
 /** 创作表单和工具菜单使用同一份示例图地址。 */
 export const workspaceToolHeroImages = {
-  create: "/studio/tool-heroes/running-shoe-studio.webp",
-  variation: "/studio/tool-heroes/image-set-backpack.webp",
-  replica: "/studio/tool-heroes/style-match-headphones.webp",
-  textile: "/landing/comforter-studio.webp",
+  create: publicImageUrl("/studio/tool-heroes/running-shoe-studio.webp"),
+  variation: publicImageUrl("/studio/tool-heroes/image-set-backpack.webp"),
+  replica: publicImageUrl("/studio/tool-heroes/style-match-headphones.webp"),
+  textile: publicImageUrl("/landing/comforter-studio.webp"),
 } as const satisfies Record<CommerceToolId, string>;
 
 type ToolCategory = {

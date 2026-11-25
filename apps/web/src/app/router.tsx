@@ -1,5 +1,6 @@
 import { mainImageModelIds } from "@lycoboai/contracts";
 import { createBrowserRouter, type LoaderFunctionArgs, type RouteObject } from "react-router";
+import { rechargePath } from "../features/account/credits/recharge-navigation";
 import { getRecentCommercePath } from "../features/commerce/commerce-preferences";
 import { useStudioStore } from "../features/generation/studio-state";
 import { creationGuidePath } from "../features/guide/creation-guide-path";
@@ -124,13 +125,12 @@ const localizedRoutes: RouteObject[] = [
           Component: (await import("../features/free-canvas/free-canvas-page")).FreeCanvasPage,
         }),
       },
-      {
-        path: "membership",
+      ...[rechargePath.slice(1), "membership"].map<RouteObject>((path) => ({
+        path,
         lazy: async () => ({
-          Component: (await import("../features/account/membership/membership-page"))
-            .MembershipPage,
+          Component: (await import("../features/account/credits/recharge-page")).RechargePage,
         }),
-      },
+      })),
       {
         path: dashboardAssetsPath.slice(1),
         lazy: async () => ({

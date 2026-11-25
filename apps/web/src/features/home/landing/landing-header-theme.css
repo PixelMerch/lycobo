@@ -24,10 +24,6 @@
     color: var(--landing-foreground);
   }
 
-  .public-site-header[data-scrolled="true"] {
-    border-bottom: 1px solid #2e2e2e;
-  }
-
   .public-site-brand-art,
   .mobile-nav .lycobo-logo {
     filter: brightness(0) invert(1);

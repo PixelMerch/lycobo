@@ -84,6 +84,8 @@ Node API、Sharp、S3 与 LISTEN/SSE 仅用于隔离本地开发及测试。生�
 
 ### 图片处理
 
+公开产品插图、登录配图、工具封面、模型 Logo 与灵感示例使用独立 R2 桶 `lycobo-site-assets`，经 `static.lycobo.com` 读取。对象以版本目录发布并启用长期缓存，更换图片时先上传新版本、验证 URL，再更新引用。浏览器上传测试的素材保留在测试 fixture。用户上传和生成的图片继续由私有媒体路径处理。
+
 上传文件先暂存私有 R2，并保存恢复意图，再发送 Queue。图片 Worker 校验输入，使用 Images binding 解码、清理元信息、规范化 PNG，并生成 WebP 预览与缩略图，最后登记 PostgreSQL 素材。重复消息使用稳定素材 ID 和内容哈希，回执丢失不会生成另一份素材。恢复扫描使用 R2 列表的状态和到期元数据跳过已完成且未到期的回执，待处理、到期和旧回执仍检查正文。
 
 原始桶保持私有，禁止 r2.dev 或其他入口直接公开。`/images/*` 经主站 Worker 校验短期签名、用途、来源与过期时间后读取 R2，缺失派生变体通过 Queue 补齐。原图存在且成功投递补齐消息后，短期边缘缓存标记可合并同一素材的后续补齐请求。已有原图时，经同一预览鉴权回退私有原图，回退响应不进入变体缓存。付费输出不套用浏览器参考图压缩规则。源图保存与规范化并行，原图与展示变体最多三路并行。可直接保存的 PNG 复用已验证的尺寸，宽高都在 512 像素以内的原图只转换一次 WebP 供两个展示档位使用；Queue 补齐变体时同样复用，只写缺失对象，重复消息发现两个档位都已存在时不读取或转码原图。原图持久化并登记后可交付，展示变体或暂存副本清理失败不阻止交付。原图处理或写入失败时保留暂存源图供恢复。无透明通道的供应商参考图可以压缩为 JPEG，透明图保留 PNG。
@@ -106,7 +108,7 @@ Node API、Sharp、S3 与 LISTEN/SSE 仅用于隔离本地开发及测试。生�
 
 当前活动的账号、Hyperdrive、私有 R2、图片队列、死信队列和 `RealtimeHub` 命名空间用 `pnpm cf:check:config` 核对。仓库所需绑定以两个 Wrangler 配置为准。主站静态资产来自 `apps/web/dist`。
 
-主站需要 `AUTH_JWT_SECRET`、`ASSET_SIGNING_SECRET`、`STANDALONE_IMAGE_API_KEY`、`DEEPSEEK_API_KEY`、`IMAGE_WEBHOOK_SECRET`。图片 Worker 只需要媒体签名与两个模型密钥。普通变量、域名、Queue 和绑定以两个 Wrangler 配置为准。
+主站需要 `AUTH_JWT_SECRET`、`AUTH_PASSWORD_TURNSTILE_SITE_KEY`、`AUTH_PASSWORD_TURNSTILE_SECRET`、`ASSET_SIGNING_SECRET`、`STANDALONE_IMAGE_API_KEY`、`DEEPSEEK_API_KEY`、`IMAGE_WEBHOOK_SECRET`。图片 Worker 只需要媒体签名与两个模型密钥。普通变量、域名、Queue 和绑定以两个 Wrangler 配置为准。
 
 Secrets 使用受保护输入或忽略的临时文件配置；不能写入 Git、命令参数、日志或前端。`backups/`、`.env*`、`.dev.vars*`、`.cloudflare/` 保持 Git 忽略，只有 `.env.example` 可提交。不得依赖开发进程自动继承生产基础设施凭据。
 

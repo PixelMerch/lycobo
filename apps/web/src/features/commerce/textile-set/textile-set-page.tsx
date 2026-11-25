@@ -3,6 +3,7 @@ import { imageUnitCredits, publicImageResolutions } from "@lycoboai/contracts";
 import { IconPlus, IconTrash, IconX } from "@tabler/icons-react";
 import { type RefObject, useId, useRef, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
+import { publicImageUrl } from "../../../lib/public-image-url";
 import { GenerateButton } from "../../generation/composer/generate-button";
 import { ParameterGroup } from "../../generation/composer/parameter-group";
 import { AspectRatioField } from "../../generation/composer/ratio-picker";
@@ -39,7 +40,7 @@ export function TextileSetPage() {
             label={t.mainImage}
             required
             description={t.mainImageHint}
-            exampleSrc="/studio/bedroom-thumb.webp"
+            exampleSrc={publicImageUrl("/studio/bedroom-thumb.webp")}
             value={mainImage ? [mainImage] : []}
             onChange={(images) => update({ mainImage: images[0] ?? null })}
             number={1}
@@ -47,7 +48,7 @@ export function TextileSetPage() {
           <TextileImageField
             label={t.detailImages}
             description={t.detailImagesHint}
-            exampleSrc="/studio/textile-views/fabric.webp"
+            exampleSrc={publicImageUrl("/studio/textile-views/fabric.webp")}
             value={detailImages}
             maxImages={5}
             onChange={(images) => update({ detailImages: images })}

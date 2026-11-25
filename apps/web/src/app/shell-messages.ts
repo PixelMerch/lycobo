@@ -11,7 +11,6 @@ export const shellMessages = defineMessages({
     inspiration: "灵感库",
     assets: "素材库",
     projects: "项目",
-    benefits: "会员权益",
     creationHelp: "创作指南",
     mainNavigation: "主导航",
     openNavigation: "打开导航",
@@ -27,6 +26,7 @@ export const shellMessages = defineMessages({
     pageNotFoundHint: "请检查地址，或返回首页继续浏览。",
     reloadPage: "重新加载",
     backHome: "返回首页",
+    pageScroll: "滚动页面",
   },
   en: {
     home: "Home",
@@ -37,7 +37,6 @@ export const shellMessages = defineMessages({
     inspiration: "Inspiration",
     assets: "Assets",
     projects: "Projects",
-    benefits: "Membership benefits",
     creationHelp: "Creation guide",
     mainNavigation: "Main navigation",
     openNavigation: "Open navigation",
@@ -53,5 +52,6 @@ export const shellMessages = defineMessages({
     pageNotFoundHint: "Check the address or return to the homepage to keep browsing.",
     reloadPage: "Reload page",
     backHome: "Back to home",
+    pageScroll: "Scroll page",
   },
 });

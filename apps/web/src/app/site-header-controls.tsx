@@ -50,7 +50,6 @@ export function SiteHeaderControls({
             popoverOffset={popoverOffset}
           />
           <AccountMenu
-            hover
             variant="header"
             popoverClassName="landing-control-popover"
             popoverOffset={popoverOffset}

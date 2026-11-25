@@ -6,6 +6,7 @@ import {
   dashboardToolPaths,
   freeCanvasPath,
 } from "../../lib/dashboard-paths";
+import { rechargePath } from "../account/credits/recharge-navigation";
 import { inspirationLibraryPath } from "../inspiration/inspiration-path";
 import { legalPaths } from "../legal/legal-document";
 import { workspaceToolMessages } from "../workspace/workspace-tool-messages";
@@ -38,6 +39,7 @@ export function siteFooterGroups(locale: Locale) {
       title: t.resources,
       links: [
         { path: inspirationLibraryPath, label: shell.inspiration },
+        { path: rechargePath, label: t.recharge },
         { path: siteFooterFaqPath, label: t.faq },
       ],
     },

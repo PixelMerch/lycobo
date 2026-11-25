@@ -20,9 +20,6 @@ export function roleLabel(role: string, locale: Locale) {
   const names: Record<string, string> = accountFormatMessages[locale].roles;
   return names[role] ?? role;
 }
-/** 会员状态尚未接入、会员也还不能购买，所有账号都按免费版展示；接入后改为读取服务端会员等级。 */
-export const currentPlanName = (locale: Locale) => accountFormatMessages[locale].freePlan;
-
 // 中文与英文的千分位写法相同，数字固定按英文格式化，不随界面语言变化。
 const numberFormat = new Intl.NumberFormat("en-US");
 /** 带千分位的数字，用于金额与数量。 */

@@ -102,7 +102,8 @@
 }
 .main-content:has(> .workspace) {
   --content-padding: var(--workspace-padding);
-  padding: var(--content-padding);
+  padding-block: var(--content-padding);
+  padding-inline: var(--public-site-header-gutter);
 }
 
 .ratio-preview {

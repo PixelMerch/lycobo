@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const landingPage = readFileSync("apps/web/src/features/home/landing/landing-page.tsx", "utf8");
@@ -30,10 +30,26 @@ describe("Landing composition", () => {
     expect(landingPage).not.toContain("dangerouslySetInnerHTML");
   });
 
-  it("includes the horizontal hero accordion, logo marquee, sticky deck, and cursor follower", () => {
+  it("includes the horizontal hero accordion, sticky deck, and cursor follower", () => {
     expect(heroSection).toContain("lp-hero-accordion");
-    expect(heroSection).toContain("lp-logo-marquee");
     expect(capabilitySection).toContain("lp-stack-deck");
     expect(capabilitySection).toContain("lp-float-cursor");
+  });
+
+  it("uses the versioned public R2 URL for landing artwork", () => {
+    const directory = "apps/web/src/features/home/landing";
+    const source = readdirSync(directory)
+      .filter((file) => file.endsWith("-section.tsx") || file.endsWith("-assets.ts"))
+      .map((file) => readFileSync(`${directory}/${file}`, "utf8"))
+      .join("\n");
+    expect(source).not.toContain("/landing/ltx/");
+    const images = [...source.matchAll(/"\/landing\/[\w/.-]+\.webp"/g)];
+    expect(images).not.toHaveLength(0);
+    expect([...source.matchAll(/publicImageUrl\("\/landing\/[\w/.-]+\.webp"\)/g)]).toHaveLength(
+      images.length,
+    );
+    expect(readFileSync("apps/web/src/lib/public-image-url.ts", "utf8")).toMatch(
+      /https:\/\/static\.lycobo\.com\/site-\d{8}/,
+    );
   });
 });

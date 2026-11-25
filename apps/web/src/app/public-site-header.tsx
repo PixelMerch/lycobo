@@ -14,7 +14,7 @@ import { SiteHeaderControls } from "./site-header-controls";
 import { usePublicHeaderBrand } from "./use-public-header-brand";
 import "./public-site-header.css";
 
-/** 首页与灵感库共用导航和账户入口，首页额外同步滚动品牌并定位 FAQ。 */
+/** 公共页面共用导航与账户入口，首页额外同步滚动品牌并定位 FAQ。 */
 export function PublicSiteHeader({
   account,
   isLanding,

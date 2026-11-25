@@ -1,6 +1,25 @@
 import { expect, test } from "@playwright/test";
 import { apiFixture, chooseWorkspaceTool, mockImageApi } from "./image-api-fixture";
 
+test("the four commerce tools use the home header and content gutters", async ({ page }) => {
+  await mockImageApi(page);
+  await page.goto("/zh-CN");
+  const headerGeometry = (element: Element) => {
+    const style = getComputedStyle(element);
+    return {
+      width: element.getBoundingClientRect().width,
+      padding: [style.paddingInlineStart, style.paddingInlineEnd],
+    };
+  };
+  const home = await page.locator(".public-site-header").evaluate(headerGeometry);
+  for (const route of ["create", "smart-variation", "replica", "textile-set"]) {
+    await page.goto(`/zh-CN/dashboard/commerce/${route}`);
+    await expect(page.locator(".unified-workspace")).toBeVisible();
+    expect(await page.locator(".workspace-site-header").evaluate(headerGeometry)).toEqual(home);
+    expect(await page.locator(".main-content").evaluate(headerGeometry)).toEqual(home);
+  }
+});
+
 for (const width of [390, 1440]) {
   test(`workspace tools keep their own history and stay below the header at ${width}px`, async ({
     page,

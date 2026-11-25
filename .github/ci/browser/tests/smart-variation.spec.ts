@@ -349,7 +349,10 @@ test("a per-image plan sends each item only its own uploaded picture", async ({ 
   await page.goto("/commerce/smart-variation");
   await page
     .getByLabel("添加参考图片", { exact: true })
-    .setInputFiles(["apps/web/public/studio/bedroom.webp", "apps/web/public/studio/lavender.webp"]);
+    .setInputFiles([
+      ".github/ci/browser/fixtures/studio/bedroom.webp",
+      ".github/ci/browser/fixtures/studio/lavender.webp",
+    ]);
   await expect(page.locator(".reference-tile")).toHaveCount(2);
   await expect(
     page.locator(".reference-tile").getByRole("button", { name: /更改角色/ }),

@@ -72,8 +72,7 @@ apps/web/src/
     │   ├── avatar/               # 预设头像配色与各处共用的账户头像
     │   ├── menu/                 # 顶部栏账户头像菜单、手机抽屉账户行和积分入口
     │   ├── center/               # 账户设置共用的弹窗外框、表格与窄屏样式
-    │   ├── credits/              # 共用美元积分包目录、明细、充值预览及订单
-    │   ├── membership/           # 独立会员页和定价
+    │   ├── credits/              # 共用美元积分包目录、明细、充值页面及订单
     │   ├── settings/             # 账户设置、预设头像选择和密码表单
     │   └── notifications/        # 消息中心
     ├── workspace/                # 统一工作区布局、工具坞、跨工具草稿交接
@@ -85,7 +84,7 @@ apps/web/src/
     ├── guide/                    # 双语创作指南、公开路由与工具章节
     ├── inspiration/              # 灵感库页面、示例数据与作品墙；素材库复用同一浏览组件
     ├── site/                     # 首页、灵感库与协议页共用页脚样式、文案和导航目录
-    ├── legal/                    # 用户协议、隐私及积分退款政策公开页；运营主体等待补信息集中在 legal-entity-messages.ts
+    ├── legal/                    # 用户协议、可接受使用条款、隐私及积分退款政策公开页
     ├── assets/                   # 素材库页面与工作区全屏素材库：我的素材／灵感库标签、筛选、瀑布流、多选批量下载与收藏
     ├── generation/               # 生图请求、事件、会话草稿及工作台页面
     │   ├── composer/             # 共用比例字段、单选参数行、选中底板与提交按钮
@@ -101,11 +100,11 @@ apps/web/src/
 - 先按业务功能归类，功能内部就近存放组件、hook、样式与单元测试；只有存在明确子职责时再增加目录，不为每个组件建立一层文件夹。
 - 保留描述性文件名和直接导入，不新增 `index.ts` 聚合出口，也不建立覆盖所有功能的 components/hooks/services 分类目录。
 - 已登录顶栏的「工作区」指向 `/:locale/dashboard`，按最近使用的工具打开，首次进入默认主图制作。创作工具、自由画布和素材页统一使用 `/dashboard` 前缀，旧地址保留语言、查询参数与定位后跳到新地址。`features/workspace` 组合参数子路由、随功能切换的历史及工具栏。
-- `features/auth/login-prompt.tsx` 共享登录导航与首页创作交互门禁；Header及首页操作前往懒加载的 `/login`，`login-navigation.ts` 校验站内返回地址。`login-page.tsx` 在青柠丝绸背景（`login-backdrop.tsx`）上居中固定尺寸玻璃卡片并负责翻面，版式在同目录 `login-page.css`；`login-methods.tsx` 按服务端可用状态展示 Google、Apple 与邮箱入口，`social-login-client.ts` 发起本地 Supabase OAuth，`email-login.tsx` 处理邮箱验证码与 Turnstile，`enterprise-login.tsx` 保留真实密码认证。`app/studio-shell.tsx` 在登录状态确认前不挂载非首页业务内容，未登录时重定向；登录页不挂载应用壳或实时连接，回到业务页后按原有持久游标重连补齐。
+- `features/auth/login-prompt.tsx` 共享登录导航与首页创作交互门禁；Header及首页操作前往懒加载的 `/login`，`login-navigation.ts` 校验站内返回地址。`login-page.tsx` 在黑色背景上居中展示分栏登录卡片，左侧为图片轮播，右侧可切换个人与企业登录，点击卡片外背景可关闭，版式在同目录 `login-page.css`；`login-methods.tsx` 按服务端可用状态展示 Google、Apple 与邮箱入口，`social-login-client.ts` 发起本地 Supabase OAuth，`email-login.tsx` 处理邮箱验证码与 Turnstile，`enterprise-login.tsx` 保留真实密码认证。`app/studio-shell.tsx` 在登录状态确认前不挂载非首页业务内容，未登录时重定向；登录页不挂载应用壳或实时连接，回到业务页后按原有持久游标重连补齐。
 - `app/studio-shell.tsx` 组合导航、身份门禁、账户和生图事件；`use-window-scrolled.ts` 提供页面是否离开顶部，顶部栏据此切换透明与滚动磨砂。路由页面留在各 feature。首页、工作台和素材页继续由路由懒加载，`image-workspace/preview-workspace.tsx` 及 Konva 继续按预览需要加载。
 - 首页与灵感库在 `StudioShell` 中共用 `PublicSiteHeader`。`PublicSiteNavigation` 使用工作区目录生成桌面下拉与手机折叠菜单，`SiteHeaderControls` 也供工作区使用。共用顶栏根据宿主或隔离正文的滚动距离绘制 Rive 品牌时间轴。首页主题独立保持黑色。隔离首页使用共享的页脚样式与链接数据，在 iframe 内通过原生链接和消息桥保留导航；灵感库和协议页由 `SiteFooter` 渲染，使用本地化路由。`landing-footer-overlay.ts` 只测量 FAQ 高度并恢复键盘焦点，FAQ 停驻与 footer 整块覆盖由原生 CSS 完成。
 - `generation/generation-client.ts` 维护现有生图、历史和素材 API 查询与缓存，被历史、素材库和编辑工作区直接引用；目录维护不改变 query key 或增加请求层。
-- `assets/asset-library-client.ts` 负责素材库查询（来源含 AI 生成的功能、类型、时间与仅看收藏，素材库页面写入地址栏）和服务端收藏：一个有上限的收藏 ID 查询供所有星标共用，切换乐观更新、失败回滚；`asset-browser.tsx` 组合 `asset-filters.tsx`、`asset-selection.tsx`（多选与批量下载，打包在 `asset-archive.ts`）、`asset-tile.tsx` 与现有图片预览，`asset-masonry.tsx` 订阅网格宽度并组合原比例瀑布流，`asset-layout.ts` 提供列数、按天分组与保持输入顺序的最短列定位纯函数。`asset-library-tabs.tsx` 是“我的素材 / 灵感库”标签行；`assets-page.tsx` 与 `library-dialog.tsx`（工作区打开，来源默认当前功能）只组合标签、浏览组件与灵感库的作品墙。生成记录整组下载与素材批量下载共用 `generation/original-download.ts` 读取原文件。
+- `assets/asset-library-client.ts` 负责素材库查询（来源含 AI 生成的功能、类型、时间与仅看收藏，素材库页面写入地址栏）和服务端收藏：一个有上限的收藏 ID 查询供所有星标共用，切换乐观更新、失败回滚；`asset-browser.tsx` 组合 `asset-filters.tsx`、`asset-selection.tsx`（多选与批量下载，打包在 `asset-archive.ts`）、`asset-tile.tsx` 与现有图片预览，`asset-masonry.tsx` 订阅网格宽度并组合原比例瀑布流，`asset-layout.ts` 提供列数、按天分组与保持输入顺序的最短列定位纯函数。`asset-library-tabs.tsx` 是“我的素材 / 灵感库”标签行；`assets-page.tsx` 与 `library-dialog.tsx`（支持直接打开我的素材或灵感库，从工具内打开素材时默认筛选当前功能）只组合标签、浏览组件与灵感库的作品墙。生成记录整组下载与素材批量下载共用 `generation/original-download.ts` 读取原文件。
 - `generation/studio-state.ts` 保留原有客户端草稿、跨页面交互状态及样例定义，现有引用直接指向它；目录归类不把样例转换成持久服务，也不改变状态生命周期。
 - `image-workspace/local-edit` 负责编辑交互，调用生图请求；预览壳组合画布与编辑面板。底层请求不反向依赖页面。类型依赖继续使用 `import type`，不为目录入口建立运行时循环。
 - `styles/fullscreen-dialog.css` 是图片详情与素材库共用的全屏动效；各功能 CSS 随对应组件导入。目录维护保持 DOM、class、样式内容、文案及交互逻辑不变。
@@ -178,9 +177,9 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 功能组件使用直接依赖；服务端缓存属于TanStack Query，临时草稿与交互属于Zustand，纯展示组件从props获得数据。具体规则见 [Web 规则](apps/web/AGENTS.md)。
 
-- `features/account/menu/account-menu.tsx` 组合HeaderLogin与账户菜单（桌面顶部栏头像、手机抽屉账户行）；菜单提供设置、个人作品与退出登录。`header-benefits.tsx` 是顶部栏积分胶囊与积分菜单（按参考站，悬停逻辑复用 `lib/use-hover-menu.ts`）；`credits/credit-usage-dialog.tsx`、`credit-usage-list.tsx` 与 `use-credit-usage.ts` 组成积分明细弹窗（视图筛选、按需续读与分页；从 Header 积分菜单打开）。`account-overlays.tsx` 通过Zustand记录弹窗及打开者，统一懒加载账户设置及叠在其上的充值、会员和积分明细；关闭后各自恢复焦点，退出或改密成功清空状态。
-- `features/account/settings/account-settings-dialog.tsx` 是账户设置：左侧身份、分区与退出登录，分区为账户、套餐与用量、登录与安全及管理员可见的企业成员（`settings-sections.ts`）。`account-plan-usage.tsx` 组合当前套餐与升级、企业共享积分与充值，以及在积分明细（`credits/credit-ledger.tsx`）与充值订单（`credits/recharge-orders.tsx`）之间切换的积分用量；`account-password-form.tsx` 通过auth-client接入既有改密接口，成功清理登录状态。`account-settings-panels.tsx` 组合账户分区并如实保留未接入的子账号入口；`account-avatar-picker.tsx` 是头像行的预设单选，点选即通过auth-client的 `PUT /api/v1/auth/avatar` 保存。`account-language-picker.tsx` 与顶栏菜单复用 `use-account-language.ts`，已登录时通过 `PUT /api/v1/auth/locale` 保存语言偏好，再切换当前路由。`avatar/account-avatar.tsx` 是顶部栏、手机抽屉、账户菜单与设置共用的头像，按身份里的 `avatarPreset` 取 `account-avatar.css` 中的渐变，认不出时用默认青柠。`account-format.ts` 提供格式化，`account-entry.tsx` 提供收支图标；各页签查询按需挂载。
-- `features/account/membership/membership-page.tsx` 导出懒加载全屏 MembershipDialog，Header在当前工作区打开；/membership仅为旧链接兼容入口，不展示返回与明细按钮；`MembershipPlans` 管理分类、周期、档位和团队席位展示；标语单价、周期最低折扣、折扣标签、单位积分价与“积分单价最低”飘带均由 `membership-pricing.ts` 的纯函数从价格表推导，并由同目录单元测试覆盖；membership-details组合工具／协作能力与Tooltip，membership-faq用官方Accordion承载本站FAQ，`CreditPacks` 只管理所选包。`wallet-client.ts` 共享钱包查询，最近记录按需读取并缓存30秒，不新增轮询。未接入的会员、绑定、验证码及支付不会模拟成功。
+- `features/account/menu/account-menu.tsx` 组合HeaderLogin与账户菜单（桌面顶部栏头像、手机抽屉账户行）；菜单提供设置、个人作品与退出登录。`header-benefits.tsx` 是顶部栏积分胶囊与积分菜单（按参考站，悬停逻辑复用 `lib/use-hover-menu.ts`）；`credits/credit-usage-dialog.tsx`、`credit-usage-list.tsx` 与 `use-credit-usage.ts` 组成积分明细弹窗（视图筛选、按需续读与分页；从 Header 积分菜单打开）。`account-overlays.tsx` 通过Zustand记录弹窗及打开者，统一懒加载账户设置及叠在其上的充值和积分明细；关闭后各自恢复焦点，退出或改密成功清空状态。
+- `features/account/settings/account-settings-dialog.tsx` 是账户设置：左侧身份、分区与退出登录，分区为账户、积分与账单、登录与安全及管理员可见的企业成员（`settings-sections.ts`）。`account-plan-usage.tsx` 展示企业共享积分与充值入口，以及在积分明细（`credits/credit-ledger.tsx`）与充值订单（`credits/recharge-orders.tsx`）之间切换的积分用量；`account-password-form.tsx` 通过auth-client接入既有改密接口，成功清理登录状态。`account-settings-panels.tsx` 组合账户分区并如实保留未接入的子账号入口；`account-avatar-picker.tsx` 是头像行的预设单选，点选即通过auth-client的 `PUT /api/v1/auth/avatar` 保存。`account-language-picker.tsx` 与顶栏菜单复用 `use-account-language.ts`，已登录时通过 `PUT /api/v1/auth/locale` 保存语言偏好，再切换当前路由。`avatar/account-avatar.tsx` 是顶部栏、手机抽屉、账户菜单与设置共用的头像，按身份里的 `avatarPreset` 取 `account-avatar.css` 中的渐变，认不出时用默认青柠。`account-format.ts` 提供格式化，`account-entry.tsx` 提供收支图标；各页签查询按需挂载。
+- `features/account/credits/credits-dialog.tsx` 提供应用内全屏充值弹框，`recharge-page.tsx` 是公开充值页面。两者复用 `CreditPacks` 的五档目录和活动倒计时，卡片按价格类型及金额匹配 Creem 托管付款链接。在线积分履约待接入，订单与流水仅供查看。
 
 ## 数据库领域命名
 
@@ -206,7 +205,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 - 共享列表分页在 `components/infinite-load.tsx`，组合 IntersectionObserver 与 HeroUI Spinner；主站分页列表统一复用，业务查询仍由各功能的 TanStack Query hook 管理。提示词有效描述判断在 `features/generation/references/prompt-description.ts`，首页与创作页共用。
 - 套图计划：`variation-planner.ts` 封装 OpenAI 兼容语言分析；`variation-service.ts` 负责参考素材归属校验与解密密钥；计划阶段仅优化文本和参考图编号，不读取或发送图片，参考图保留至实际生图阶段；`variation-repository.ts` 持久化计划和幂等状态。`model_planners` 独立配置语言模型；`generation_jobs.input.variation` 保存确认后的方案快照，Worker 每条方案只请求一张图。
 - 套图逐条参考图：`features/commerce/smart-variation/plan-image-bindings.ts` 计算每条方案的用图，`plan-reference-strip.tsx` 显示并切换。服务端 `packages/generation/src/images/reference-roles.ts` 决定每条输出使用的参考图并保留历史角色兼容，Worker 的 `provider-references.ts` 按它读取参考图。
-- 主站独立试用路由由 `packages/generation/src/images/standalone-models.ts` 定义；API/消费者将纯配置注入图片仓储，绕过后台模型目录、路由及语言模型设置读取。前端展示在 `models/model-presentation.ts`，Logo 位于 `apps/web/public/model-logos/`。不会删除后台表或改变鉴权/积分/素材持久化。
+- 主站独立试用路由由 `packages/generation/src/images/standalone-models.ts` 定义；API/消费者将纯配置注入图片仓储，绕过后台模型目录、路由及语言模型设置读取。前端展示在 `models/model-presentation.ts`，Logo 使用公开素材 R2 的版本化 URL。不会删除后台表或改变鉴权/积分/素材持久化。
 - Cloudflare 入口为 `apps/api/src/cloudflare.ts`，API 组合在 `cloudflare-app.ts`；`apps/worker/src/cloudflare/cloudflare-consumer.ts` 处理 Queue/Cron，`cloudflare/cloudflare-runtime.ts` 创建调用级资源。PostgreSQL 与钱包仍由原生仓储维护，绑定与状态见 [Cloudflare 部署准备](docs/releasing.md#cloudflare-运行与部署)。
 - 图片回调接收位于 `apps/api/src/features/images/webhooks/provider-webhook.ts`；任务与事件的持久化关联位于 `packages/db/src/webhooks/provider-webhook-repository.ts`。前端主动推送、服务端超时补查和发布顺序见 [图片 Webhook](docs/image-generation-api.md#图片-webhook-与延迟查询)。
 - 视频接入使用 `packages/contracts/src/videos/video-generation.ts`（六种比例、5–30秒整数时长、每次100积分）、`apps/api/src/features/videos`（薄路由和服务）、`packages/db/src/videos/video-repository.ts`（固定 PostgreSQL 业务操作）。任务与单个执行项复用generation_jobs／generation_job_items以保留钱包外键，generation_video_outbox独立维护持久意图、租约、供应商任务ID与下一次查询时间；图片历史和超时扫描排除视频。`apps/worker/src/videos/video-processor.ts` 为保留的历史实现，当前 Workers 不调度，供应商协议在 `packages/generation/src/videos/video-provider.ts`；MP4容器校验在storage/videos/video-media，资源服务提供短期签名与Range。服务端复用生图密钥STANDALONE_IMAGE_API_KEY；当前 Workers 和本地 API 不启用视频提交，运行边界见[视频接入](docs/image-generation-api.md#视频创作实现边界)。
@@ -215,6 +214,6 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 图片存储的受限并行编排位于 `packages/storage/src/cloudflare/cloudflare-image-write.ts`，由 `cloudflare.ts` 调用；原图和两个变体完成后才返回，遥测只记录阶段与耗时。
 
-`apps/web/src/styles/overlay-glass.css` 统一 HeroUI 浮层的毛玻璃材质与减少透明回退；全屏会员页按具名例外使用稳定实底；消息中心布局与状态卡片由 `features/account/notifications/account-messages.css` 维护。
+`apps/web/src/styles/overlay-glass.css` 统一 HeroUI 浮层的毛玻璃材质与减少透明回退。充值弹框使用实色底。消息中心布局与状态卡片由 `features/account/notifications/account-messages.css` 维护。
 
 主图制作统一位于 `/dashboard/commerce/create`，默认 `gpt-image-2.6`，模型选择按 2.6、2.5、2 排列。`mainImageModelIds` 统一前后端主图选项；历史展示资料和其他工具保留原有型号。首页与工作台共用草稿，首页提示词最多 5000 字，操作栏独立于自动伸展输入区。

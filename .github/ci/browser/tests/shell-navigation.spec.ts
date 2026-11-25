@@ -90,6 +90,7 @@ for (const path of [
   "/video",
   "/assets",
   "/membership",
+  "/recharge",
 ]) {
   test(`signed-out direct route ${path} requires login without mounting business pages`, async ({
     page,

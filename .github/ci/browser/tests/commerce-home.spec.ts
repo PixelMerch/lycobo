@@ -30,10 +30,10 @@ test("home composer shares prompt and real reference drafts without submitting g
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles([
-      "apps/web/public/studio/commerce-atlas.webp",
-      "apps/web/public/studio/bedroom.webp",
-      "apps/web/public/studio/lavender.webp",
-      "apps/web/public/studio/set.webp",
+      ".github/ci/browser/fixtures/studio/commerce-atlas.webp",
+      ".github/ci/browser/fixtures/studio/bedroom.webp",
+      ".github/ci/browser/fixtures/studio/lavender.webp",
+      ".github/ci/browser/fixtures/studio/set.webp",
     ]);
   await expect(page.locator(".reference-tile")).toHaveCount(5);
   await expect(page.getByRole("button", { name: "添加参考图", exact: true })).toHaveCount(0);
@@ -161,8 +161,8 @@ test("removing a referenced image deletes its mention and renumbers later mentio
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles([
-      "apps/web/public/studio/commerce-atlas.webp",
-      "apps/web/public/studio/bedroom-thumb.webp",
+      ".github/ci/browser/fixtures/studio/commerce-atlas.webp",
+      ".github/ci/browser/fixtures/studio/bedroom-thumb.webp",
     ]);
   const prompt = page.getByRole("textbox", { name: "创作需求" });
   await prompt.fill("保留 @图片1 和 @图片2 的画面");
@@ -193,8 +193,8 @@ test("image mentions insert at the cursor and preserve surrounding text", async 
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles([
-      "apps/web/public/studio/commerce-atlas.webp",
-      "apps/web/public/studio/bedroom-thumb.webp",
+      ".github/ci/browser/fixtures/studio/commerce-atlas.webp",
+      ".github/ci/browser/fixtures/studio/bedroom-thumb.webp",
     ]);
   await expect(page.locator(".reference-tile")).toHaveCount(2);
   await prompt.fill("保留 面料");
@@ -598,7 +598,7 @@ test("home modes keep each tool's draft and hand off to the matching workspace t
   await prompt.fill("主图描述");
   await page
     .getByLabel("添加参考图片", { exact: true })
-    .setInputFiles("apps/web/public/studio/bedroom-thumb.webp");
+    .setInputFiles(".github/ci/browser/fixtures/studio/bedroom-thumb.webp");
   await expect(page.locator(".reference-tile")).toHaveCount(1);
 
   await modes.getByRole("tab", { name: "视频创作" }).click();
@@ -638,8 +638,8 @@ test("textile mode selects views and opens the textile tool with the uploaded ma
   await page
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles([
-      "apps/web/public/studio/bedroom-thumb.webp",
-      "apps/web/public/studio/textile-views/fabric.webp",
+      ".github/ci/browser/fixtures/studio/bedroom-thumb.webp",
+      ".github/ci/browser/fixtures/studio/textile-views/fabric.webp",
     ]);
   await expect(page.locator(".reference-tile")).toHaveCount(2);
   await expect(start).toBeEnabled();
@@ -673,6 +673,7 @@ for (const width of [1440, 390]) {
     // 商品画面随滚动变化，但共用顶栏的位置保持稳定。
     await scroll(400);
     await expect(header).toHaveAttribute("data-scrolled", "true");
+    await expect(header).toHaveCSS("border-bottom-width", "0px");
     await expect.poll(surface).toEqual({
       background: "rgba(18, 18, 18, 0.84)",
       blur: "blur(14px)",
@@ -722,13 +723,59 @@ test("home uses Lycobo's own brand language instead of copying the reference loo
   await expect(avatar.locator(".avatar__fallback")).toHaveCSS("border-top-left-radius", "50%");
 });
 
+test("homepage hero returns to equal cards when the pointer leaves", async ({ page }) => {
+  await mockImageApi(page);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  const gallery = page.locator(".lp-hero-accordion");
+  const cards = gallery.locator(".lp-hero-panel");
+  const widthDifference = () =>
+    cards.evaluateAll((elements) => {
+      const widths = elements.map((element) => element.getBoundingClientRect().width);
+      return Math.max(...widths) - Math.min(...widths);
+    });
+  await expect(cards).toHaveCount(3);
+  await expect.poll(widthDifference).toBeLessThan(2);
+  await cards.nth(1).hover();
+  await expect(cards.nth(1)).toHaveAttribute("data-active", "true");
+  await expect.poll(widthDifference).toBeGreaterThan(100);
+  await page.locator("#lp-hero-title").hover();
+  await expect(gallery).toHaveAttribute("data-expanded", "false");
+  await expect.poll(widthDifference).toBeLessThan(2);
+  const firstTrigger = cards.first().getByRole("button");
+  await firstTrigger.focus();
+  await firstTrigger.press("Enter");
+  await expect(firstTrigger).toHaveAttribute("aria-expanded", "true");
+  await expect(firstTrigger).toBeFocused();
+});
+
 test("home and legal pages share the public footer and link to FAQ", async ({ page }) => {
   await mockImageApi(page);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
   const footer = page.locator("footer.site-footer");
-  await footer.scrollIntoViewIfNeeded();
+  const reveal = page.locator(".lp-footer-reveal");
+  await expect(reveal).toHaveCSS("position", "sticky");
+  const landing = page.locator(".lp-page");
+  const approachFooter = (edgeRatio: number) =>
+    landing.evaluate((element, ratio) => {
+      window.scrollTo({
+        top: element.getBoundingClientRect().bottom + window.scrollY - window.innerHeight * ratio,
+        behavior: "instant",
+      });
+    }, edgeRatio);
+  const footerTop = () => reveal.evaluate((element) => element.getBoundingClientRect().top);
+  // 正文上滚揭开后层页脚，露出多少由正文底边决定。
+  await approachFooter(0.8);
+  const pinnedTop = await footerTop();
+  await approachFooter(0.5);
+  await expect.poll(footerTop).toBe(pinnedTop);
+  await page.evaluate(() =>
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }),
+  );
   await expect(footer.getByRole("navigation")).toBeVisible();
-  const links = footer.getByRole("link");
+  const links = footer.getByRole("navigation").getByRole("link");
   const labels = [
     "主图制作",
     "套图计划",
@@ -738,6 +785,7 @@ test("home and legal pages share the public footer and link to FAQ", async ({ pa
     "自由画布",
     "素材库",
     "灵感库",
+    "积分充值",
     "常见问题",
     "用户协议",
     "隐私政策",
@@ -750,10 +798,15 @@ test("home and legal pages share the public footer and link to FAQ", async ({ pa
   );
   await expect(footer.getByRole("img", { name: "Lycobo", exact: true })).toBeVisible();
   await expect(footer).toContainText(`© ${new Date().getFullYear()} Lycobo`);
+  const support = footer.getByRole("link", { name: "support@lycobo.com", exact: true });
+  await expect(support).toHaveAttribute("href", "mailto:support@lycobo.com");
   await footer.getByRole("link", { name: "用户协议", exact: true }).click();
   await expect(page).toHaveURL(/\/zh-CN\/terms$/);
   const legalFooter = page.locator("footer.site-footer");
-  await expect(legalFooter.getByRole("link")).toHaveText(labels);
+  await expect(legalFooter.getByRole("navigation").getByRole("link")).toHaveText(labels);
+  await expect(
+    legalFooter.getByRole("link", { name: "support@lycobo.com", exact: true }),
+  ).toHaveAttribute("href", "mailto:support@lycobo.com");
   await legalFooter.getByRole("link", { name: "常见问题", exact: true }).click();
   await expect(page).toHaveURL(/\/zh-CN#faq$/);
   await expect(page.locator("#faq-title")).toBeFocused();

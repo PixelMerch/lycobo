@@ -7,6 +7,7 @@ import { RouteLink } from "../../../components/router-link";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { dashboardPath, dashboardToolPaths } from "../../../lib/dashboard-paths";
+import { publicImageUrl } from "../../../lib/public-image-url";
 import { LandingActionLink } from "./landing-action-link";
 import { landingHeroMessages } from "./landing-hero-messages";
 import { landingEase, landingTextReveal, landingTextSequence } from "./landing-motion";
@@ -15,6 +16,7 @@ import "./landing-hero-section.css";
 interface HeroPanel {
   id: string;
   image: string;
+  imageAlt: string;
   title: string;
   description: string;
   actionLabel: string;
@@ -24,116 +26,89 @@ interface HeroPanel {
 interface HeroAccordionPanelProps {
   panel: HeroPanel;
   isActive: boolean;
-  onActivate: () => void;
+  onHover: () => void;
+  onToggle: () => void;
   reducedMotion: boolean;
 }
 
+/** 展示单个商品案例，展开后提供说明和对应的创作入口。 */
 function HeroAccordionPanel({
   panel,
   isActive,
-  onActivate,
+  onHover,
+  onToggle,
   reducedMotion,
 }: HeroAccordionPanelProps) {
+  const detailsId = `lp-${panel.id}-details`;
   return (
-    <motion.article
+    <article
       className="lp-hero-panel"
       data-active={isActive ? "true" : "false"}
-      onMouseEnter={onActivate}
-      onFocus={onActivate}
-      layout={!reducedMotion}
-      transition={{ duration: 0.58, ease: landingEase }}
+      onPointerEnter={(event) => {
+        if (event.pointerType === "mouse") onHover();
+      }}
     >
       <img
         src={panel.image}
-        alt={panel.title}
+        alt={panel.imageAlt}
         className="lp-hero-panel-img"
         decoding="async"
-        fetchPriority={isActive ? "high" : "auto"}
+        fetchPriority={panel.id === "hero-1" ? "high" : "auto"}
       />
       <div className="lp-hero-panel-scrim" aria-hidden="true" />
 
-      {!isActive ? (
-        <Button
-          variant="ghost"
-          aria-label={panel.title}
-          className="lp-hero-panel-trigger"
-          onPress={onActivate}
-        />
-      ) : null}
+      <Button
+        variant="ghost"
+        aria-label={panel.title}
+        aria-expanded={isActive}
+        aria-controls={detailsId}
+        className="lp-hero-panel-trigger"
+        onPress={(event) => {
+          if (event.pointerType === "mouse") onHover();
+          else onToggle();
+        }}
+      />
 
       <div className="lp-hero-panel-body">
         <h3 className="lp-hero-panel-title">{panel.title}</h3>
-        <AnimatePresence initial={false}>
-          {isActive ? (
-            <motion.div
-              key={`${panel.id}-details`}
-              className="lp-hero-panel-details"
-              initial={reducedMotion ? false : { opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : 8 }}
-              transition={{ duration: 0.34, ease: landingEase }}
-            >
-              <p className="lp-hero-panel-desc">{panel.description}</p>
-              <RouteLink to={panel.to} className="lp-hero-panel-cta">
-                {panel.actionLabel}
-                <UiIcon icon={IconArrowUpRight} size="small" />
-              </RouteLink>
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
+        <div id={detailsId} className="lp-hero-detail-region" inert={!isActive}>
+          <AnimatePresence initial={false}>
+            {isActive && (
+              <motion.div
+                className="lp-hero-panel-details"
+                initial={reducedMotion ? false : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: reducedMotion ? 0 : 8 }}
+                transition={{ duration: reducedMotion ? 0 : 0.34, ease: landingEase }}
+              >
+                <p className="lp-hero-panel-desc">{panel.description}</p>
+                <RouteLink to={panel.to} className="lp-hero-panel-cta">
+                  {panel.actionLabel}
+                  <UiIcon icon={IconArrowUpRight} size="small" />
+                </RouteLink>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
-    </motion.article>
+    </article>
   );
 }
 
-const heroLogos = [
-  { id: "futurebrand", src: "/landing/ltx/logos/futurebrand.svg", alt: "FutureBrand" },
-  { id: "cylndr", src: "/landing/ltx/logos/cylndr.svg", alt: "CYLNDR" },
-  { id: "code-and-theory", src: "/landing/ltx/logos/code-and-theory.svg", alt: "Code and Theory" },
-  { id: "trapdoor", src: "/landing/ltx/logos/trapdoor.png", alt: "Trapdoor Creative" },
-  { id: "mccann", src: "/landing/ltx/logos/mccann.png", alt: "McCann Worldgroup" },
-  { id: "elevenlabs", src: "/landing/ltx/logos/elevenlabs.svg", alt: "ElevenLabs" },
-  { id: "clutch", src: "/landing/ltx/logos/clutch.svg", alt: "Clutch" },
-];
-
-function HeroLogoMarquee({ reducedMotion }: { reducedMotion: boolean }) {
-  const items = reducedMotion
-    ? heroLogos.map((logo) => ({ ...logo, key: `${logo.id}-a`, duplicate: false }))
-    : [
-        ...heroLogos.map((logo) => ({ ...logo, key: `${logo.id}-a`, duplicate: false })),
-        ...heroLogos.map((logo) => ({ ...logo, key: `${logo.id}-b`, duplicate: true })),
-      ];
-
-  return (
-    <div className="lp-logo-marquee">
-      <div className="lp-logo-track" data-static={reducedMotion ? "true" : "false"}>
-        {items.map((logo) => (
-          <img
-            key={logo.key}
-            src={logo.src}
-            alt={logo.duplicate ? "" : logo.alt}
-            aria-hidden={logo.duplicate ? true : undefined}
-            className="lp-logo-item"
-            loading="lazy"
-            decoding="async"
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** 首页复刻 LTX 首屏大标题、锐利白底主按钮、全幅横向手风琴画廊与滚动品牌标带。 */
+/** 首页首屏展示三组自制商品案例，并从画廊直达对应创作工具。 */
 export function LandingHeroSection() {
   const t = useMessages(landingHeroMessages);
   const { startCreating } = useMessages(shellMessages);
   const reducedMotion = Boolean(useReducedMotion());
-  const [activeId, setActiveId] = useState("hero-2");
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [pressedId, setPressedId] = useState<string | null>(null);
+  const activeId = pressedId ?? hoveredId;
 
   const panels: HeroPanel[] = [
     {
       id: "hero-1",
-      image: "/landing/ltx/hero-1.avif",
+      image: publicImageUrl("/landing/hero/camera-studio.webp"),
+      imageAlt: t.cardOneImageAlt,
       title: t.cardOneTitle,
       description: t.cardOneDesc,
       actionLabel: t.cardOneAction,
@@ -141,7 +116,8 @@ export function LandingHeroSection() {
     },
     {
       id: "hero-2",
-      image: "/landing/ltx/hero-2.webp",
+      image: publicImageUrl("/landing/hero/amber-serum-set.webp"),
+      imageAlt: t.cardTwoImageAlt,
       title: t.cardTwoTitle,
       description: t.cardTwoDesc,
       actionLabel: t.cardTwoAction,
@@ -149,7 +125,8 @@ export function LandingHeroSection() {
     },
     {
       id: "hero-3",
-      image: "/landing/ltx/hero-3.webp",
+      image: publicImageUrl("/landing/hero/bronze-eyewear-editorial.webp"),
+      imageAlt: t.cardThreeImageAlt,
       title: t.cardThreeTitle,
       description: t.cardThreeDesc,
       actionLabel: t.cardThreeAction,
@@ -191,20 +168,32 @@ export function LandingHeroSection() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.75, delay: 0.22, ease: landingEase }}
       >
-        <div className="lp-hero-accordion">
+        <fieldset
+          className="lp-hero-accordion"
+          aria-labelledby="lp-hero-title"
+          data-expanded={activeId !== null}
+          onPointerLeave={(event) => {
+            if (event.pointerType === "mouse") setHoveredId(null);
+          }}
+          onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) setPressedId(null);
+          }}
+        >
           {panels.map((panel) => (
             <HeroAccordionPanel
               key={panel.id}
               panel={panel}
               isActive={panel.id === activeId}
-              onActivate={() => setActiveId(panel.id)}
+              onHover={() => setHoveredId(panel.id)}
+              onToggle={() => {
+                setHoveredId(null);
+                setPressedId(activeId === panel.id ? null : panel.id);
+              }}
               reducedMotion={reducedMotion}
             />
           ))}
-        </div>
+        </fieldset>
       </motion.div>
-
-      <HeroLogoMarquee reducedMotion={reducedMotion} />
     </section>
   );
 }
