@@ -72,9 +72,7 @@ test("hover retries only the chosen unconfirmed image after its own confirmation
   await action.click();
   const dialog = page.getByRole("dialog", { name: "重新生成这张图片？", exact: true });
   // 这一张结果待确认：先查询原任务，确认需要重新生成时才扣费，所以弹窗不显示金额。
-  await expect(dialog).toContainText(
-    "先查询原任务，已有结果将直接保存；确认需重新生成时才扣除积分。",
-  );
+  await expect(dialog).toContainText("先查原结果，重新生成才扣积分。");
   await expect(dialog).not.toContainText("本次消耗");
   expect(submissions).toHaveLength(0);
   await dialog.getByRole("button", { name: "取消", exact: true }).click();

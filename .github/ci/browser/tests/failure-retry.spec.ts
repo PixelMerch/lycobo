@@ -196,7 +196,7 @@ test("insufficient credits opens checkout options without inserting an error int
   await page.getByRole("button", { name: "重新生成", exact: true }).click();
   // An unresolved attempt is looked up before any new charge, so the dialog names no amount.
   await expect(page.getByRole("dialog", { name: "重新生成这张图片？", exact: true })).toContainText(
-    "先查询原任务，已有结果将直接保存；确认需重新生成时才扣除积分。",
+    "先查原结果，重新生成才扣积分。",
   );
   await page
     .getByRole("dialog", { name: "重新生成这张图片？", exact: true })

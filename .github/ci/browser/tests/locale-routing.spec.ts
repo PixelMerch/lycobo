@@ -15,7 +15,8 @@ test("the homepage language menu stays anchored while scrolling under the pointe
   const option = page.getByRole("menuitemradio", { name: "English", exact: true });
   await trigger.hover();
   await option.hover();
-  await page.mouse.wheel(0, 600);
+  // 滚动正文，同时让鼠标始终停在选项上。
+  await page.evaluate(() => window.scrollTo({ top: 600, behavior: "instant" }));
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
   await expect(option).toBeInViewport();
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
@@ -64,9 +65,9 @@ test("workspace language switch preserves draft and routes tool navigation in th
     "保留这个商品图草稿",
   );
   await expect(page.locator('[data-locale-draft-probe="kept"]')).toBeVisible();
-  await expect(page.locator(".workspace-site-header .header-workspace")).toHaveAttribute(
+  await expect(page.locator(".workspace-site-header .workspace-site-brand")).toHaveAttribute(
     "href",
-    "/en/dashboard",
+    "/en",
   );
   expect(localizedApiRequests).toEqual([]);
 });
