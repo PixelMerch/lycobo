@@ -16,7 +16,8 @@
     "@lycoboai/queue": "workspace:*",
     "@lycoboai/storage": "workspace:*",
     "postgres": "4.1.0",
-    "zod": "4.6.7"
+    "zod": "4.6.7",
+    "@lycoboai/billing": "workspace:*"
   },
   "devDependencies": {
     "tsx": "4.23.15"

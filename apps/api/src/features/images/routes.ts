@@ -1,6 +1,8 @@
+import { BillingError } from "@lycoboai/billing";
 import { ImageRepositoryError, VariationError, WalletError } from "@lycoboai/db";
 import { type Context, Hono } from "hono";
 import { enterprisePrincipal } from "../auth/principal";
+import { ModerationError } from "../moderation/service";
 import { registerImageWallet } from "../wallet/wallet-routes";
 import { registerImageAssetDelivery, registerImageAssetLibrary } from "./assets/asset-routes";
 import { imageDeliveries } from "./assets/delivery";
@@ -17,7 +19,7 @@ import {
 
 export type { ImageApiDependencies } from "./route-context";
 
-function repositoryFailure(code: string): { status: 400 | 403 | 404 | 409; message: string } {
+function repositoryFailure(code: string): { status: 400 | 403 | 404 | 409 | 503; message: string } {
   switch (code) {
     case "FORBIDDEN":
       return { status: 403, message: "没有权限操作此任务" };
@@ -29,6 +31,9 @@ function repositoryFailure(code: string): { status: 400 | 403 | 404 | 409; messa
       return { status: 400, message: "当前模型渠道未启用或不支持所选参数，请刷新模型配置" };
     case "INSUFFICIENT_CREDITS":
       return { status: 409, message: "积分不足，请充值后重试" };
+    case "BILLING_UNAVAILABLE":
+    case "CREDIT_APPROVAL_INVALID":
+      return { status: 503, message: "积分结算暂不可用，请稍后重试" };
     case "STATE_CONFLICT":
       return { status: 409, message: "任务正在生成或状态已更新，请稍后重试" };
     default:
@@ -36,11 +41,12 @@ function repositoryFailure(code: string): { status: 400 | 403 | 404 | 409; messa
   }
 }
 
+/** 注册鉴权后的图片接口，并将业务失败转换为统一响应。 */
 export function imageRoutes(deps: ImageApiDependencies) {
   const app = new Hono<Env>();
   const resolvePrincipal = async (c: Context) => {
     const bearer = c.req.header("Authorization");
-    // Keep existing service API keys compatible; browser sessions never fall back to local identity.
+    // 保留服务 API 密钥的兼容性，浏览器会话不回退到本地身份。
     if (deps.auth && bearer && /^Bearer [\w-]{43}$/.test(bearer))
       return deps.repository.authenticate(bearer.slice(7));
     return deps.auth
@@ -61,7 +67,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
     setWorkbenchCookie(c, deps.session);
     return c.json({ userId: principal.userId, organizationId: principal.organizationId });
   });
-  // Display-only metadata is public; authenticated task and capability routes stay below.
+  // 展示用元数据公开，任务和能力接口仍需鉴权。
   app.get("/image-model-logos", async (c) => c.json(await deps.repository.models.logos()));
   app.use("*", async (c, next) => {
     const principal = await resolvePrincipal(c);
@@ -70,6 +76,8 @@ export function imageRoutes(deps: ImageApiDependencies) {
     await next();
   });
   app.onError((error, c) => {
+    if (error instanceof ModerationError)
+      return fail(c, error.code, error.failure.message, error.failure.status);
     if (error instanceof VariationError)
       return fail(
         c,
@@ -77,7 +85,11 @@ export function imageRoutes(deps: ImageApiDependencies) {
         "分析请求未执行，请检查图片或稍后再试",
         error.code === "RATE_LIMITED" ? 409 : 400,
       );
-    if (error instanceof ImageRepositoryError || error instanceof WalletError) {
+    if (
+      error instanceof ImageRepositoryError ||
+      error instanceof WalletError ||
+      error instanceof BillingError
+    ) {
       const { status, message } = repositoryFailure(error.code);
       return fail(c, error.code, message, status);
     }

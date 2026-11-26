@@ -1,16 +1,35 @@
-import { imageUnitCredits } from "@lycoboai/contracts";
+import { checkoutPackSchema, defaultCreditOfferEnd, imageUnitCredits } from "@lycoboai/contracts";
 import type { Hono } from "hono";
 import { z } from "zod";
+import { enterprisePrincipal } from "../auth/principal";
 import { type Env, fail, type ImageApiDependencies } from "../images/route-context";
 
 /** 注册共享积分余额、收支明细与充值订单的读取接口。 */
 export function registerImageWallet(app: Hono<Env>, deps: ImageApiDependencies) {
-  app.get("/wallet", async (c) =>
-    c.json({
-      ...(await deps.repository.wallet(c.get("principal"))),
-      unitCredits: imageUnitCredits,
-    }),
+  app.get("/wallet", async (c) => {
+    const scope = c.get("principal");
+    const balance = deps.billing
+      ? await deps.billing.balance(scope)
+      : (await deps.repository.wallet(scope)).balance;
+    return c.json({ balance, unitCredits: imageUnitCredits });
+  });
+  app.get("/wallet/checkout", async (c) =>
+    c.json(
+      deps.checkout
+        ? await deps.checkout.options(c.get("principal"))
+        : { packs: [], offerEnd: defaultCreditOfferEnd },
+    ),
   );
+  app.post("/wallet/checkout", async (c) => {
+    const identity = deps.auth && (await enterprisePrincipal(c, deps.auth));
+    if (!identity) return fail(c, "UNAUTHORIZED", "请先登录", 401);
+    const input = z
+      .strictObject({ pack: checkoutPackSchema, key: z.uuid() })
+      .safeParse(await c.req.json());
+    if (!input.success) return fail(c, "VALIDATION_ERROR", "请选择有效的积分包", 400);
+    if (!deps.checkout) return fail(c, "BILLING_UNAVAILABLE", "积分购买暂不可用", 503);
+    return c.json(await deps.checkout.checkout(identity.user, input.data.key, input.data.pack));
+  });
   app.get("/wallet/entries", async (c) => {
     const parsed = z
       .object({
@@ -24,14 +43,12 @@ export function registerImageWallet(app: Hono<Env>, deps: ImageApiDependencies) 
       })
       .safeParse(c.req.query());
     if (!parsed.success) return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
-    return c.json({
-      data: await deps.repository.walletEntries(
-        c.get("principal"),
-        parsed.data.limit,
-        parsed.data.before,
-        parsed.data.view,
-      ),
-    });
+    const { limit, before, view } = parsed.data;
+    const scope = c.get("principal");
+    const data = deps.billing
+      ? await deps.repository.billingEntries(scope, deps.billing.provider, limit, before, view)
+      : await deps.repository.walletEntries(scope, limit, before, view);
+    return c.json({ data });
   });
   app.get("/wallet/recharges", async (c) => {
     const parsed = z
@@ -42,7 +59,7 @@ export function registerImageWallet(app: Hono<Env>, deps: ImageApiDependencies) 
       .safeParse(c.req.query());
     if (!parsed.success) return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
     return c.json({
-      data: await deps.repository.rechargeOrders(
+      data: await deps.repository.billingOrders(
         c.get("principal"),
         parsed.data.limit,
         parsed.data.before,

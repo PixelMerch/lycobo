@@ -10,7 +10,25 @@ try {
   if (error.code !== "ENOENT") throw error;
 }
 const docker = process.argv.includes("--docker");
-const env = localEnvironment(process.env, docker, { ...settings, ...process.env });
+const configured = { ...settings, ...process.env };
+const env = localEnvironment(process.env, docker, configured);
+const moderationEnabled = configured.CREEM_MODERATION_ENABLED;
+const creemKey = configured.CREEM_API_KEY?.trim();
+// 本地子进程只接受测试密钥，浏览器和素材服务不继承账务配置。
+const apiEnv = {
+  ...env,
+  ...(moderationEnabled ? { CREEM_MODERATION_ENABLED: moderationEnabled } : {}),
+  ...(creemKey?.startsWith("creem_test_") ? { CREEM_API_KEY: creemKey } : {}),
+  ...Object.fromEntries(
+    [
+      "BILLING_PROVIDER",
+      "BILLING_PRODUCTS",
+      "BILLING_OFFER_END_AT",
+      "CREEM_WEBHOOK_SECRET",
+    ].flatMap((key) => (configured[key] ? [[key, configured[key]]] : [])),
+  ),
+};
+const workerEnv = creemKey?.startsWith("creem_test_") ? { ...env, CREEM_API_KEY: creemKey } : env;
 const names = process.argv.includes("--api-only") ? ["api"] : ["api", "worker", "assets", "web"];
 const children = names.map((name) =>
   spawn(
@@ -18,7 +36,7 @@ const children = names.map((name) =>
     ["--filter", `@lycoboai/${name}`, docker && name === "web" ? "dev:docker" : "dev"],
     {
       stdio: "inherit",
-      env,
+      env: { api: apiEnv, worker: workerEnv }[name] ?? env,
       detached: process.platform !== "win32",
     },
   ),

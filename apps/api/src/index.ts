@@ -1,5 +1,6 @@
 import { isAbsolute } from "node:path";
 import { serve } from "@hono/node-server";
+import { creemBillingProvider } from "@lycoboai/billing";
 import {
   openAuthRepository,
   openImageEventFeed,
@@ -20,9 +21,13 @@ import pino from "pino";
 import { createApp } from "./app";
 import { readEnv } from "./env";
 import { enterpriseAuth, readAuthConfig } from "./features/auth/service";
+import { creemWebhookRoutes } from "./features/billing/creem-webhook";
+import { checkoutService } from "./features/billing/service";
+import { externalWalletService } from "./features/billing/wallet-service";
 import { readWorkbenchSession } from "./features/images/session";
+import { createCreemModerator } from "./features/moderation/creem-moderation";
 
-// Node entrypoint is for isolated local development. Production uses cloudflare.ts.
+// Node 入口只用于隔离开发，生产由 cloudflare.ts 启动。
 const env = readEnv(process.env);
 const logger = pino({ level: env.LOG_LEVEL });
 const url = new URL(process.env.DATABASE_URL ?? "");
@@ -50,10 +55,45 @@ const signAsset =
         allowLocalHttp: true,
       })
     : undefined;
+const creemTestKey = process.env.CREEM_API_KEY?.trim();
+const billingProvider = creemTestKey?.startsWith("creem_test_")
+  ? creemBillingProvider(creemTestKey)
+  : undefined;
+const billingEnabled = process.env.BILLING_PROVIDER === "creem";
+const billingSecret = process.env.CREEM_WEBHOOK_SECRET;
+const siteOrigin = authConfig?.origins[0];
+const moderate = createCreemModerator(process.env);
+if (
+  billingEnabled &&
+  (!billingProvider ||
+    !billingSecret ||
+    !siteOrigin ||
+    !moderate ||
+    process.env.CREEM_MODERATION_ENABLED !== "true")
+)
+  throw new Error("BILLING_TEST_CONFIGURATION_REQUIRED");
+const checkout =
+  billingEnabled && billingProvider && siteOrigin
+    ? checkoutService(repository, billingProvider, {
+        products: process.env.BILLING_PRODUCTS,
+        offerEnd: process.env.BILLING_OFFER_END_AT,
+        successUrl: new URL("/", siteOrigin).href,
+      })
+    : undefined;
 const app = createApp(
   (event) => logger.error(event, "Request failed"),
   {
     repository,
+    moderate,
+    billing:
+      billingEnabled && billingProvider
+        ? externalWalletService(repository, billingProvider)
+        : undefined,
+    checkout,
+    billingWebhooks:
+      billingProvider && billingSecret
+        ? creemWebhookRoutes(billingSecret, repository, billingProvider.id)
+        : undefined,
     store,
     auth,
     signAsset,

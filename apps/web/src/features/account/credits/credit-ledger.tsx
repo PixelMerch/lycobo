@@ -158,7 +158,7 @@ export function CreditLedger() {
                       </Table.Cell>
                       <Table.Cell className="account-cell-after">
                         <span className="account-after-label">{t.balanceLabel}</span>
-                        {formatCredits(entry.balance_after)}
+                        {entry.balance_after === null ? "—" : formatCredits(entry.balance_after)}
                       </Table.Cell>
                     </Table.Row>
                   );

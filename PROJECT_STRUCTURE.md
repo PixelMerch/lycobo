@@ -18,6 +18,7 @@ AI 开发按 [工程文档索引](docs/README.md) 读取相关目录和依赖方
 | packages/contracts                   | 浏览器安全的 Zod 输入/输出定义，不含 DB 或 Node 依赖                                           |
 | packages/db                          | PostgreSQL pool、Drizzle schema、迁移、持久化生成事件及 LISTEN/NOTIFY                          |
 | packages/queue                       | ID-only 消息契约、图片 outbox 投递与实时事件批量确认                                           |
+| packages/billing                     | 服务端支付适配器、积分扣费与冲正，独立于图片生成                                               |
 | packages/generation                  | 服务商契约、Vakv 同步兼容、可配置 OpenAI／FluxPort 同异步适配与密钥加密                        |
 | packages/storage                     | 私有 R2、Images binding 与 Queue 上传；Node Sharp/S3 仅供隔离开发和测试                        |
 | scripts/check-cloudflare-runtime.mjs | 隔离 workerd、Images/R2 与密码验证                                                             |
@@ -179,7 +180,7 @@ contracts 不得反向引用应用或 server-only 包；共享包不得依赖 ap
 
 - `features/account/menu/account-menu.tsx` 组合HeaderLogin与账户菜单（桌面顶部栏头像、手机抽屉账户行）；菜单提供设置、个人作品与退出登录。`header-benefits.tsx` 是顶部栏积分胶囊与积分菜单（按参考站，悬停逻辑复用 `lib/use-hover-menu.ts`）；`credits/credit-usage-dialog.tsx`、`credit-usage-list.tsx` 与 `use-credit-usage.ts` 组成积分明细弹窗（视图筛选、按需续读与分页；从 Header 积分菜单打开）。`account-overlays.tsx` 通过Zustand记录弹窗及打开者，统一懒加载账户设置及叠在其上的充值和积分明细；关闭后各自恢复焦点，退出或改密成功清空状态。
 - `features/account/settings/account-settings-dialog.tsx` 是账户设置：左侧身份、分区与退出登录，分区为账户、积分与账单、登录与安全及管理员可见的企业成员（`settings-sections.ts`）。`account-plan-usage.tsx` 展示企业共享积分与充值入口，以及在积分明细（`credits/credit-ledger.tsx`）与充值订单（`credits/recharge-orders.tsx`）之间切换的积分用量；`account-password-form.tsx` 通过auth-client接入既有改密接口，成功清理登录状态。`account-settings-panels.tsx` 组合账户分区并如实保留未接入的子账号入口；`account-avatar-picker.tsx` 是头像行的预设单选，点选即通过auth-client的 `PUT /api/v1/auth/avatar` 保存。`account-language-picker.tsx` 与顶栏菜单复用 `use-account-language.ts`，已登录时通过 `PUT /api/v1/auth/locale` 保存语言偏好，再切换当前路由。`avatar/account-avatar.tsx` 是顶部栏、手机抽屉、账户菜单与设置共用的头像，按身份里的 `avatarPreset` 取 `account-avatar.css` 中的渐变，认不出时用默认青柠。`account-format.ts` 提供格式化，`account-entry.tsx` 提供收支图标；各页签查询按需挂载。
-- `features/account/credits/credits-dialog.tsx` 为已登录用户提供全屏充值弹框，`CreditPacks` 展示五档目录和活动倒计时，卡片按价格类型及金额匹配 Creem 托管付款链接。在线积分履约待接入，订单与流水仅供查看。
+- `features/account/credits/credits-dialog.tsx` 为已登录用户提供全屏充值弹框，`CreditPacks` 展示五档目录和活动倒计时，卡片读取服务端可购买的套餐，提交后跳转托管收银台。计费适配器在 `packages/billing`，API 负责登录归属与订单，消费者可恢复持久扣费和冲正。
 
 ## 数据库领域命名
 

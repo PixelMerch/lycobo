@@ -64,7 +64,10 @@ function usageDetails(entry: WalletEntry, currentUid: string | undefined, locale
   const detail = entryDetail(entry, locale);
   const lines = [
     { label: labels.member, value: memberLabel(entry.user_uid, currentUid, locale) },
-    { label: labels.balanceAfter, value: formatCredits(entry.balance_after) },
+    {
+      label: labels.balanceAfter,
+      value: entry.balance_after === null ? "—" : formatCredits(entry.balance_after),
+    },
   ];
   if (detail !== "—" && detail !== usageTitle(entry, locale))
     lines.unshift({ label: labels.detail, value: detail });

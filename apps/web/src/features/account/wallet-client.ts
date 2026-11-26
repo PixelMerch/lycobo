@@ -1,9 +1,11 @@
 import {
+  checkoutOptionsSchema,
+  creditCheckoutSchema,
   rechargeOrdersSchema,
   walletBalanceSchema,
   walletEntriesSchema,
 } from "@lycoboai/contracts";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 import { imageRequest, useImageSession } from "../generation/generation-client";
 export function useWallet() {
   const session = useImageSession();
@@ -61,5 +63,32 @@ export function useRechargeOrders() {
         ).json(),
       ),
     getNextPageParam: (page) => (page.data.length === 20 ? page.data.at(-1)?.id : undefined),
+  });
+}
+
+/** 按登录身份加载实际可购买的档位，商品编号留在服务端。 */
+export function useCheckoutOptions() {
+  const session = useImageSession();
+  return useQuery({
+    queryKey: ["checkout-options", session.data?.organizationId, session.data?.userId],
+    enabled: session.isSuccess,
+    retry: false,
+    queryFn: async ({ signal }) =>
+      checkoutOptionsSchema.parse(await (await imageRequest("wallet/checkout", { signal })).json()),
+  });
+}
+
+/** 创建托管收银台并跳转，网络异常时保持当前积分弹框。 */
+export function useCreditCheckout() {
+  return useMutation({
+    mutationFn: async (pack: string) => {
+      const response = await imageRequest("wallet/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pack, key: crypto.randomUUID() }),
+      });
+      return creditCheckoutSchema.parse(await response.json());
+    },
+    onSuccess: ({ url }) => window.location.assign(url),
   });
 }

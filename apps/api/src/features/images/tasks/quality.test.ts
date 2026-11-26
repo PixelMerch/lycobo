@@ -1,3 +1,4 @@
+import { BillingError } from "@lycoboai/billing";
 import { imageModelsResponseSchema, unwrapApiData } from "@lycoboai/contracts";
 import type { ImageRepository } from "@lycoboai/db";
 import { supportedResolutions, validateModelInput } from "@lycoboai/generation";
@@ -5,6 +6,9 @@ import type { ImageStore } from "@lycoboai/storage";
 import { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { expect, it, vi } from "vitest";
 import { createApp } from "../../../app";
+import type { ExternalWalletService } from "../../billing/wallet-service";
+import { createCreemModerator } from "../../moderation/creem-moderation";
+import type { GenerationModerator } from "../../moderation/service";
 
 const unexpected = async (): Promise<never> => {
   throw new Error("Unexpected dependency call");
@@ -14,7 +18,12 @@ function fixture(
   managedModelsOnly = false,
   extra: {
     wake?: () => Promise<void>;
+    wakeBilling?: (id: string) => Promise<void>;
+    billing?: ExternalWalletService;
+    moderate?: GenerationModerator | undefined;
     get?: ImageRepository["get"];
+    retry?: ImageRepository["retry"];
+    providerRetryCandidates?: ImageRepository["providerRetryCandidates"];
     getMany?: ImageRepository["getMany"];
     assetLocations?: ImageRepository["assetLocations"];
     asset?: ImageRepository["asset"];
@@ -60,7 +69,7 @@ function fixture(
       hasRoute: async () => false,
     },
     providerCipher: unexpected,
-    providerRetryCandidates: unexpected,
+    providerRetryCandidates: extra.providerRetryCandidates ?? unexpected,
     resumeProvider: unexpected,
     deferProvider: unexpected,
     webhookWait: unexpected,
@@ -73,6 +82,19 @@ function fixture(
     markReferenceDeleted: unexpected,
     provision: unexpected,
     wallet: unexpected,
+    billingCustomer: unexpected,
+    billingEmail: unexpected,
+    saveBillingCustomer: unexpected,
+    createBillingOrder: unexpected,
+    saveBillingCheckout: unexpected,
+    confirmBillingOrder: unexpected,
+    refreshBillingAccount: unexpected,
+    billingEntries: unexpected,
+    billingOrders: unexpected,
+    leaseGenerationCharges: unexpected,
+    finishGenerationCharge: unexpected,
+    replayImageSubmission: async () => undefined,
+    replayImageRetry: async () => false,
     walletEntries: unexpected,
     rechargeOrders: unexpected,
     createRecharge: unexpected,
@@ -99,7 +121,7 @@ function fixture(
     pruneEvents: unexpected,
     expireClaims: unexpected,
     reconcile: unexpected,
-    retry: unexpected,
+    retry: extra.retry ?? unexpected,
     settleInvalidResponses: unexpected,
   };
   const store: ImageStore = {
@@ -111,6 +133,9 @@ function fixture(
   };
   const app = createApp(() => {}, {
     repository,
+    moderate: extra.moderate,
+    billing: extra.billing,
+    wakeBilling: extra.wakeBilling,
     store,
     signAsset: extra.signAsset,
     plannerKey: extra.optimizer ? "fixture" : undefined,
@@ -122,7 +147,7 @@ function fixture(
     validate: (input) => validateModelInput(input, {}, editsEnabled),
     resolutions: supportedResolutions,
   });
-  const submit = (quality?: unknown) =>
+  const submit = (quality?: unknown, overrides?: Record<string, unknown>) =>
     app.request("/api/v1/image-tasks", {
       method: "POST",
       headers: {
@@ -134,6 +159,7 @@ function fixture(
         model: "gpt-image-2",
         prompt: "fixture",
         ...(quality === undefined ? {} : { quality }),
+        ...overrides,
       }),
     });
   return { create, submit, app };
@@ -149,6 +175,91 @@ it.each(["low", "medium", "high"])(
     expect(create.mock.calls[0]?.[3]).toBe(2);
   },
 );
+it("blocks rejected submissions before repository or queue calls", async () => {
+  const request = vi.fn<typeof fetch>(async () =>
+    Response.json({ id: "mod_test", object: "moderation_result", decision: "deny" }),
+  );
+  const moderate = createCreemModerator(
+    { CREEM_MODERATION_ENABLED: "true", CREEM_API_KEY: "creem_test_fixture" },
+    request,
+  );
+  const wake = vi.fn(async () => {});
+  const { create, submit } = fixture(false, false, { moderate, wake });
+  const result = await submit(undefined, { prompt: "实际生成文案", userPrompt: "仅展示的文案" });
+  expect(result.status).toBe(400);
+  expect(await result.json()).toMatchObject({ error: { code: "CONTENT_REJECTED" } });
+  expect(request.mock.calls[0]?.[1]?.body).toContain("实际生成文案");
+  expect(request.mock.calls[0]?.[1]?.body).not.toContain("仅展示的文案");
+  expect(create).not.toHaveBeenCalled();
+  expect(wake).not.toHaveBeenCalled();
+});
+
+it("screens every distinct item in a generated image set before accepting the task", async () => {
+  const moderate = vi.fn<GenerationModerator>(async () => undefined);
+  const { create, submit } = fixture(false, false, { moderate });
+  const result = await submit(undefined, {
+    count: 2,
+    variation: {
+      version: 1,
+      planId: crypto.randomUUID(),
+      items: [
+        { id: crypto.randomUUID(), title: "白底", prompt: "生成一张白色背景的商品图" },
+        { id: crypto.randomUUID(), title: "场景", prompt: "生成一张窗边自然光的商品图" },
+      ],
+    },
+  });
+  expect(result.status).toBe(202);
+  expect(moderate.mock.calls[0]?.[0]).toEqual([
+    expect.stringContaining("生成一张白色背景的商品图"),
+    expect.stringContaining("生成一张窗边自然光的商品图"),
+  ]);
+  expect(moderate.mock.invocationCallOrder[0]).toBeLessThan(
+    create.mock.invocationCallOrder[0] ?? 0,
+  );
+});
+
+it("screens the stored content of the selected retry item and binds its position", async () => {
+  const jobId = crypto.randomUUID();
+  const first = crypto.randomUUID();
+  const second = crypto.randomUUID();
+  const plan = {
+    version: 1,
+    planId: crypto.randomUUID(),
+    items: [
+      { id: crypto.randomUUID(), title: "白底", prompt: "生成一张白色背景的商品图" },
+      { id: crypto.randomUUID(), title: "场景", prompt: "生成一张窗边自然光的商品图" },
+    ],
+  };
+  const moderate = vi.fn<GenerationModerator>(async () => undefined);
+  const retry = vi.fn<ImageRepository["retry"]>().mockResolvedValue({ id: jobId, replayed: false });
+  const { app } = fixture(false, false, {
+    moderate,
+    retry,
+    providerRetryCandidates: async () => [],
+    get: async () => ({
+      id: jobId,
+      input: { model: "gpt-image-2.5", count: 2, prompt: "旧任务", variation: plan },
+      items: [
+        { id: first, position: 0, status: "failed" },
+        { id: second, position: 1, status: "failed" },
+      ],
+    }),
+  });
+  const result = await app.request(`/api/v1/image-tasks/${jobId}/retry`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer fixture",
+      "Content-Type": "application/json",
+      "Idempotency-Key": crypto.randomUUID(),
+    },
+    body: JSON.stringify({ itemId: second }),
+  });
+  expect(result.status).toBe(202);
+  expect(moderate.mock.calls[0]?.[0]).toEqual([
+    expect.stringContaining("生成一张窗边自然光的商品图"),
+  ]);
+  expect(retry.mock.calls[0]?.[5]).toEqual([1]);
+});
 it("wakes background processing once per newly enqueued task, never for a replay", async () => {
   const wake = vi.fn(async () => {});
   const { create, submit } = fixture(false, false, { wake });
@@ -511,4 +622,51 @@ it("streams DeepSeek text and only completes after the result is settled", async
   expect(await (await optimize()).text()).toContain("event: complete");
   expect(request).toHaveBeenCalledTimes(1);
   expect(finish).toHaveBeenCalledTimes(1);
+});
+
+it("persists separate per-image billing approvals and routes the task to billing before generation", async () => {
+  const generationAccount = vi.fn(async () => ({ provider: "fixture", accountId: "cca_fixture" }));
+  const moderate = vi.fn<GenerationModerator>(async () => ["mod_one", "mod_two"]);
+  const wakeBilling = vi.fn(async () => {});
+  const wake = vi.fn(async () => {});
+  const { create, submit } = fixture(false, false, {
+    billing: {
+      provider: "fixture",
+      generationAccount,
+      balance: unexpected,
+    },
+    moderate,
+    wake,
+    wakeBilling,
+  });
+  expect((await submit(undefined, { count: 2 })).status).toBe(202);
+  expect(generationAccount).toHaveBeenCalledWith(expect.anything(), 4);
+  expect(moderate.mock.calls[0]?.[3]).toBe(true);
+  expect(create.mock.calls[0]?.[6]).toEqual({
+    provider: "fixture",
+    accountId: "cca_fixture",
+    approvals: new Map([
+      [0, "mod_one"],
+      [1, "mod_two"],
+    ]),
+  });
+  expect(wakeBilling).toHaveBeenCalledOnce();
+  expect(wake).not.toHaveBeenCalled();
+});
+
+it("returns insufficient credits before persisting a generation in external billing mode", async () => {
+  const { create, submit } = fixture(false, false, {
+    billing: {
+      provider: "fixture",
+      generationAccount: async () => {
+        throw new BillingError("INSUFFICIENT_CREDITS");
+      },
+      balance: unexpected,
+    },
+    moderate: async () => ["mod_one"],
+  });
+  const rejected = await submit();
+  expect(rejected.status).toBe(409);
+  expect(await rejected.json()).toMatchObject({ error: { code: "INSUFFICIENT_CREDITS" } });
+  expect(create).not.toHaveBeenCalled();
 });

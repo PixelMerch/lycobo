@@ -8,21 +8,23 @@ import {
   imageUnitCredits,
   imageUserPrompt,
   providerModelForResolution,
-  providerSnapshotSchema,
   variationPlanInputSchema,
 } from "@lycoboai/contracts";
 import type postgres from "postgres";
 import { resolveProviderSnapshot } from "../models/model-management-repository";
 import { appendWalletEntry, ensureWallet } from "../wallet/wallet-repository";
 import { recordImageEvent } from "./image-event-repository";
+import { imageProviderRecovery, isVideoInput } from "./image-provider-recovery";
 import { ImageRepositoryError, type IndependentModelConfiguration } from "./image-repository-types";
 import type { imageSettlement } from "./image-settlement";
 
-type RetryItem = { id: string; position: number; status: string };
+export type ImageCreditAuthorization = {
+  provider: string;
+  accountId: string;
+  approvals: ReadonlyMap<number, string>;
+};
 
-function isVideoInput(input: unknown) {
-  return typeof input === "object" && input !== null && "video" in input;
-}
+type RetryItem = { id: string; position: number; status: string };
 
 async function verifyMember(tx: postgres.TransactionSql, scope: ImageScope) {
   const members =
@@ -91,20 +93,42 @@ async function enqueueImageItem(
   scope: ImageScope,
   jobId: string,
   position: number,
-  walletId: string,
-  unitCredits: number,
+  walletId: string | undefined,
+  credit?: ImageCreditAuthorization,
+  previousItemId?: string,
 ) {
   const itemId = randomUUID();
   await tx`insert into generation_job_items (id,job_id,organization_id,position) values (${itemId},${jobId},${scope.organizationId},${position})`;
+  if (credit) {
+    const approval = credit.approvals.get(position);
+    if (!approval) throw new ImageRepositoryError("STATE_CONFLICT");
+    // 外部确认扣费之前只保存账务意图，生成消费者收不到此图片。
+    await tx`insert into generation_credit_charges (item_id,user_id,provider,account_id,approval,amount,previous_item_id)
+      values (${itemId},${scope.userId},${credit.provider},${credit.accountId},${approval},${imageUnitCredits},${previousItemId ?? null})`;
+    return;
+  }
+  if (!walletId) throw new Error("WALLET_REQUIRED");
   await appendWalletEntry(tx, walletId, {
     eventKey: `consume:${itemId}`,
     kind: "consume",
-    amount: -unitCredits,
+    amount: -imageUnitCredits,
     userId: scope.userId,
     jobId,
     itemId,
   });
   await tx`insert into generation_outbox (item_id) values (${itemId})`;
+}
+
+async function acquireLocalWallet(
+  tx: postgres.TransactionSql,
+  scope: ImageScope,
+  total: number,
+  credit?: ImageCreditAuthorization,
+) {
+  if (credit) return undefined;
+  const wallet = await ensureWallet(tx, scope);
+  if (wallet.balance < total) throw new ImageRepositoryError("INSUFFICIENT_CREDITS");
+  return wallet.id;
 }
 
 async function refreshRetryRouting(
@@ -140,6 +164,16 @@ function retryableItems(items: RetryItem[], itemId: string | undefined) {
   return failed;
 }
 
+function assertApprovedRetryPositions(items: RetryItem[], approvedPositions?: readonly number[]) {
+  // 审核在事务外完成；重试范围发生变化时，让用户重新提交这批图片。
+  if (
+    approvedPositions &&
+    (approvedPositions.length !== items.length ||
+      items.some((item) => !approvedPositions.includes(item.position)))
+  )
+    throw new ImageRepositoryError("STATE_CONFLICT");
+}
+
 async function retireFailedItems(
   tx: postgres.TransactionSql,
   scope: ImageScope,
@@ -147,14 +181,25 @@ async function retireFailedItems(
   failed: RetryItem[],
   refund: ReturnType<typeof imageSettlement>["refund"],
 ) {
-  // Explicit user retry retires unresolved attempts before refund/recharge.
-  // Keep the uncertain provider outcome as evidence; do not call this
-  // reconciliation proof or let a late completion replace the new attempt.
+  // 主动重试保留原尝试的不确定结果与操作人，晚到结果不能覆盖新尝试。
   for (const item of failed) {
     if (item.status === "needs_reconciliation")
       await tx`update generation_job_items set status='failed',reconciled_by=${scope.userId},reconciliation_evidence='User requested retry; prior provider outcome remains unconfirmed; undelivered attempt retired',completed_at=coalesce(completed_at,now()) where id=${item.id}`;
     await refund(tx, jobId, String(item.id));
   }
+}
+
+async function findSubmissionReplay(
+  sql: postgres.ISql,
+  scope: ImageScope,
+  key: string,
+  inputHash: string,
+) {
+  const [replay] =
+    await sql`select id,input_hash from generation_jobs where organization_id=${scope.organizationId} and user_id=${scope.userId} and idempotency_key=${key}`;
+  if (!replay) return undefined;
+  if (replay.input_hash !== inputHash) throw new ImageRepositoryError("IDEMPOTENCY_CONFLICT");
+  return { id: String(replay.id), replayed: true };
 }
 
 async function insertSubmission(
@@ -168,12 +213,8 @@ async function insertSubmission(
   independent: IndependentModelConfiguration | undefined,
 ) {
   const unitCredits = imageUnitCredits;
-  const [replay] =
-    await tx`select id,input_hash from generation_jobs where organization_id=${scope.organizationId} and user_id=${scope.userId} and idempotency_key=${key}`;
-  if (replay) {
-    if (replay.input_hash !== inputHash) throw new ImageRepositoryError("IDEMPOTENCY_CONFLICT");
-    return { id: String(replay.id), replayed: true };
-  }
+  const replay = await findSubmissionReplay(tx, scope, key, inputHash);
+  if (replay) return replay;
   const snapshot = await submissionSnapshot(tx, input, requireManaged, independent);
   const inserted =
     await tx`insert into generation_jobs (organization_id,user_id,idempotency_key,input_hash,input,model,provider_model,prompt,user_prompt,resolution,aspect_ratio,requested_count,unit_credits,provider_snapshot)
@@ -189,47 +230,6 @@ async function insertSubmission(
   return { id: String(inserted[0].id), replayed: false };
 }
 
-function imageProviderRecovery(
-  sql: postgres.Sql,
-  refreshJob: ReturnType<typeof imageSettlement>["refreshJob"],
-) {
-  return {
-    async providerRetryCandidates(scope: ImageScope, jobId: string, itemId?: string) {
-      const rows =
-        await sql`select i.id,e.task_id,e.status_path,j.provider_snapshot,j.input from generation_jobs j
-        join generation_job_items i on i.job_id=j.id join provider_executions e on e.item_id=i.id
-        where j.id=${jobId} and j.organization_id=${scope.organizationId} and i.superseded_at is null
-        and i.status in ('failed','needs_reconciliation') and e.task_id is not null and e.status_path is not null
-        and exists(select 1 from organization_members where organization_id=j.organization_id and user_id=${scope.userId})
-        ${itemId ? sql`and i.id=${itemId}` : sql``}`;
-      return rows.map((row) => ({
-        itemId: String(row.id),
-        taskId: String(row.task_id),
-        statusPath: String(row.status_path),
-        snapshot: providerSnapshotSchema.parse(row.provider_snapshot),
-        input: imageGenerationInputSchema.parse(row.input),
-      }));
-    },
-    async resumeProvider(scope: ImageScope, jobId: string, itemId: string) {
-      return sql.begin(async (tx) => {
-        const [job] =
-          await tx`select id,input from generation_jobs where id=${jobId} and organization_id=${scope.organizationId}
-          and exists(select 1 from organization_members where organization_id=${scope.organizationId} and user_id=${scope.userId}) for update`;
-        if (!job || isVideoInput(job.input)) throw new ImageRepositoryError("NOT_FOUND");
-        const changed =
-          await tx`update generation_job_items set status='running',error_code=null,completed_at=null,
-          execution_token=gen_random_uuid(),lease_expires_at=null,started_at=now(),reconciled_by=${scope.userId},
-          reconciliation_evidence='User retry verified the original provider task; resume result retrieval without new generation or charge'
-          where id=${itemId} and job_id=${jobId} and superseded_at is null and status in ('failed','needs_reconciliation') returning id`;
-        if (!changed.length) return;
-        await tx`update provider_executions set phase='polling',deadline_at=now()+interval '3 minutes',next_poll_at=now(),lease_until=null,poll_failures=0 where item_id=${itemId}`;
-        await tx`update generation_outbox set next_attempt_at=now(),lease_token=null,lease_expires_at=null where item_id=${itemId}`;
-        await refreshJob(tx, jobId);
-      });
-    },
-  };
-}
-
 type RetryJob = { input: unknown; provider_snapshot: unknown };
 
 async function loadRetryJob(tx: postgres.TransactionSql, scope: ImageScope, jobId: string) {
@@ -241,7 +241,7 @@ async function loadRetryJob(tx: postgres.TransactionSql, scope: ImageScope, jobI
 }
 
 async function isRetryReplay(
-  tx: postgres.TransactionSql,
+  tx: postgres.ISql,
   scope: ImageScope,
   jobId: string,
   key: string,
@@ -264,8 +264,7 @@ async function refreshManagedRetry(
   items: RetryItem[],
   independent: IndependentModelConfiguration | undefined,
 ) {
-  // Explicit retries of fully, definitively failed jobs may adopt corrected routing.
-  // Partial/uncertain/in-flight jobs keep their accepted snapshot for reconciliation.
+  // 全部确定失败后允许刷新渠道，部分失败或结果未知沿用原快照。
   const allDefinitivelyFailed = items.every((item) => item.status === "failed");
   if (job.provider_snapshot && !allDefinitivelyFailed) return;
   if (items.some((item) => item.status === "queued" || item.status === "running"))
@@ -282,6 +281,12 @@ export function imageSubmissionRepository(
   const { refreshJob, refund } = settlement;
   const hash = (value: string) => createHash("sha256").update(value).digest("hex");
   return {
+    async replayImageSubmission(scope: ImageScope, submitted: ImageTaskSubmission, key: string) {
+      return findSubmissionReplay(sql, scope, key, hash(JSON.stringify(submitted)));
+    },
+    async replayImageRetry(scope: ImageScope, jobId: string, key: string, itemId?: string) {
+      return isRetryReplay(sql, scope, jobId, key, itemId);
+    },
     async create(
       scope: ImageScope,
       submitted: ImageTaskSubmission,
@@ -289,6 +294,7 @@ export function imageSubmissionRepository(
       _legacyUnitCredits?: number,
       requireManaged = false,
       acceptedUploadIds: readonly string[] = [],
+      credit?: ImageCreditAuthorization,
     ) {
       const unitCredits = imageUnitCredits;
       // 用户文字单独落库，不改变旧请求的幂等哈希，也不进入消费者的模型快照。
@@ -310,11 +316,11 @@ export function imageSubmissionRepository(
         const { id } = submission;
         await verifySubmissionReferences(tx, scope, id, input, acceptedUploadIds);
         const total = unitCredits * input.count;
-        const wallet = await ensureWallet(tx, scope);
-        if (wallet.balance < total) throw new ImageRepositoryError("INSUFFICIENT_CREDITS");
-        await tx`insert into generation_credit_ledger (organization_id,job_id,event_type,amount) values (${scope.organizationId},${id},'reserve',${-total})`;
+        const walletId = await acquireLocalWallet(tx, scope, total, credit);
+        if (walletId)
+          await tx`insert into generation_credit_ledger (organization_id,job_id,event_type,amount) values (${scope.organizationId},${id},'reserve',${-total})`;
         for (let position = 0; position < input.count; position++) {
-          await enqueueImageItem(tx, scope, id, position, wallet.id, unitCredits);
+          await enqueueImageItem(tx, scope, id, position, walletId, credit);
         }
         if (input.referenceAssetIds.length)
           await tx`update media_assets set expires_at=null where organization_id=${scope.organizationId} and id in ${tx(input.referenceAssetIds)}`;
@@ -329,6 +335,8 @@ export function imageSubmissionRepository(
       key: string,
       itemId?: string,
       requireManaged = false,
+      approvedPositions?: readonly number[],
+      credit?: ImageCreditAuthorization,
     ) {
       return sql.begin(async (tx) => {
         await verifyMember(tx, scope);
@@ -339,15 +347,19 @@ export function imageSubmissionRepository(
           RetryItem[]
         >`select id,position,status,error_code from generation_job_items where job_id=${jobId} and superseded_at is null order by position for update`;
         const failed = retryableItems(items, itemId);
+        assertApprovedRetryPositions(failed, approvedPositions);
         if (requireManaged) await refreshManagedRetry(tx, jobId, job, items, independent);
         await retireFailedItems(tx, scope, jobId, failed, refund);
-        const wallet = await ensureWallet(tx, scope);
-        if (wallet.balance < imageUnitCredits * failed.length)
-          throw new ImageRepositoryError("INSUFFICIENT_CREDITS");
+        const walletId = await acquireLocalWallet(
+          tx,
+          scope,
+          imageUnitCredits * failed.length,
+          credit,
+        );
         await tx`insert into generation_retries (organization_id,user_id,job_id,idempotency_key,target_item_id) values (${scope.organizationId},${scope.userId},${jobId},${key},${itemId ?? null})`;
         for (const item of failed) {
           await tx`update generation_job_items set superseded_at=now() where id=${item.id}`;
-          await enqueueImageItem(tx, scope, jobId, item.position, wallet.id, imageUnitCredits);
+          await enqueueImageItem(tx, scope, jobId, item.position, walletId, credit, item.id);
         }
         await refreshJob(tx, jobId);
         return { id: jobId, replayed: false };

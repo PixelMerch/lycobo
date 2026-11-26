@@ -40,4 +40,5 @@ export * from "./planning/variation-plan";
 export * from "./realtime/realtime";
 export * from "./videos/video-generation";
 export * from "./videos/video-storyboard";
+export * from "./wallet/credit-packs";
 export * from "./wallet/wallet";

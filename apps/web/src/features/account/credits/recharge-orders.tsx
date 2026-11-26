@@ -85,7 +85,10 @@ export function RechargeOrders() {
                       {t.orderCredits(formatCredits(order.credits))}
                     </Table.Cell>
                     <Table.Cell className="account-cell-price">
-                      ¥{(order.amount_minor / 100).toFixed(2)}
+                      {new Intl.NumberFormat(locale, {
+                        style: "currency",
+                        currency: order.currency,
+                      }).format(order.amount_minor / 100)}
                     </Table.Cell>
                     <Table.Cell className="account-cell-channel">
                       {channelName(order.channel, locale)}

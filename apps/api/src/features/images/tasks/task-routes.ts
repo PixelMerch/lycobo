@@ -1,12 +1,14 @@
+import { BillingError, type CreditAuthorization } from "@lycoboai/billing";
 import {
   type ImageGenerationInput,
   imageGenerationInputSchema,
+  imageItemStatusSchema,
   imageTaskRetrySchema,
   imageTaskSubmissionSchema,
   imageToolSchema,
   imageUnitCredits,
 } from "@lycoboai/contracts";
-import { normalizeTextileGeneration } from "@lycoboai/generation";
+import { normalizeTextileGeneration, textileItemInput } from "@lycoboai/generation";
 import type { Context, Hono } from "hono";
 import { z } from "zod";
 import type { ImageDeliveries } from "../assets/delivery";
@@ -29,19 +31,14 @@ async function supportsTaskModel(
 
 async function taskSubmissionResponse<T extends { replayed: boolean }>(
   c: Context<Env>,
-  wake: ImageApiDependencies["wake"],
-  result: T,
+  deps: ImageApiDependencies,
+  result: T & { id: string },
 ) {
-  if (!result.replayed) await wake?.();
-  return c.json(result, result.replayed ? 200 : 202);
-}
-
-async function supportsStoredTaskModel(deps: ImageApiDependencies, input: unknown) {
-  try {
-    return await supportsTaskModel(deps, imageGenerationInputSchema.parse(input));
-  } catch {
-    return false;
+  if (!result.replayed) {
+    if (deps.billing) await deps.wakeBilling?.(result.id);
+    else await deps.wake?.();
   }
+  return c.json(result, result.replayed ? 200 : 202);
 }
 
 function normalizeSubmittedTask(input: ImageGenerationInput): ImageGenerationInput {
@@ -51,6 +48,105 @@ function normalizeSubmittedTask(input: ImageGenerationInput): ImageGenerationInp
   // 旧客户端仍可用原始型号确认已接收的请求，实际渠道由任务类型决定。
   const model = input.model === "gpt-image-2.6" ? input.model : "gpt-image-2.5";
   return { ...input, model, quality: "medium" };
+}
+
+async function prepareReferenceUploads(
+  deps: ImageApiDependencies,
+  scope: Env["Variables"]["principal"],
+  referenceIds: readonly string[],
+) {
+  const uploads = deps.uploads;
+  if (!uploads) return [];
+  // 以服务端保存的上传意图为准，允许仍在排队处理的参考图。
+  const states = await Promise.all(referenceIds.map((id) => uploads.status(scope, id)));
+  return referenceIds.filter((_, index) => states[index]?.status === "pending");
+}
+
+async function checkImageCredits(
+  c: Context<Env>,
+  deps: ImageApiDependencies,
+  input: ImageGenerationInput,
+  positions: readonly number[],
+  cost: number,
+): Promise<CreditAuthorization | undefined> {
+  if (positions.length === 0) return;
+  const { billing, moderate } = deps;
+  if (!moderate) {
+    if (billing) throw new BillingError("BILLING_UNAVAILABLE");
+    return;
+  }
+  // 审核消费者实际使用的文案。外部账本每张图使用独立审核结果，以便按图冲正。
+  const prompts = positions.map((position) => textileItemInput(input, position).prompt);
+  const instructions = input.localEdit?.regions.map((region) => region.prompt) ?? [];
+  const texts = billing
+    ? prompts.map((prompt) => [prompt, ...instructions].join("\n"))
+    : [...prompts, ...instructions];
+  const [wallet, approvals] = await Promise.all([
+    billing?.generationAccount(c.get("principal"), cost),
+    billing
+      ? moderate(texts, c.get("requestId"), c.req.raw.signal, true)
+      : moderate(texts, c.get("requestId"), c.req.raw.signal),
+  ]);
+  if (!wallet) return;
+  if (
+    !approvals ||
+    approvals.length !== positions.length ||
+    new Set(approvals).size !== positions.length
+  )
+    throw new BillingError("CREDIT_APPROVAL_INVALID");
+  return {
+    ...wallet,
+    approvals: new Map(
+      positions.flatMap((position, index) => {
+        const approval = approvals[index];
+        return approval ? [[position, approval]] : [];
+      }),
+    ),
+  };
+}
+
+const retryItemsSchema = z.array(
+  z.object({ id, position: z.number().int().nonnegative(), status: imageItemStatusSchema }),
+);
+const retryRequestSchema = z.object({ jobId: id, key: id, target: imageTaskRetrySchema });
+
+async function screenImageRetry(
+  c: Context<Env>,
+  deps: ImageApiDependencies,
+  input: ImageGenerationInput,
+  items: unknown,
+  itemId?: string,
+) {
+  if (!deps.moderate && !deps.billing) return;
+  const candidates = retryItemsSchema
+    .parse(items)
+    .filter(
+      (item) =>
+        (!itemId || item.id === itemId) &&
+        (item.status === "failed" || item.status === "needs_reconciliation"),
+    );
+  const positions = candidates.map((item) => item.position);
+  // 原尝试仍待核对时，先允许落库冲正；后台扣费以实际余额为准。
+  const cost = candidates.some((item) => item.status === "needs_reconciliation")
+    ? 0
+    : positions.length * imageUnitCredits;
+  const credit = await checkImageCredits(c, deps, input, positions, cost);
+  return { positions, credit };
+}
+
+async function parseRetryRequest(c: Context<Env>) {
+  const body = await c.req.text();
+  return retryRequestSchema.safeParse({
+    jobId: c.req.param("jobId"),
+    key: c.req.header("Idempotency-Key"),
+    target: body ? JSON.parse(body) : {},
+  });
+}
+
+async function supportedRetryInput(deps: ImageApiDependencies, input: unknown) {
+  const stored = imageGenerationInputSchema.safeParse(input);
+  if (stored.success && (await supportsTaskModel(deps, stored.data))) return stored.data;
+  return undefined;
 }
 
 /** 校验任务与服务端上传意图，再原子接收付费生成。 */
@@ -63,52 +159,59 @@ export function registerImageTaskSubmission(app: Hono<Env>, deps: ImageApiDepend
       return fail(c, "VALIDATION_ERROR", "请检查参数和 Idempotency-Key", 400);
     const { userPrompt, ...modelInput } = input.data;
     const normalized = normalizeSubmittedTask(modelInput);
-    if (!(await supportsTaskModel(deps, normalized)))
+    const scope = c.get("principal");
+    const submitted = { ...normalized, userPrompt };
+    if (deps.billing) {
+      const replay = await deps.repository.replayImageSubmission(scope, submitted, key.data);
+      if (replay) return c.json(replay);
+    }
+    const positions = Array.from({ length: normalized.count }, (_, index) => index);
+    const [supported, acceptedUploads, credit] = await Promise.all([
+      supportsTaskModel(deps, normalized),
+      prepareReferenceUploads(deps, scope, normalized.referenceAssetIds),
+      checkImageCredits(c, deps, normalized, positions, positions.length * imageUnitCredits),
+    ]);
+    if (!supported)
       return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "当前模型暂不可用，请选择其他模型", 400);
-    // 仅信任服务端按当前身份读取的 R2 上传意图，不接受客户端声明“已上传”。
-    const acceptedUploads = deps.uploads
-      ? await Promise.all(
-          normalized.referenceAssetIds.map(async (id) => {
-            const upload = await deps.uploads?.status(c.get("principal"), id);
-            return upload?.status === "pending" ? id : null;
-          }),
-        )
-      : [];
     const result = await deps.repository.create(
-      c.get("principal"),
-      { ...normalized, userPrompt },
+      scope,
+      submitted,
       key.data,
       imageUnitCredits,
       deps.managedModelsOnly,
-      acceptedUploads.filter((id) => id !== null),
+      acceptedUploads,
+      ...(credit ? [credit] : []),
     );
-    return taskSubmissionResponse(c, deps.wake, result);
+    return taskSubmissionResponse(c, deps, result);
   });
   app.post("/image-tasks/:jobId/retry", async (c) => {
     if (!deps.enabled) return fail(c, "GENERATION_NOT_CONFIGURED", "生图服务尚未启用", 503);
-    const jobId = id.safeParse(c.req.param("jobId"));
-    const key = id.safeParse(c.req.header("Idempotency-Key"));
-    if (!jobId.success || !key.success) return fail(c, "VALIDATION_ERROR", "重试参数无效", 400);
-    const body = await c.req.text();
-    const target = imageTaskRetrySchema.safeParse(body ? JSON.parse(body) : {});
-    if (!target.success) return fail(c, "VALIDATION_ERROR", "重试图片参数无效", 400);
+    const request = await parseRetryRequest(c);
+    if (!request.success) return fail(c, "VALIDATION_ERROR", "重试图片参数无效", 400);
+    const { jobId, key, target } = request.data;
     const scope = c.get("principal");
-    const job = await deps.repository.get(scope, jobId.data);
+    if (deps.billing && (await deps.repository.replayImageRetry(scope, jobId, key, target.itemId)))
+      return c.json({ id: jobId, replayed: true });
+    const job = await deps.repository.get(scope, jobId);
     if (!job) return fail(c, "NOT_FOUND", "任务不存在", 404);
-    if (await providerRetryService(deps)(scope, jobId.data, target.data.itemId)) {
+    if (await providerRetryService(deps)(scope, jobId, target.itemId)) {
       await deps.wake?.();
-      return c.json({ id: jobId.data, replayed: false }, 202);
+      return c.json({ id: jobId, replayed: false }, 202);
     }
-    if (!(await supportsStoredTaskModel(deps, job.input)))
+    const storedInput = await supportedRetryInput(deps, job.input);
+    if (!storedInput)
       return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "当前模型暂不可用，请选择其他模型", 400);
+    const approved = await screenImageRetry(c, deps, storedInput, job.items, target.itemId);
     const result = await deps.repository.retry(
       scope,
-      jobId.data,
-      key.data,
-      target.data.itemId,
+      jobId,
+      key,
+      target.itemId,
       deps.managedModelsOnly,
+      approved?.positions,
+      approved?.credit,
     );
-    return taskSubmissionResponse(c, deps.wake, result);
+    return taskSubmissionResponse(c, deps, result);
   });
 }
 

@@ -1,4 +1,5 @@
 import type { MessageBatch } from "@cloudflare/workers-types";
+import { creemBillingProvider, drainGenerationCredits } from "@lycoboai/billing";
 import { openRealtimeRepository } from "@lycoboai/db";
 import {
   dispatchImageOutbox,
@@ -94,6 +95,12 @@ export async function dispatchCloudflareImages(env: CloudflareImageEnv) {
     // 试用期间也不改变历史付费任务的租约、账务或投递状态。
     if (env.CLOUDFLARE_GENERATION_ENABLED === "true") {
       await runtime.repository.expireClaims();
+      const key = env.CREEM_API_KEY?.trim();
+      if (
+        key?.startsWith("creem_") &&
+        (await drainGenerationCredits(creemBillingProvider(key), runtime.repository))
+      )
+        console.error("BILLING_SETTLEMENT_DEFERRED");
       await dispatchImageOutbox(runtime.repository, env.IMAGE_QUEUE);
     }
     await recoverCloudflareUploads(env.MEDIA, runtime.uploads.recover);

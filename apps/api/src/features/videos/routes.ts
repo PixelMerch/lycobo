@@ -1,5 +1,6 @@
 import {
   storyboardOriginalImageLimit,
+  videoCreateSchema,
   videoModel,
   videoReferenceUnavailableMessage,
   videoUnitCredits,
@@ -8,6 +9,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { enterprisePrincipal } from "../auth/principal";
 import type { EnterpriseAuth } from "../auth/service";
+import { type GenerationModerator, ModerationError } from "../moderation/service";
 import type { videoService } from "./service";
 export type VideoApiDependencies = { service: ReturnType<typeof videoService> };
 
@@ -18,6 +20,8 @@ const fail = (code: string, message: string, status: 400 | 401 | 403 | 404 | 409
   });
 
 function videoFailure(error: Error) {
+  if (error instanceof ModerationError)
+    return fail(error.code, error.failure.message, error.failure.status);
   if (error instanceof z.ZodError)
     return fail("VALIDATION_ERROR", "请检查视频描述、参考图片和时长", 400);
   const code = z.object({ code: z.string() }).safeParse(error);
@@ -33,9 +37,11 @@ function videoFailure(error: Error) {
   return fail("GENERATION_NOT_CONFIGURED", "视频服务暂时不可用，请稍后重试", 503);
 }
 
+/** 处理已配置的视频任务，复用图片服务的生成前审核。 */
 export function videoRoutes(
   deps: VideoApiDependencies | undefined,
   auth: EnterpriseAuth | undefined,
+  moderate?: GenerationModerator,
 ) {
   const app = new Hono();
   app.use("*", async (c, next) => {
@@ -65,7 +71,8 @@ export function videoRoutes(
     const identity = await enterprisePrincipal(c, auth);
     if (!identity) return fail("UNAUTHORIZED", "请先登录", 401);
     const key = z.uuid().parse(c.req.header("Idempotency-Key"));
-    const input: unknown = await c.req.json().catch(() => null);
+    const input = videoCreateSchema.parse(await c.req.json().catch(() => null));
+    await moderate?.([input.prompt], key, c.req.raw.signal);
     return c.json(await deps.service.create(identity.user, input, key), 202);
   });
   app.get("/video-tasks", async (c) => {

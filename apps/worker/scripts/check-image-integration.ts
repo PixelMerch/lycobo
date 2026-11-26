@@ -19,6 +19,7 @@ import { z } from "zod";
 import { createApp } from "../../api/src/app";
 import { processImageItem } from "../src/images/image-processor";
 import { startImageProviderFixture } from "./fixtures/image-provider-fixture";
+import { verifyBilling } from "./verifications/verify-billing";
 import { verifyGenerationMigration } from "./verifications/verify-generation-migration";
 import {
   verifyBrowserImageSession,
@@ -283,7 +284,7 @@ try {
     output?.output_public_id,
   );
   assert.equal(new Set(assetList.map((asset) => asset.public_id)).size, assetList.length);
-  // Kind filtering must happen before pagination, and retain organization scope.
+  // 分页前按素材类型过滤，并沿用组织归属范围。
   const readAssets = async (query: string, authorization = headers.Authorization) => {
     const response = await app.request(`/api/v1/image-assets?${query}`, {
       headers: { Authorization: authorization },
@@ -376,6 +377,7 @@ try {
   );
   await verifyExhaustedWallet(repository, app, first, headers, key);
   await verifyImageFeatures(databaseUrl, repository, sql, store, png, app);
+  await verifyBilling(repository, sql);
   await sql`update generation_api_keys set revoked_at=now() where id=${first.keyId}`;
   assert.equal((await app.request("/api/v1/image-models", { headers })).status, 401);
   console.info(
