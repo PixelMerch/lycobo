@@ -191,7 +191,7 @@ test("credit usage scrolls by category at a fixed height with expandable details
     return route.fulfill({
       json: apiFixture({
         data: batch.slice(0, 20),
-        nextCursor: batch.length > 20 ? batch[19].id : null,
+        nextCursor: batch.length > 20 ? (batch[19]?.id ?? null) : null,
       }),
     });
   });
