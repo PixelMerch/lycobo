@@ -8,6 +8,8 @@ on:
     secrets:
       CLOUDFLARE_API_TOKEN:
         required: true
+      BILLING_PRODUCTS:
+        required: true
   workflow_dispatch:
     inputs:
       version:
