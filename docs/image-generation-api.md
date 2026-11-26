@@ -46,6 +46,8 @@ curl --fail-with-body https://lycobo.com/api/v1/enterprise/image-api/generations
 
 「打开豆包客户端」通过 `doubaoapp://active-chat` 唤起已安装的豆包桌面应用。浏览器可能会要求确认打开应用。首次使用时展开「首次连接设置」，复制连接地址、生成生图 Key 并下载技能。在豆包工作支持企业 MCP 连接器的环境中，用该地址和 `Authorization: Bearer <Key>` 配置 Lycobo 连接器，导入 `lycobo-image.zip`。先在豆包对话里验证连接，再设定生图时间、提示词和分辨率，例如每天北京时间 09:00 生成一张 2K 商品图。Key 填在连接器设置。 [豆包技能指南](https://open.doubao.com/document/doubao-developer-guide/skill-integration-guide)
 
+macOS 上，`doubao://active-chat` 可能由豆包浏览器处理并显示 `ERR_INVALID_URL`。出现该错误时，从账户设置点击「打开豆包客户端」，由系统将 `doubaoapp://active-chat` 交给桌面版。
+
 维护技能时，同步更新 `apps/web/public/integrations/doubao/lycobo-image/SKILL.md` 与该目录提供的 ZIP。压缩包只包含 `lycobo-image/SKILL.md`。
 
 REST JSON 响应遵循 [统一返回格式](node-ts-best-practices.md#api-响应)，原业务结果放入顶层 data；错误使用 request_id、数字业务码和中文 message。MCP 响应遵循 JSON-RPC。未验证身份返回 401，跨组织资源返回 404。API 客户端使用 `Authorization: Bearer <LycoBo 访问令牌>`（不是供应商密钥）；浏览器支持企业 JWT HttpOnly Cookie，不开放凭证通配 CORS。图片内容接口保留二进制响应。
