@@ -62,13 +62,13 @@ const billingProvider = creemTestKey?.startsWith("creem_test_")
 const billingEnabled = process.env.BILLING_PROVIDER === "creem";
 const billingSecret = process.env.CREEM_WEBHOOK_SECRET;
 const siteOrigin = authConfig?.origins[0];
-const moderate = createCreemModerator(process.env);
+const purchasedModerate = billingEnabled ? createCreemModerator(process.env) : undefined;
 if (
   billingEnabled &&
   (!billingProvider ||
     !billingSecret ||
     !siteOrigin ||
-    !moderate ||
+    !purchasedModerate ||
     process.env.CREEM_MODERATION_ENABLED !== "true")
 )
   throw new Error("BILLING_TEST_CONFIGURATION_REQUIRED");
@@ -84,7 +84,7 @@ const app = createApp(
   (event) => logger.error(event, "Request failed"),
   {
     repository,
-    moderate,
+    purchasedModerate,
     billing:
       billingEnabled && billingProvider
         ? externalWalletService(repository, billingProvider)

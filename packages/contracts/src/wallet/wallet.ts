@@ -1,7 +1,12 @@
 import { z } from "zod";
+/** 区分本地积分与用户在线购买的积分流水。 */
+export const walletSourceSchema = z.enum(["local", "purchased"]);
+export type WalletSource = z.infer<typeof walletSourceSchema>;
+
 export const walletBalanceSchema = z.object({
   balance: z.number().int().nonnegative(),
   unitCredits: z.number().int().positive(),
+  purchasedBalance: z.number().int().nonnegative().nullable().optional(),
 });
 export const walletEntriesSchema = z.object({
   data: z.array(

@@ -3,6 +3,8 @@ import { defineMessages } from "../../../i18n/messages";
 /** 积分与账单的文案：收支明细表、积分明细弹窗、充值订单与充值积分包。 */
 export const creditsMessages = defineMessages({
   "zh-CN": {
+    walletSource: "积分来源",
+    walletSources: { local: "站内积分", purchased: "购买积分" },
     ledgerKinds: {
       all: "全部",
       consume: "积分消耗",
@@ -94,6 +96,8 @@ export const creditsMessages = defineMessages({
     reloadOrders: "重新加载订单",
   },
   en: {
+    walletSource: "Credit source",
+    walletSources: { local: "Lycobo credits", purchased: "Purchased credits" },
     ledgerKinds: {
       all: "All",
       consume: "Spent",

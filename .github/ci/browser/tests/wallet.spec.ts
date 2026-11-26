@@ -1,5 +1,14 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
+
+async function openWalletSettings(page: Page) {
+  await page.goto("/zh-CN/dashboard/commerce/create");
+  await page.locator(".account-trigger").click();
+  await page.getByRole("button", { name: "设置", exact: true }).click();
+  const settings = page.getByRole("dialog", { name: "账户设置", exact: true });
+  await settings.getByRole("tab", { name: "积分与账单", exact: true }).click();
+  return settings;
+}
 
 test("enterprise account shows shared balance, member spending and recharge records", async ({
   page,
@@ -55,15 +64,10 @@ test("enterprise account shows shared balance, member spending and recharge reco
       }),
     }),
   );
-  await page.goto("/commerce/create");
+  const center = await openWalletSettings(page);
   await expect(page.locator(".header-credits")).toContainText("200");
-  await page.locator(".account-trigger").click();
-  // 头像菜单的“积分明细”打开积分明细弹窗；完整账单表格在“积分与账单”。
-  await page.getByRole("menuitem", { name: "积分与账单", exact: true }).click();
-  // The ledger opens in the account center dialog above the current page.
-  const center = page.getByRole("dialog", { name: "积分与账单", exact: true });
-  await expect(center.getByRole("tab", { name: "积分明细", exact: true })).toHaveAttribute(
-    "aria-selected",
+  await expect(center.getByRole("button", { name: "积分明细", exact: true })).toHaveAttribute(
+    "aria-pressed",
     "true",
   );
   await expect(page).toHaveURL(/\/commerce\/create$/);
@@ -76,14 +80,14 @@ test("enterprise account shows shared balance, member spending and recharge reco
   await expect(row).toContainText("任务 W12345678");
   await expect(row).toContainText("-20");
   await page.screenshot({ path: "/tmp/lycobo-account-ledger-wallet.png" });
-  await center.getByRole("tab", { name: "充值订单", exact: true }).click();
+  await center.getByRole("button", { name: "充值订单", exact: true }).click();
   const order = center.locator(".account-orders .table__body .table__row");
   await expect(order).toContainText("已到账");
   await expect(order).toContainText("¥10.00");
   // Unknown provider codes are shown as recorded instead of being renamed.
   await expect(order).toContainText("fixture");
   await page.setViewportSize({ width: 320, height: 760 });
-  await center.getByRole("tab", { name: "积分明细", exact: true }).click();
+  await center.getByRole("button", { name: "积分明细", exact: true }).click();
   await page.screenshot({ path: "/tmp/lycobo-account-ledger-mobile.png" });
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
@@ -110,11 +114,7 @@ test("billing failures stay unknown and retry real reads", async ({ page }) => {
     reads++;
     return route.fulfill({ status: 503, json: apiFixture({}, 503) });
   });
-  await page.goto("/commerce/create");
-  await page.locator(".account-trigger").click();
-  // 头像菜单的“积分明细”打开积分明细弹窗；完整账单表格在“积分与账单”。
-  await page.getByRole("menuitem", { name: "积分与账单", exact: true }).click();
-  const center = page.getByRole("dialog", { name: "积分与账单", exact: true });
+  const center = await openWalletSettings(page);
   const ledger = center.getByRole("region", { name: "积分明细", exact: true });
   await expect(ledger.locator(".account-toolbar-meta")).toContainText("当前可用 — 积分");
   await expect(ledger.getByText("收支记录暂时不可用", { exact: true })).toBeVisible();
@@ -122,4 +122,28 @@ test("billing failures stay unknown and retry real reads", async ({ page }) => {
   const initialReads = reads;
   await ledger.getByRole("button", { name: "重新加载收支", exact: true }).click();
   await expect.poll(() => reads).toBeGreaterThan(initialReads);
+});
+
+test("dual wallets display distinct balances and request separate statements", async ({ page }) => {
+  await mockImageApi(page);
+  await page.route("**/api/v1/wallet", (route) =>
+    route.fulfill({ json: apiFixture({ balance: 18, purchasedBalance: 104, unitCredits: 2 }) }),
+  );
+  const sources: string[] = [];
+  await page.route("**/api/v1/wallet/entries?*", (route) => {
+    sources.push(new URL(route.request().url()).searchParams.get("source") ?? "local");
+    return route.fulfill({ json: apiFixture({ data: [] }) });
+  });
+  const center = await openWalletSettings(page);
+  await expect(center.locator(".plan-usage-row").filter({ hasText: "站内积分" })).toContainText(
+    "18",
+  );
+  await expect(center.locator(".plan-usage-row").filter({ hasText: "购买积分" })).toContainText(
+    "104",
+  );
+  const ledger = center.getByRole("region", { name: "积分明细", exact: true });
+  await expect(ledger.locator(".account-toolbar-meta")).toContainText("当前可用 18 积分");
+  await ledger.getByRole("button", { name: "购买积分", exact: true }).click();
+  await expect(ledger.locator(".account-toolbar-meta")).toContainText("当前可用 104 积分");
+  await expect.poll(() => sources).toEqual(["local", "purchased"]);
 });

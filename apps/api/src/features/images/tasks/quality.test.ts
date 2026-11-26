@@ -20,7 +20,9 @@ function fixture(
     wake?: () => Promise<void>;
     wakeBilling?: (id: string) => Promise<void>;
     billing?: ExternalWalletService;
+    wallet?: ImageRepository["wallet"];
     moderate?: GenerationModerator | undefined;
+    purchasedModerate?: GenerationModerator | undefined;
     get?: ImageRepository["get"];
     retry?: ImageRepository["retry"];
     providerRetryCandidates?: ImageRepository["providerRetryCandidates"];
@@ -81,7 +83,7 @@ function fixture(
     expiredReferences: unexpected,
     markReferenceDeleted: unexpected,
     provision: unexpected,
-    wallet: unexpected,
+    wallet: extra.wallet ?? (async () => ({ balance: 0 })),
     billingCustomer: unexpected,
     billingEmail: unexpected,
     saveBillingCustomer: unexpected,
@@ -134,6 +136,7 @@ function fixture(
   const app = createApp(() => {}, {
     repository,
     moderate: extra.moderate,
+    purchasedModerate: extra.purchasedModerate,
     billing: extra.billing,
     wakeBilling: extra.wakeBilling,
     store,
@@ -635,7 +638,7 @@ it("persists separate per-image billing approvals and routes the task to billing
       generationAccount,
       balance: unexpected,
     },
-    moderate,
+    purchasedModerate: moderate,
     wake,
     wakeBilling,
   });
@@ -655,6 +658,7 @@ it("persists separate per-image billing approvals and routes the task to billing
 });
 
 it("returns insufficient credits before persisting a generation in external billing mode", async () => {
+  const purchasedModerate = vi.fn<GenerationModerator>(async () => ["mod_one"]);
   const { create, submit } = fixture(false, false, {
     billing: {
       provider: "fixture",
@@ -663,10 +667,46 @@ it("returns insufficient credits before persisting a generation in external bill
       },
       balance: unexpected,
     },
-    moderate: async () => ["mod_one"],
+    wallet: async () => ({ balance: 1 }),
+    purchasedModerate,
   });
   const rejected = await submit();
   expect(rejected.status).toBe(409);
   expect(await rejected.json()).toMatchObject({ error: { code: "INSUFFICIENT_CREDITS" } });
   expect(create).not.toHaveBeenCalled();
+  expect(purchasedModerate).not.toHaveBeenCalled();
+});
+
+it("spends the local wallet alone when it covers the task even with purchased credits enabled", async () => {
+  const generationAccount = vi.fn(async () => ({ provider: "fixture", accountId: "cca_fixture" }));
+  const moderate = vi.fn<GenerationModerator>(async () => ["mod_one", "mod_two"]);
+  const wakeBilling = vi.fn(async () => {});
+  const wake = vi.fn(async () => {});
+  const { create, submit } = fixture(false, false, {
+    billing: { provider: "fixture", generationAccount, balance: unexpected },
+    wallet: async () => ({ balance: 4 }),
+    purchasedModerate: moderate,
+    wake,
+    wakeBilling,
+  });
+  expect((await submit(undefined, { count: 2 })).status).toBe(202);
+  expect(generationAccount).not.toHaveBeenCalled();
+  expect(create.mock.calls[0]?.[6]).toBeUndefined();
+  expect(moderate).not.toHaveBeenCalled();
+  expect(wake).toHaveBeenCalledOnce();
+  expect(wakeBilling).not.toHaveBeenCalled();
+});
+
+it("preserves the local balance if the purchased wallet cannot be read", async () => {
+  const { app } = fixture(false, false, {
+    billing: { provider: "fixture", generationAccount: unexpected, balance: unexpected },
+    wallet: async () => ({ balance: 18 }),
+  });
+  const response = await app.request("/api/v1/wallet", {
+    headers: { Authorization: "Bearer fixture" },
+  });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({
+    data: { balance: 18, unitCredits: 2, purchasedBalance: null },
+  });
 });
