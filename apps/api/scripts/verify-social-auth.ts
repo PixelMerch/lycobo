@@ -5,6 +5,7 @@ import {
   socialAuthorizationSchema,
   unwrapApiData,
 } from "@lycoboai/contracts";
+import type { RealtimeRepository } from "@lycoboai/db";
 import type { createApp } from "../src/app";
 
 type App = ReturnType<typeof createApp>;
@@ -49,8 +50,13 @@ async function complete(app: App, flow: string) {
   return { user, headers, refresh: cookie(result, "lycobo_enterprise_refresh") };
 }
 
-/** 用隔离数据库和供应商响应样本验证 PKCE、账号归属和主站会话。 */
-export async function verifySocialAuth(app: App, origin: string, enterpriseUserId: string) {
+/** 在隔离数据库验证 PKCE、账号归属及同一第三方账号的单设备会话。 */
+export async function verifySocialAuth(
+  app: App,
+  origin: string,
+  enterpriseUserId: string,
+  realtime: Pick<RealtimeRepository, "sessions" | "pending">,
+) {
   const externalId = crypto.randomUUID();
   const google = await start(app, origin, "google");
   const apple = await start(app, origin, "apple");
@@ -83,6 +89,8 @@ export async function verifySocialAuth(app: App, origin: string, enterpriseUserI
   try {
     const first = await complete(app, google.flow);
     assert.equal(first.user.nickname, "Google Fixture");
+    const previous = await realtime.sessions(first.user.organizationId);
+    assert.equal(previous.length, 1);
     const rename = await app.request("/api/v1/auth/nickname", {
       method: "PUT",
       headers: { ...first.headers, Origin: origin, "Content-Type": "application/json" },
@@ -101,11 +109,25 @@ export async function verifySocialAuth(app: App, origin: string, enterpriseUserI
     assert.equal(first.user.uid, second.user.uid);
     assert.equal(first.user.organizationId, second.user.organizationId);
     assert.notEqual(first.user.userId, enterpriseUserId);
-    const refresh = await app.request("/api/v1/auth/refresh", {
-      method: "POST",
-      headers: { Origin: origin, Cookie: second.refresh },
-    });
-    assert.equal(refresh.status, 200);
+    const latest = await realtime.sessions(first.user.organizationId);
+    assert.equal(latest.length, 1);
+    assert.notDeepEqual(latest, previous);
+    assert.ok(
+      (await realtime.pending()).some(
+        (record) =>
+          record.channel === first.user.organizationId &&
+          record.userId === first.user.userId &&
+          record.event.kind === "session-revoked" &&
+          record.event.resourceId === previous[0],
+      ),
+    );
+    const refresh = (cookie: string) =>
+      app.request("/api/v1/auth/refresh", {
+        method: "POST",
+        headers: { Origin: origin, Cookie: cookie },
+      });
+    assert.equal((await refresh(second.refresh)).status, 401);
+    assert.equal((await refresh(returning.refresh)).status, 200);
     const logout = await app.request("/api/v1/auth/logout", {
       method: "POST",
       headers: { Origin: origin, Cookie: first.headers.Cookie },
@@ -114,6 +136,10 @@ export async function verifySocialAuth(app: App, origin: string, enterpriseUserI
     assert.equal(
       (await app.request("/api/v1/auth/session", { headers: first.headers })).status,
       401,
+    );
+    assert.equal(
+      (await app.request("/api/v1/auth/session", { headers: returning.headers })).status,
+      200,
     );
     assert.equal(exchange, 3);
   } finally {

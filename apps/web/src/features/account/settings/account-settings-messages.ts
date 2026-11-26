@@ -27,6 +27,7 @@ export const accountSettingsMessages = defineMessages({
     avatarHint: "选择头像，登录后跨设备同步",
     avatarPreset: (name: string) => `头像：${name}`,
     presetNames: {
+      black: "黑色（默认）",
       lime: "青柠",
       mint: "薄荷",
       peach: "蜜桃",
@@ -95,6 +96,7 @@ export const accountSettingsMessages = defineMessages({
     avatarHint: "Choose an avatar. It syncs across devices.",
     avatarPreset: (name) => `Avatar: ${name}`,
     presetNames: {
+      black: "Black (default)",
       lime: "Lime",
       mint: "Mint",
       peach: "Peach",

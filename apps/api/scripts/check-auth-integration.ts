@@ -16,6 +16,11 @@ import { createApp } from "../src/app";
 import { hashPassword } from "../src/features/auth/password";
 import { enterpriseAuth } from "../src/features/auth/service";
 import { passwordLoginFixture, verifyPasswordLock } from "./verify-password-lock";
+import {
+  cookieOf,
+  verifyConcurrentPasswordSessions,
+  verifyPasswordSessionReplacement,
+} from "./verify-session-replacement";
 import { verifySocialAuth } from "./verify-social-auth";
 
 if (process.env.ALLOW_LOCAL_INTEGRATION !== "true")
@@ -125,22 +130,26 @@ try {
     assert.match(result.user.uid ?? "", /^[0-9]{10}$/);
     assert.equal(result.user.uid, first.uid);
     assert.notEqual(first.uid, second.uid);
-    await verifySocialAuth(app, origin, first.userId);
-    const headers = { Authorization: `Bearer ${result.accessToken}` };
+    await verifySocialAuth(app, origin, first.userId, realtime);
+    const initialHeaders = { Authorization: `Bearer ${result.accessToken}` };
     const session = enterpriseIdentitySchema.parse(
-      unwrapApiData(await (await app.request("/api/v1/auth/session", { headers })).json()),
+      unwrapApiData(
+        await (await app.request("/api/v1/auth/session", { headers: initialHeaders })).json(),
+      ),
     );
     assert.equal(session.uid, first.uid);
     // 预设头像存在 users 表：只改当前会话的用户，会话读取带回同一个值，格式约束拒绝非法 id。
     assert.equal(session.avatarPreset, null);
     const savedAvatar = await app.request("/api/v1/auth/avatar", {
       method: "PUT",
-      headers: { ...headers, "Content-Type": "application/json" },
+      headers: { ...initialHeaders, "Content-Type": "application/json" },
       body: JSON.stringify({ avatarPreset: "sky" }),
     });
     assert.equal(savedAvatar.status, 200);
     const withAvatar = enterpriseIdentitySchema.parse(
-      unwrapApiData(await (await app.request("/api/v1/auth/session", { headers })).json()),
+      unwrapApiData(
+        await (await app.request("/api/v1/auth/session", { headers: initialHeaders })).json(),
+      ),
     );
     assert.equal(withAvatar.avatarPreset, "sky");
     const [otherUser] = await sql`select avatar_preset from users where id=${second.userId}`;
@@ -150,21 +159,19 @@ try {
     assert.equal(session.preferredLocale, null);
     const savedLocale = await app.request("/api/v1/auth/locale", {
       method: "PUT",
-      headers: { ...headers, "Content-Type": "application/json" },
+      headers: { ...initialHeaders, "Content-Type": "application/json" },
       body: JSON.stringify({ preferredLocale: "zh-CN" }),
     });
     assert.equal(savedLocale.status, 200);
-    const nextLogin = await login();
-    assert.equal(nextLogin.status, 200);
-    const nextUser = enterpriseLoginResponseSchema.parse(
-      unwrapApiData(await nextLogin.json()),
-    ).user;
-    assert.equal(nextUser.preferredLocale, "zh-CN");
-    assert.equal(nextUser.avatarPreset, "sky");
+    const nextLogin = await verifyPasswordSessionReplacement(app, origin, login, response);
+    const replacement = enterpriseLoginResponseSchema.parse(unwrapApiData(await nextLogin.json()));
+    assert.equal(replacement.user.preferredLocale, "zh-CN");
+    assert.equal(replacement.user.avatarPreset, "sky");
+    const headers = { Authorization: `Bearer ${replacement.accessToken}` };
     const [otherLocale] = await sql`select preferred_locale from users where id=${second.userId}`;
     assert.equal(otherLocale?.preferred_locale, null);
     await assert.rejects(sql`update users set preferred_locale='fr' where id=${first.userId}`);
-    const cookie = response.headers.get("set-cookie")?.split(";")[0] ?? "";
+    const cookie = cookieOf(nextLogin, "lycobo_enterprise_session");
     // 本地没有 DO，公告仍公开可读，通知列表仍要求有效会话。
     const release = await app.request("/api/v1/realtime/release");
     assert.equal(release.status, 200);
@@ -250,11 +257,6 @@ try {
       401,
     );
     // 刷新凭据只放 HttpOnly Cookie，原子轮换，有效期不超过最初登录的时限。
-    const cookieOf = (response: Response, name: string) =>
-      response.headers
-        .getSetCookie()
-        .find((value) => value.startsWith(`${name}=`))
-        ?.split(";")[0] ?? "";
     const refresh = (cookie: string, requestOrigin = origin) =>
       app.request("/api/v1/auth/refresh", {
         method: "POST",
@@ -356,6 +358,8 @@ try {
       first.organizationId,
       await hashPassword(password),
     );
+    await verifyConcurrentPasswordSessions(app, login);
+    assert.equal((await realtime.sessions(first.organizationId)).length, 1);
     const expirationLogin = await login();
     const expiringRefresh = cookieOf(expirationLogin, "lycobo_enterprise_refresh");
     await sql`update enterprise_sessions set expires_at=now()-interval '1 second'`;

@@ -575,6 +575,12 @@ export const enterpriseSessions = pgTable(
   (t) => [
     index("enterprise_sessions_account_idx").on(t.accountId),
     index("enterprise_sessions_social_account_idx").on(t.socialAccountId),
+    uniqueIndex("enterprise_sessions_active_account_uidx")
+      .on(t.accountId)
+      .where(sql`${t.accountId} is not null and ${t.revokedAt} is null`),
+    uniqueIndex("enterprise_sessions_active_social_uidx")
+      .on(t.socialAccountId)
+      .where(sql`${t.socialAccountId} is not null and ${t.revokedAt} is null`),
     check(
       "enterprise_sessions_one_account",
       sql`(${t.accountId} is null) <> (${t.socialAccountId} is null)`,

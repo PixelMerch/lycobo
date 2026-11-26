@@ -1,9 +1,10 @@
 import { DurableObject } from "cloudflare:workers";
 import {
-  type RealtimeEvent,
+  type RealtimeOutboxMessage,
   realtimeCursorSchema,
-  realtimeEventSchema,
+  realtimeOutboxMessageSchema,
   releaseSchema,
+  sessionReplacedCloseCode,
 } from "@lycoboai/contracts";
 import { z } from "zod";
 
@@ -15,6 +16,7 @@ const attachmentSchema = z.object({
 });
 type Connection = z.infer<typeof attachmentSchema>;
 type StoredEvent = { cursor: number; event_id: string; user_id: string | null; payload: string };
+const revokedSessionRetention = 24 * 60 * 60 * 1000;
 
 /** 每个组织独立的可休眠连接与短期消息日志，不在空闲时持有数据库连接。 */
 export class RealtimeHub extends DurableObject<CloudflareEnv> {
@@ -24,6 +26,9 @@ export class RealtimeHub extends DurableObject<CloudflareEnv> {
       cursor INTEGER PRIMARY KEY AUTOINCREMENT,event_id TEXT UNIQUE NOT NULL,user_id TEXT,payload TEXT NOT NULL)`);
     this.ctx.storage.sql.exec(
       `CREATE TABLE IF NOT EXISTS receipts (id TEXT PRIMARY KEY,created_at INTEGER NOT NULL)`,
+    );
+    this.ctx.storage.sql.exec(
+      `CREATE TABLE IF NOT EXISTS revoked_sessions (id TEXT PRIMARY KEY,expires_at INTEGER NOT NULL)`,
     );
     this.ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
   }
@@ -49,6 +54,17 @@ export class RealtimeHub extends DurableObject<CloudflareEnv> {
   ): Promise<Response> {
     attachmentSchema.parse(connection);
     realtimeCursorSchema.parse(cursor);
+    // 防止在数据库撤销之前通过验证的旧握手晚于退出通知抵达。
+    if (
+      this.ctx.storage.sql
+        .exec(
+          "SELECT 1 FROM revoked_sessions WHERE id=? AND expires_at>?",
+          connection.sessionId,
+          Date.now(),
+        )
+        .toArray().length
+    )
+      return new Response(null, { status: 401 });
     const active = this.ctx.getWebSockets(connection.userId);
     if (active.length >= 8) return new Response("连接数量已达上限", { status: 429 });
     const pair = new WebSocketPair();
@@ -96,12 +112,17 @@ export class RealtimeHub extends DurableObject<CloudflareEnv> {
   /** 先持久化再广播，重复投递不生成新游标；过期或被撤销的会话不会收到事件。 */
   async publish(
     id: string,
-    event: RealtimeEvent,
+    event: RealtimeOutboxMessage,
     userId: string | null,
     sessions: string[],
   ): Promise<void> {
     z.uuid().parse(id);
-    realtimeEventSchema.parse(event);
+    const message = realtimeOutboxMessageSchema.parse(event);
+    if (message.kind === "session-revoked") {
+      if (!userId) throw new Error("SESSION_REVOCATION_USER_REQUIRED");
+      this.closeRevokedSession(userId, message.resourceId);
+      return;
+    }
     const row = this.ctx.storage.transactionSync(() => {
       const inserted = this.ctx.storage.sql
         .exec<{ id: string }>(
@@ -119,7 +140,7 @@ export class RealtimeHub extends DurableObject<CloudflareEnv> {
           "INSERT INTO events(event_id,user_id,payload) VALUES (?,?,?) RETURNING cursor",
           id,
           userId,
-          JSON.stringify(event),
+          JSON.stringify(message),
         )
         .one();
       this.ctx.storage.sql.exec("DELETE FROM events WHERE cursor<=?", saved.cursor - 1000);
@@ -142,11 +163,36 @@ export class RealtimeHub extends DurableObject<CloudflareEnv> {
       }
       if (userId && userId !== attachment.userId) continue;
       try {
-        socket.send(JSON.stringify({ type: "event", cursor: String(row.cursor), event }));
+        socket.send(JSON.stringify({ type: "event", cursor: String(row.cursor), event: message }));
       } catch {
         socket.close(1011, "连接已中断");
       }
     }
+  }
+
+  /** 关闭被替换的会话，重复投递和晚到的消息只会影响同一个会话编号。 */
+  private closeRevokedSession(userId: string, sessionId: string) {
+    const now = Date.now();
+    this.ctx.storage.sql.exec("DELETE FROM revoked_sessions WHERE expires_at<=?", now);
+    this.ctx.storage.sql.exec(
+      "INSERT OR IGNORE INTO revoked_sessions (id,expires_at) VALUES (?,?)",
+      sessionId,
+      now + revokedSessionRetention,
+    );
+    for (const socket of this.ctx.getWebSockets(userId)) {
+      const attachment = attachmentSchema.parse(socket.deserializeAttachment());
+      if (attachment.sessionId !== sessionId || socket.readyState !== WebSocket.OPEN) continue;
+      // 先发退出信号，页面无需等 WebSocket 关闭握手完成。
+      socket.send(JSON.stringify({ type: "session-revoked" }));
+      socket.close(sessionReplacedCloseCode, "会话已被其他设备替换");
+    }
+  }
+
+  /** 响应对端的关闭帧，及时释放休眠 WebSocket。 */
+  override webSocketClose(socket: WebSocket, code: number, reason: string) {
+    if (code >= 1000 && code < 5000 && ![1004, 1005, 1006, 1015].includes(code))
+      socket.close(code, reason);
+    else if (code !== 1006) socket.close();
   }
 
   /** 客户端只允许自动心跳；业务操作走带权限与 CSRF 校验的 API。 */

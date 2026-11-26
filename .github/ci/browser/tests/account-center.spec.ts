@@ -63,6 +63,58 @@ async function expectInsideViewport(page: Page, center: Locator) {
     .toBe(true);
 }
 
+test("the default black avatar can be restored and color changes reach the home header", async ({
+  page,
+}) => {
+  await mockImageApi(page);
+  const identity = {
+    userId: crypto.randomUUID(),
+    organizationId: crypto.randomUUID(),
+    role: "member",
+    account: "avatar-fixture",
+  };
+  let avatarPreset: string | null = null;
+  await page.route("**/api/v1/auth/session", (route) =>
+    route.fulfill({ json: apiFixture({ ...identity, avatarPreset }) }),
+  );
+  const requests: unknown[] = [];
+  await page.route("**/api/v1/auth/avatar", (route) => {
+    const body: unknown = route.request().postDataJSON();
+    requests.push(body);
+    if (
+      body &&
+      typeof body === "object" &&
+      "avatarPreset" in body &&
+      typeof body.avatarPreset === "string"
+    )
+      avatarPreset = body.avatarPreset;
+    return route.fulfill({ json: apiFixture({ ...identity, avatarPreset }) });
+  });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/zh-CN");
+  const avatar = page.locator(".public-site-header .account-trigger .account-avatar");
+  await expect(avatar).toHaveAttribute("data-avatar-preset", "black");
+  const center = await openCenter(page, identity.account);
+  const black = center.getByRole("radio", { name: "头像：黑色（默认）", exact: true });
+  const sky = center.getByRole("radio", { name: "头像：天空", exact: true });
+  await expect(black).toBeChecked();
+  await sky.click();
+  await expect(center.locator(".settings-identity-avatar")).toHaveAttribute(
+    "data-avatar-preset",
+    "sky",
+  );
+  // 同时检查计算后的背景与字色，避免顶栏的样式再次覆盖选中的颜色。
+  await expect(avatar).toHaveCSS("background-image", /rgb\(124, 196, 255\)/);
+  await expect(avatar.locator(".avatar__fallback")).toHaveCSS("color", "rgb(0, 33, 58)");
+  await page.reload();
+  await expect(avatar).toHaveAttribute("data-avatar-preset", "sky");
+  await openCenter(page, identity.account);
+  await expect(sky).toBeChecked();
+  await black.click();
+  await expect(avatar).toHaveAttribute("data-avatar-preset", "black");
+  expect(requests).toEqual([{ avatarPreset: "sky" }, { avatarPreset: "black" }]);
+});
+
 test("personal center opens billing from settings and preserves drafts and focus", async ({
   page,
 }) => {

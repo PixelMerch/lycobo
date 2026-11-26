@@ -22,6 +22,7 @@ export const enterprisePasswordChangeSchema = z
 export const userUidSchema = z.string().regex(/^[0-9]{10}$/);
 /** 账户可选的预设头像；服务端只接受这些 id，配色由前端决定。 */
 export const avatarPresetIds = [
+  "black",
   "lime",
   "mint",
   "peach",

@@ -30,8 +30,8 @@ import { clearPreviewLinks } from "../generation/preview-link-cache";
 import { authMessages } from "./auth-messages";
 
 export const enterpriseSessionKey = ["enterprise-session"];
-async function authRequest(path: string, init: RequestInit = {}) {
-  const useSession = path === "session" || path === "locale";
+async function authRequest(path: string, init: RequestInit = {}, allowRenewal = true) {
+  const useSession = allowRenewal && (path === "session" || path === "locale");
   const request = useSession ? sessionFetch : fetch;
   let response: Response;
   try {
@@ -82,19 +82,27 @@ async function authError(response: Response) {
   }
   return new Error(currentMessages(authMessages).serviceUnavailable);
 }
-/** 读取当前登录状态；未登录或登录服务未配置时返回 null。 */
-export function useEnterpriseSession() {
-  return useQuery({
+function sessionQuery(allowRenewal = true) {
+  return {
     queryKey: enterpriseSessionKey,
     retry: false,
-    staleTime: 30000,
-    queryFn: async ({ signal }) => {
-      const response = await authRequest("session", { signal });
+    queryFn: async ({ signal }: { signal: AbortSignal }) => {
+      const response = await authRequest("session", { signal }, allowRenewal);
       if (response.status === 401 || response.status === 503) return null;
       if (!response.ok) throw new Error(currentMessages(authMessages).sessionUnavailable);
       return enterpriseIdentitySchema.parse(await response.json());
     },
-  });
+  };
+}
+
+/** 读取当前登录状态，所有页面订阅同一份会话。 */
+export function useEnterpriseSession() {
+  return useQuery({ ...sessionQuery(), staleTime: 30000 });
+}
+
+/** 主动核验并更新登录状态，和已有会话查询共用正在进行的请求。 */
+export function recheckEnterpriseSession(client: QueryClient, allowRenewal = true) {
+  return client.fetchQuery({ ...sessionQuery(allowRenewal), staleTime: 0 });
 }
 /** 登录后同步账号偏好和会话，清理旧身份的业务查询。 */
 export function useEnterpriseLogin() {

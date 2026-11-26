@@ -3,9 +3,9 @@ import { type AvatarPreset, avatarPresetIds, type EnterpriseIdentity } from "@ly
 import { accountDisplayName } from "../account-format";
 import "./account-avatar.css";
 
-/** 没选过或认不出的预设（例如新部署新增的 id）显示默认的青柠头像。 */
+/** 未选择头像或遇到当前版本认不出的预设时，显示默认黑色头像。 */
 export function avatarPresetOf(value: string | null | undefined): AvatarPreset {
-  return avatarPresetIds.find((id) => id === value) ?? "lime";
+  return avatarPresetIds.find((id) => id === value) ?? "black";
 }
 
 /** 头像里显示的账号首字母（大写）。 */

@@ -31,7 +31,7 @@ Compose 修改环境变量后运行 `docker compose up -d --no-deps --wait api`�
 | GET /api/v1/auth/session           | 验证 JWT 后返回 `{userId,organizationId,role,account}`，另带可选 `uid`、`avatarPreset` 与 `preferredLocale`（偏好未选择为 null）；未登录／过期返回 401                                |
 | POST /api/v1/auth/refresh          | 仅接受可信 Origin 和 HttpOnly 刷新 Cookie；轮换刷新凭据并签发新访问 Token，返回同登录的字段；刷新 Token 不进入 JSON                                                                   |
 | POST /api/v1/auth/password         | 已登录；JSON `{currentPassword,newPassword}`，新密码 12–256 字符；验证旧密码，原子更新密码并撤销该账号全部会话                                                                        |
-| PUT /api/v1/auth/avatar            | 已登录；Cookie 写请求同样校验可信 Origin；JSON `{avatarPreset}` 只接受 12 个预设 id 或 null（恢复默认），未知 id 或多余字段返回 400；只更新当前会话用户，返回带 `avatarPreset` 的身份 |
+| PUT /api/v1/auth/avatar            | 已登录；Cookie 写请求同样校验可信 Origin；JSON `{avatarPreset}` 只接受 13 个预设 id 或 null（恢复默认），未知 id 或多余字段返回 400；只更新当前会话用户，返回带 `avatarPreset` 的身份 |
 | POST /api/v1/auth/logout           | 撤销服务端会话并删除 Cookie；重复退出可安全返回 HTTP 200、code=0、data={}                                                                                                             |
 | PUT /api/v1/auth/locale            | 已登录且 Cookie 请求来源可信；只接受 `{"preferredLocale":"zh-CN"}` 或 `{"preferredLocale":"en"}`，按会话用户写入并返回更新后的身份                                                    |
 | POST /api/v1/image-session         | 企业模式下读取当前 JWT 身份，不再创建本地身份                                                                                                                                         |
@@ -47,6 +47,14 @@ API 实例不缓存会话校验结果：后台停用账号、替换凭据以及�
 访问 Cookie `lycobo_enterprise_session` 的 Path 为 `/api`，刷新 Cookie `lycobo_enterprise_refresh` 的 Path 为 `/api/v1/auth`；均使用 HttpOnly、SameSite=Strict，生产启用 Secure。刷新 JWT 含 32 字节密码学随机 nonce、独立的 enterprise-refresh 用途和签名会话 ID，数据库仅保存整个凭据的 SHA-256 哈希；迁移 0006 新增可空、唯一的 refresh_token_hash。每次刷新通过数据库原子条件更新轮换哈希，旧刷新凭据立即不可再用；并发刷新只有一个成功。拒绝刷新时不清除 Cookie，避免覆盖其他标签页已成功轮换的新凭据。
 
 退出撤销当前会话；即使访问 Cookie 已过期，也会验证刷新凭据的签名并定位该会话。刚轮换的旧凭据只能撤销所属会话，不能再用于续期，避免退出与并发刷新竞态重新登录。通过改密码接口或已有账号设置命令修改密码，均撤销该账号全部会话，因此旧访问 Token 和刷新凭据同时失效；禁用账号、移除成员同样阻止访问和刷新。
+
+## 单设备登录
+
+每个账号只保留一个有效会话。新设备验证成功并签发会话时，数据库在同一事务撤销这个账号的旧访问及刷新凭据。错误密码和失败的人机验证不影响原会话。多个标签页共用同一浏览器的登录 Cookie，正常刷新凭据不建立新会话。Google、Apple 和邮件验证码若解析为同一个 Supabase 用户 UUID，也共用这一限制。
+
+旧会话的受保护请求会立即被拒绝。会话签发事务把退出通知写入实时 outbox，主动关闭旧设备对应的 WebSocket。旧网页收到通知后读取一次当前登录状态，确认失效后退出。连接恢复或页面回到前台时重新核验会话，空闲页面不定时请求登录接口。
+
+迁移 0052 为已有重复记录保留每个账号最近的有效会话，并约束并发签发。迁移 0053 启用退出通知写入。生产先部署能识别该消息的主站和图片 Worker，再独立执行迁移。这样更新期间现有消费者仍能读取 outbox。
 
 API 使用 Turnstile Siteverify 校验令牌成功状态、`password_login` 操作和可信请求 Origin 的主机名，通过后原子消费令牌哈希，再校验密码。令牌无效或重复提交返回 403，且不计入密码失败。错误密码与不存在账号使用同一流程，前四次失败返回 401，第五次返回 429、`ACCOUNT_LOCKED` 及 `Retry-After`。锁定持续 1 小时，期间再次尝试不会延长时限。成功登录或距离上次失败已满 1 小时时重新计数。PostgreSQL 按规范化后的账号哈希，串行化失败计数和会话签发。全局仍限制每分钟 200 次，改密接口沿用独立的请求限制。日志不记录密码、人机验证令牌、JWT、Cookie 或请求体。
 
@@ -71,7 +79,7 @@ Siteverify 在 Workers 中使用 `redirect: "manual"` 并拒绝 3xx，确保请�
 
 ## 自动续期与升级
 
-前端通过既有每分钟会话检查和业务请求边界，在访问 Token 到期前 5 分钟内自动续期；休眠后恢复或重新打开页面遇到 401，也会刷新并重试一次。页面内合并并发刷新，支持 Web Locks 的浏览器跨标签页串行刷新；其他浏览器在轮换冲突时重新检查共享会话。业务 5xx 不触发重新提交；401 重试保留原请求体与幂等键。仅非敏感的到期时间保存在内存，Token 不写 localStorage 或 sessionStorage。
+前端通过会话检查和业务请求边界，在访问 Token 到期前 5 分钟内自动续期；休眠后恢复或重新打开页面遇到 401，也会刷新并重试一次。页面内合并并发刷新，支持 Web Locks 的浏览器跨标签页串行刷新；其他浏览器在轮换冲突时重新检查共享会话。业务 5xx 不触发重新提交；401 重试保留原请求体与幂等键。仅非敏感的到期时间保存在内存，Token 不写 localStorage 或 sessionStorage。
 
 迁移必须先于 API 新代码部署，迁移未升级的旧 15 分钟会话不会自动获得长期权限，需再登录一次以领取刷新 Cookie。续期不清空草稿、不跳转页面；刷新凭据过期、账号失效或密码变更后恢复未登录状态。
 
@@ -81,7 +89,7 @@ Siteverify 在 Workers 中使用 `redirect: "manual"` 并拒绝 3xx，确保请�
 
 用户 2026-11-10 决定取消头像上传，头像只能从预设中选择，不涉及文件上传或对象存储。迁移 0044 为 `users` 新增可空的 `avatar_preset` 和 CHECK 约束（只允许 2–32 位小写短 id），未选择为 null。新代码会读取这一列，因此必须先应用迁移再部署 API，否则会话查询会失败。
 
-契约 `enterpriseAvatarChangeSchema` 写入时严格限定为 `avatarPresetIds` 中的 12 个 id 或 null；身份响应读取时只要求短字符串且可缺省，后续部署新增预设时旧页面不会登录失败，只显示默认头像。登录、续期和会话响应都从同一身份查询返回 `avatarPreset`，前端保存成功后用返回的身份更新登录状态，顶部栏、账户菜单和设置立即同步，换设备登录也一样。配色只在前端定义，服务端只保存 id。
+契约 `enterpriseAvatarChangeSchema` 写入时严格限定为 `avatarPresetIds` 中的 13 个 id 或 null。未选择或当前版本无法识别的预设在界面上显示为黑色，用户也可以从彩色头像切回黑色。身份响应读取时接受可缺省的短字符串，以便兼容新增预设。登录、续期和会话响应都从同一身份查询返回 `avatarPreset`，前端保存成功后用返回的身份更新登录状态，顶部栏、账户菜单和设置立即同步，换设备登录也一样。配色只在前端定义，服务端只保存 id。新增预设沿用已有格式约束，无需迁移。
 
 `test:auth` 隔离集成覆盖：新账号为 null、保存后会话返回新值、其他用户不受影响、数据库拒绝非法 id；单元测试覆盖未登录、未知预设、多余字段、恶意来源和恢复默认。
 
