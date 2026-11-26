@@ -120,8 +120,11 @@ for (const layout of ["desktop", "mobile"] as const) {
       }),
     );
     if (layout === "mobile") await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/");
-    await page.getByRole("button", { name: "登录领积分", exact: true }).click();
+    await page.goto("/zh-CN");
+    await page
+      .locator(".public-site-header")
+      .getByRole("link", { name: "开始创作", exact: true })
+      .click();
     const dialog = page.locator(".login-page");
     await dialog.getByRole("button", { name: "企业账号登录", exact: true }).click();
     await dialog.getByLabel("企业账号", { exact: true }).fill("login-fixture");

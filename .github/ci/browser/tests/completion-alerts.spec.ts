@@ -1,7 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 import { apiFixture, mockImageApi } from "./image-api-fixture";
 
-async function setup(page: Page, identity?: { userId: string; organizationId: string }) {
+async function setup(page: Page, identity?: { userId: string; organizationId: string }, count = 1) {
   await mockImageApi(page);
   if (identity) {
     await page.route("**/api/v1/image-session", (route) =>
@@ -29,22 +29,20 @@ async function setup(page: Page, identity?: { userId: string; organizationId: st
     prompt: "完成提醒测试任务",
     resolution: "1K",
     aspect_ratio: "1:1",
-    requested_count: 1,
+    requested_count: count,
     status: "running",
     created_at: new Date().toISOString(),
     completed_at: null,
-    items: [
-      {
-        id: crypto.randomUUID(),
-        position: 0,
-        status: "running",
-        output_asset_id: null,
-        error_code: null,
-        width: null,
-        height: null,
-        worker_id: null,
-      },
-    ],
+    items: Array.from({ length: count }, (_, position) => ({
+      id: crypto.randomUUID(),
+      position,
+      status: "running",
+      output_asset_id: null,
+      error_code: null,
+      width: null,
+      height: null,
+      worker_id: null,
+    })),
   };
   await page.route("**/api/v1/image-tasks*", (route) =>
     route.fulfill({ json: apiFixture({ data: [job] }) }),
@@ -93,16 +91,20 @@ async function hidden(page: Page, value: boolean) {
   }, value);
 }
 
+function goHome(page: Page) {
+  return page
+    .locator(".workspace-site-header")
+    .getByRole("link", { name: "首页", exact: true })
+    .click();
+}
+
 test("background title counts once, returns to a result action and preserves the draft", async ({
   page,
 }) => {
-  const { job } = await setup(page);
+  const { job } = await setup(page, undefined, 20);
   const prompt = page.getByRole("textbox", { name: "提示词", exact: true });
   await prompt.fill("保留这份未提交草稿");
-  await page
-    .getByRole("navigation", { name: "主导航", exact: true })
-    .getByRole("link", { name: "首页", exact: true })
-    .click();
+  await goHome(page);
   await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   const title = await page.title();
   await hidden(page, true);
@@ -113,7 +115,10 @@ test("background title counts once, returns to a result action and preserves the
   await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   await hidden(page, false);
   await expect(page).toHaveTitle(title);
-  await expect(page.getByRole("button", { name: "查看结果", exact: true })).toBeVisible();
+  const toast = page.locator('.toast-region .toast[data-frontmost="true"]');
+  await expect(toast).toHaveCount(1);
+  await expect(toast).toHaveCSS("height", "40px");
+  await expect(toast.getByRole("button", { name: "查看结果", exact: true })).toBeVisible();
   await page.screenshot({ path: "/tmp/lycobo-completion-toast.png" });
   await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   await page.getByRole("button", { name: "查看结果", exact: true }).click();
@@ -148,10 +153,7 @@ test("visible other page offers a result without navigating and desktop permissi
     Object.defineProperty(window, "Notification", { value: FixtureNotification });
   });
   const { job } = await setup(page);
-  await page
-    .getByRole("navigation", { name: "主导航", exact: true })
-    .getByRole("link", { name: "首页", exact: true })
-    .click();
+  await goHome(page);
   await expect(page.locator("html")).not.toHaveAttribute("data-permission-requests");
   await emit(page, job.id, "1");
   await expect(page.getByRole("button", { name: "查看结果", exact: true })).toBeVisible();
@@ -216,10 +218,7 @@ test("two tabs share one completion receipt", async ({ page, context }) => {
       reads++;
       return route.fulfill({ json: apiFixture(result) });
     });
-    await tab
-      .getByRole("navigation", { name: "主导航", exact: true })
-      .getByRole("link", { name: "首页", exact: true })
-      .click();
+    await goHome(tab);
     await hidden(tab, false);
     await expect(tab.locator("html")).toHaveAttribute("data-ws-active", "1");
   }
@@ -237,10 +236,7 @@ test("two tabs share one completion receipt", async ({ page, context }) => {
 test("mobile result action reveals history and keeps the form draft", async ({ page }) => {
   const { job } = await setup(page);
   await page.getByRole("textbox", { name: "提示词", exact: true }).fill("手机未提交草稿");
-  await page
-    .getByRole("navigation", { name: "主导航", exact: true })
-    .getByRole("link", { name: "首页", exact: true })
-    .click();
+  await goHome(page);
   await emit(page, job.id, "1");
   await expect(page.getByRole("button", { name: "查看结果", exact: true })).toBeVisible();
   await page.setViewportSize({ width: 393, height: 852 });
