@@ -10,6 +10,7 @@ import { imageDeliveries } from "./assets/delivery";
 import { registerImageEvents } from "./events/event-routes";
 import { registerImageModels } from "./model-routes";
 import { registerImagePlanning, registerPromptOptimization } from "./planning/planning-routes";
+import { checkImageRequestLimit } from "./rate-limit";
 import { type Env, fail, type ImageApiDependencies } from "./route-context";
 import { setWorkbenchCookie, trustedWorkbenchRequest, workbenchPrincipal } from "./session";
 import {
@@ -57,9 +58,12 @@ export function imageRoutes(deps: ImageApiDependencies) {
   app.post("/image-session", async (c) => {
     if (deps.auth) {
       const principal = await resolvePrincipal(c);
-      return principal
-        ? c.json({ userId: principal.userId, organizationId: principal.organizationId })
-        : fail(c, "UNAUTHORIZED", "请先登录", 401);
+      if (!principal) return fail(c, "UNAUTHORIZED", "请先登录", 401);
+      const limited =
+        deps.rateLimits && (await checkImageRequestLimit(c, deps.rateLimits, principal.userId));
+      return (
+        limited ?? c.json({ userId: principal.userId, organizationId: principal.organizationId })
+      );
     }
     if (!deps.session || !trustedWorkbenchRequest(c, deps.session))
       return fail(c, "UNAUTHORIZED", "请先登录工作台", 401);
@@ -76,6 +80,10 @@ export function imageRoutes(deps: ImageApiDependencies) {
   app.use("*", async (c, next) => {
     const principal = await resolvePrincipal(c);
     if (!principal) return fail(c, "UNAUTHORIZED", "请先验证身份", 401);
+    if (deps.rateLimits) {
+      const limited = await checkImageRequestLimit(c, deps.rateLimits, principal.userId);
+      if (limited) return limited;
+    }
     c.set("principal", principal);
     await next();
   });

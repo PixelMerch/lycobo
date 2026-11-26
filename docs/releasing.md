@@ -106,6 +106,12 @@ Node API、Sharp、S3 与 LISTEN/SSE 仅用于隔离本地开发及测试。生�
 
 提示词优化与规划同样受生成开关约束。检查、构建、部署、健康探测和签名拒绝测试均不需要调用真实付费模型；真实生成由用户按明确额度测试。
 
+### API 限流
+
+Cloudflare Security rules 的站点级规则 `Lycobo API rate limit` 按来源 IP 限制 `/api/v1/` 每 10 秒 120 次，超出暂停 10 秒。`/api/v1/webhooks/` 继续使用各自的验签。边缘规则由 Cloudflare 管理，独立于 Worker 版本。部署前后从控制台核对规则已启用。 [WAF 限流规则](https://developers.cloudflare.com/waf/rate-limiting-rules/)
+
+主站 Worker 使用 Wrangler 的三组 `ratelimits` 绑定，在鉴权后、模型审核和文件处理前按账号限制。绑定计数按 Cloudflare 节点近似执行。使用 `429` 与 `Retry-After` 观察触发情况，发布后仅做正常调用冒烟，限流验证使用测试环境。 [Worker 限流绑定](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
+
 ### 绑定与 Secrets
 
 当前活动的账号、Hyperdrive、私有 R2、图片队列、死信队列和 `RealtimeHub` 命名空间用 `pnpm cf:check:config` 核对。仓库所需绑定以两个 Wrangler 配置为准。主站静态资产来自 `apps/web/dist`。

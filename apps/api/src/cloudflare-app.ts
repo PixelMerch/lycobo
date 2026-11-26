@@ -126,6 +126,11 @@ export async function serveCloudflareApi(
         store,
         uploads,
         uploadsEnabled: env.CLOUDFLARE_CONSUMER_ENABLED === "true",
+        rateLimits: {
+          generation: env.IMAGE_GENERATION_RATE_LIMIT,
+          upload: env.IMAGE_UPLOAD_RATE_LIMIT,
+          general: env.IMAGE_API_RATE_LIMIT,
+        },
         auth,
         // 提示词优化与规划也会收费，必须受同一个生成开关约束。
         standaloneKey:

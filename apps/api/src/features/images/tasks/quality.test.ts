@@ -14,6 +14,7 @@ import type { CheckoutService } from "../../billing/service";
 import type { ExternalWalletService } from "../../billing/wallet-service";
 import { createCreemModerator } from "../../moderation/creem-moderation";
 import type { GenerationModerator } from "../../moderation/service";
+import type { ImageRequestRateLimits } from "../route-context";
 
 const unexpected = async (): Promise<never> => {
   throw new Error("Unexpected dependency call");
@@ -22,6 +23,7 @@ function fixture(
   editsEnabled = false,
   managedModelsOnly = false,
   extra: {
+    rateLimits?: ImageRequestRateLimits;
     wake?: () => Promise<void>;
     wakeBilling?: (id: string) => Promise<void>;
     billing?: ExternalWalletService;
@@ -46,6 +48,7 @@ function fixture(
   const create = vi
     .fn<ImageRepository["create"]>()
     .mockResolvedValue({ id: crypto.randomUUID(), replayed: false });
+  const userId = crypto.randomUUID();
   const repository: ImageRepository = {
     waitingReferenceUploads: unexpected,
     close: unexpected,
@@ -109,7 +112,7 @@ function fixture(
     createRecharge: unexpected,
     settleRecharge: unexpected,
     authenticate: async () => ({
-      userId: crypto.randomUUID(),
+      userId,
       organizationId: crypto.randomUUID(),
       role: "member",
     }),
@@ -142,6 +145,7 @@ function fixture(
   };
   const app = createApp(() => {}, {
     repository,
+    rateLimits: extra.rateLimits,
     moderate: extra.moderate,
     billing: extra.billing,
     checkout: extra.checkout,
@@ -172,8 +176,63 @@ function fixture(
         ...overrides,
       }),
     });
-  return { create, submit, app };
+  return { create, submit, app, userId };
 }
+
+it("applies the generation budget by authenticated user before moderation or persistence", async () => {
+  const blocked = vi.fn(async () => ({ success: false }));
+  const moderate = vi.fn();
+  const untouched = { limit: vi.fn(unexpected) };
+  const { create, submit, userId } = fixture(false, false, {
+    moderate,
+    rateLimits: { generation: { limit: blocked }, upload: untouched, general: untouched },
+  });
+  const response = await submit();
+  expect(response.status).toBe(429);
+  expect(response.headers.get("Retry-After")).toBe("60");
+  expect(await response.json()).toMatchObject({ error: { code: "RATE_LIMITED" } });
+  expect(blocked).toHaveBeenCalledExactlyOnceWith({ key: userId });
+  expect(untouched.limit).not.toHaveBeenCalled();
+  expect(moderate).not.toHaveBeenCalled();
+  expect(create).not.toHaveBeenCalled();
+});
+
+it("rejects a chunked upload before reading the stream when the upload budget is exceeded", async () => {
+  const blocked = vi.fn(async () => ({ success: false }));
+  const untouched = { limit: vi.fn(unexpected) };
+  const { app, userId } = fixture(false, false, {
+    rateLimits: { generation: untouched, upload: { limit: blocked }, general: untouched },
+  });
+  const pull = vi.fn((controller: ReadableStreamDefaultController<Uint8Array>) =>
+    controller.close(),
+  );
+  const request = {
+    method: "POST",
+    duplex: "half",
+    headers: { Authorization: "Bearer fixture", "Content-Type": "image/png" },
+    body: new ReadableStream({ pull }, { highWaterMark: 0 }),
+  };
+  expect((await app.request("/api/v1/image-assets", request)).status).toBe(429);
+  expect(blocked).toHaveBeenCalledExactlyOnceWith({ key: userId });
+  expect(pull).not.toHaveBeenCalled();
+  expect(untouched.limit).not.toHaveBeenCalled();
+});
+
+it("rate limits authenticated task status reads without reading the database", async () => {
+  const blocked = vi.fn(async () => ({ success: false }));
+  const untouched = { limit: vi.fn(unexpected) };
+  const { app, userId } = fixture(false, false, {
+    rateLimits: { generation: untouched, upload: untouched, general: { limit: blocked } },
+  });
+  const path = `/api/v1/image-tasks/status?ids=${crypto.randomUUID()}`;
+  expect((await app.request(path)).status).toBe(401);
+  expect(blocked).not.toHaveBeenCalled();
+  expect((await app.request(path, { headers: { Authorization: "Bearer fixture" } })).status).toBe(
+    429,
+  );
+  expect(blocked).toHaveBeenCalledExactlyOnceWith({ key: userId });
+  expect(untouched.limit).not.toHaveBeenCalled();
+});
 it.each(["low", "medium", "high"])(
   "validates and forwards %s quality to task persistence",
   async (quality) => {

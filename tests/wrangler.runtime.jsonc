@@ -3,6 +3,13 @@
   "main": "fixtures/workers-runtime.mjs",
   "compatibility_date": "2026-11-06",
   "compatibility_flags": ["nodejs_compat"],
+  "ratelimits": [
+    {
+      "name": "FIXTURE_RATE_LIMIT",
+      "namespace_id": "9918101",
+      "simple": { "limit": 2, "period": 10 }
+    }
+  ],
   "images": {
     "binding": "IMAGES"
   },

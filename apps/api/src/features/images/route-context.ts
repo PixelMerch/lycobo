@@ -10,8 +10,18 @@ import type { GenerationModerator } from "../moderation/service";
 import type { DeliverySigner } from "./assets/delivery";
 import type { WorkbenchSession } from "./session";
 
+type Limiter = { limit(input: { key: string }): Promise<{ success: boolean }> };
+
+/** 三类账号预算由运行环境提供，图片接口只依赖计数结果。 */
+export type ImageRequestRateLimits = {
+  generation: Limiter;
+  upload: Limiter;
+  general: Limiter;
+};
+
 export type ImageApiDependencies = {
   repository: ImageRuntimeRepository;
+  rateLimits?: ImageRequestRateLimits | undefined;
   moderate?: GenerationModerator | undefined;
   billing?: ExternalWalletService | undefined;
   checkout?: CheckoutService | undefined;
@@ -47,9 +57,10 @@ export type ImageApiDependencies = {
 };
 export type Env = { Variables: { principal: ImagePrincipal; requestId: string } };
 export const id = z.uuid();
+/** 返回图片 API 的业务错误，并保留请求编号和 HTTP 状态。 */
 export const fail = (
   c: Context<Env>,
   code: string,
   message: string,
-  status: 400 | 401 | 403 | 404 | 409 | 413 | 503,
+  status: 400 | 401 | 403 | 404 | 409 | 413 | 429 | 503,
 ) => c.json({ error: { code, message, requestId: c.get("requestId") } }, status);

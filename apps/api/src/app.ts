@@ -127,7 +127,12 @@ export function createApp(
   const app = new Hono<ApiEnv>();
   app.use("*", responseEnvelope(reportError));
   app.use("*", secureHeaders());
-  app.use("/api/*", requestSizeLimit(11 * 1024 * 1024));
+  const generalSizeLimit = requestSizeLimit(11 * 1024 * 1024);
+  app.use("/api/*", (c, next) => {
+    // 上传路由在鉴权和限流后再读取文件，仍通过流式大小限制。
+    if (images && c.req.method === "POST" && c.req.path === "/api/v1/image-assets") return next();
+    return generalSizeLimit(c, next);
+  });
   app.use("/api/*", async (c, next) => {
     if (c.req.path === "/api/v1/image-assets") {
       await next();
