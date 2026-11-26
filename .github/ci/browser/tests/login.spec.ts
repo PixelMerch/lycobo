@@ -157,8 +157,7 @@ test("pending enterprise login blocks repeat submissions and changing methods", 
     await responseReady;
     await route.fulfill({ status: 503, json: apiFixture({}, 503) });
   });
-  await page.goto("/");
-  await page.getByRole("button", { name: "登录领积分", exact: true }).click();
+  await page.goto("/zh-CN/login");
   const dialog = page.locator(".login-page");
   const enterprise = dialog.getByRole("button", { name: "企业账号登录", exact: true });
   await enterprise.click();
