@@ -58,27 +58,17 @@ for (const mobile of [false, true]) {
   }) => {
     await mockImageApi(page, { signedIn: false });
     await page.setViewportSize(mobile ? { width: 390, height: 844 } : { width: 1584, height: 993 });
-    // 顶部导航不再有素材库；手机抽屉里的素材库是打开弹窗的按钮，未登录时同样先去登录。
-    for (const entry of mobile ? ["工作区", "素材库"] : ["工作区"]) {
-      await page.goto("/");
-      if (mobile) await page.getByRole("button", { name: "打开导航", exact: true }).click();
-      const navigation = page.locator(mobile ? ".mobile-nav" : ".topbar");
-      await expect(navigation.getByRole("button", { name: "账户设置", exact: true })).toHaveCount(
-        0,
-      );
-      await expect(navigation.getByRole("button", { name: "帮助中心", exact: true })).toHaveCount(
-        0,
-      );
-      if (!mobile || entry === "素材库") {
-        await navigation.getByRole("button", { name: entry, exact: true }).click();
-      } else {
-        await navigation.getByRole("link", { name: entry, exact: true }).click();
-      }
-      const login = page.locator(".login-page");
-      await expect(login).toBeVisible();
-      await login.getByRole("button", { name: "关闭登录", exact: true }).click();
-      await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
-    }
+    await page.goto("/zh-CN");
+    const navigation = page.locator(".topbar");
+    // 未登录时，桌面和手机都从「开始创作」进入需要登录的工作区。
+    await expect(navigation.getByRole("link", { name: "工作区", exact: true })).toHaveCount(0);
+    await expect(navigation.getByRole("button", { name: "账户设置", exact: true })).toHaveCount(0);
+    await navigation.getByRole("link", { name: "开始创作", exact: true }).click();
+    const login = page.locator(".login-page");
+    await expect(login).toBeVisible();
+    expect(new URL(page.url()).searchParams.get("returnTo")).toMatch(/^\/zh-CN\/dashboard(?:\/|$)/);
+    await login.getByRole("button", { name: "关闭登录", exact: true }).click();
+    await expect(page).toHaveURL(/\/zh-CN\/?$/);
   });
 }
 
