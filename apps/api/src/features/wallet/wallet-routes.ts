@@ -1,12 +1,12 @@
 import {
   checkoutPackSchema,
+  checkoutReturnPathSchema,
   defaultCreditOfferEnd,
   imageUnitCredits,
   walletSourceSchema,
 } from "@lycoboai/contracts";
 import type { Hono } from "hono";
 import { z } from "zod";
-import { enterprisePrincipal } from "../auth/principal";
 import { type Env, fail, type ImageApiDependencies } from "../images/route-context";
 
 const entryIdSchema = z
@@ -37,14 +37,18 @@ export function registerImageWallet(app: Hono<Env>, deps: ImageApiDependencies) 
     ),
   );
   app.post("/wallet/checkout", async (c) => {
-    const identity = deps.auth && (await enterprisePrincipal(c, deps.auth));
-    if (!identity) return fail(c, "UNAUTHORIZED", "请先登录", 401);
+    if (!c.get("authenticatedSession")) return fail(c, "UNAUTHORIZED", "请先登录", 401);
     const input = z
-      .strictObject({ pack: checkoutPackSchema, key: z.uuid() })
+      .strictObject({
+        pack: checkoutPackSchema,
+        key: z.uuid(),
+        returnTo: checkoutReturnPathSchema.optional(),
+      })
       .safeParse(await c.req.json());
     if (!input.success) return fail(c, "VALIDATION_ERROR", "请选择有效的积分包", 400);
     if (!deps.checkout) return fail(c, "BILLING_UNAVAILABLE", "积分购买暂不可用", 503);
-    return c.json(await deps.checkout.checkout(identity.user, input.data.key, input.data.pack));
+    const { key, pack, returnTo } = input.data;
+    return c.json(await deps.checkout.checkout(c.get("principal"), key, pack, returnTo));
   });
   app.get("/wallet/entries", async (c) => {
     const parsed = z

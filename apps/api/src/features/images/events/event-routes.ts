@@ -3,10 +3,11 @@ import type { Context, Hono } from "hono";
 import { type Env, fail, type ImageApiDependencies } from "../route-context";
 import { imageEventStream } from "./events";
 
+/** 提供图片实时通知并持续校验连接所属身份。 */
 export function registerImageEvents(
   app: Hono<Env>,
   deps: ImageApiDependencies,
-  resolvePrincipal: (c: Context) => Promise<ImagePrincipal | undefined | null>,
+  resolvePrincipal: (c: Context<Env>) => Promise<ImagePrincipal | undefined | null>,
 ) {
   const connections = new Map<string, number>();
   app.get("/image-events", async (c) => {

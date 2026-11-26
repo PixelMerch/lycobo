@@ -1,4 +1,3 @@
-import { Button, Spinner } from "@heroui/react";
 import { checkoutOptionsSchema, creditPacks, unwrapApiData } from "@lycoboai/contracts";
 import { IconSparkle } from "@tabler/icons-react";
 import { useQuery } from "@tanstack/react-query";
@@ -8,6 +7,7 @@ import { localizedPath } from "../../../i18n/locale-path";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
 import { useAppLocation } from "../../../i18n/use-localized-navigation";
+import { CheckoutAction } from "../../account/credits/checkout-action";
 import { creditPackDisplay } from "../../account/credits/credit-pack-pricing";
 import { creditsMessages } from "../../account/credits/credits-messages";
 import { useCheckoutOptions, useCreditCheckout } from "../../account/wallet-client";
@@ -34,9 +34,10 @@ const featuredPacks: Partial<
   bulk: "best-rate",
 };
 
-function usePublicCreditOffer(checkoutOfferEnd?: string) {
+function usePublicCreditOffer(offerEndFromCheckout: string | undefined, publicFallback: boolean) {
   const { data } = useQuery({
     queryKey: ["public-credit-pricing"],
+    enabled: publicFallback,
     staleTime: 60_000,
     retry: false,
     queryFn: async ({ signal }) => {
@@ -49,7 +50,7 @@ function usePublicCreditOffer(checkoutOfferEnd?: string) {
     },
   });
   const [now, setNow] = useState(Date.now);
-  const offerEnd = checkoutOfferEnd ?? data?.offerEnd;
+  const offerEnd = offerEndFromCheckout ?? data?.offerEnd;
   const end = offerEnd ? Date.parse(offerEnd) : 0;
   useEffect(() => {
     const remaining = end - Math.max(now, Date.now());
@@ -71,14 +72,18 @@ export function LandingPricingSection() {
   const packText = useMessages(creditsMessages);
   const account = useEnterpriseSession();
   const signedIn = !!account.data;
-  const { data: options } = useCheckoutOptions(signedIn);
-  const checkout = useCreditCheckout();
-  const includeOffer = usePublicCreditOffer(options?.offerEnd);
+  const { data: options, isError: optionsFailed } = useCheckoutOptions();
+  const checkout = useCreditCheckout("#pricing");
+  // 已登录的档位接口包含活动截止时间；公开接口只为访客与失败回退读取。
+  const includeOffer = usePublicCreditOffer(
+    options?.offerEnd,
+    (!account.isPending && !signedIn) || optionsFailed,
+  );
   const { search } = useAppLocation();
   const [login, setLogin] = useState<{ pack: string; returnTo: string } | null>(null);
   const resumeCheckout = useEffectEvent((intentSearch: string) => {
     const pack = consumePricingCheckout(intentSearch);
-    if (pack) checkout.buy(pack);
+    if (pack) checkout.buy(pack, false);
   });
   useEffect(() => {
     if (signedIn && !login) resumeCheckout(search);
@@ -121,6 +126,8 @@ export function LandingPricingSection() {
                 pending={pending}
                 disabled={account.isPending || (!pending && (unavailable || checkout.isOpening))}
                 error={selected ? checkout.error : null}
+                checkoutUrl={selected ? checkout.url : undefined}
+                focusCheckout={checkout.focusCheckout}
                 onBuy={buyPack}
               />
             );
@@ -136,7 +143,7 @@ export function LandingPricingSection() {
             onSuccess={() => {
               const pack = login.pack;
               closeLogin();
-              checkout.buy(pack);
+              checkout.buy(pack, false);
             }}
           />
         </Suspense>
@@ -153,6 +160,8 @@ function LandingPricingPack({
   pending,
   disabled,
   error,
+  checkoutUrl,
+  focusCheckout,
   onBuy,
 }: {
   id: (typeof creditPacks)[number]["id"];
@@ -161,6 +170,8 @@ function LandingPricingPack({
   pending: boolean;
   disabled: boolean;
   error: Error | null;
+  checkoutUrl: string | undefined;
+  focusCheckout: () => boolean;
   onBuy: (pack: string) => void;
 }) {
   const t = useMessages(landingPricingMessages);
@@ -201,17 +212,15 @@ function LandingPricingPack({
               </span>
             )}
           </div>
-          <Button
-            variant="primary"
-            className="credit-pack-buy"
-            aria-label={pending ? packText.openingCheckout : t.topUpPack(display.credits)}
-            isDisabled={disabled}
-            isPending={pending}
-            onPress={() => onBuy(display.checkoutKey)}
-          >
-            {pending && <Spinner size="sm" color="current" aria-hidden="true" />}
-            {pending ? packText.openingCheckout : t.topUp}
-          </Button>
+          <CheckoutAction
+            url={checkoutUrl}
+            focus={focusCheckout}
+            label={t.topUpPack(display.credits)}
+            buy={t.topUp}
+            pending={pending}
+            disabled={disabled}
+            onBuy={() => onBuy(display.checkoutKey)}
+          />
           {error && (
             <p className="credit-pack-error" role="alert">
               {error instanceof ImageApiError ? error.message : packText.checkoutFailed}

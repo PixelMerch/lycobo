@@ -1,13 +1,18 @@
 import {
   checkoutOptionsSchema,
+  checkoutReturnPathSchema,
   creditCheckoutSchema,
   rechargeOrdersSchema,
   walletBalanceSchema,
   walletHistorySchema,
 } from "@lycoboai/contracts";
-import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
+import { useAppLocation } from "../../i18n/use-localized-navigation";
+import { useEnterpriseSession } from "../auth/auth-client";
 import { imageRequest, useImageSession } from "../generation/generation-client";
+import { useAccountOverlays } from "./account-overlay-store";
+import { openCheckoutWindow, watchCheckoutReturn } from "./checkout-window";
 
 /** 查询工作区和当前用户的两个积分余额。 */
 export function useWallet() {
@@ -70,53 +75,79 @@ export function useRechargeOrders() {
 }
 
 /** 按登录身份加载实际可购买的档位，商品编号留在服务端。 */
-export function useCheckoutOptions(enabled = true) {
-  const session = useImageSession(enabled);
+export function useCheckoutOptions() {
+  const { data: account } = useEnterpriseSession();
   return useQuery({
-    queryKey: ["checkout-options", session.data?.organizationId, session.data?.userId],
-    enabled: enabled && session.isSuccess,
+    queryKey: ["checkout-options", account?.organizationId, account?.userId],
+    enabled: !!account,
     retry: false,
     queryFn: async ({ signal }) =>
       checkoutOptionsSchema.parse(await (await imageRequest("wallet/checkout", { signal })).json()),
   });
 }
 
-/** 创建托管收银台并跳转，网络异常时保持当前积分弹框。 */
-export function useCreditCheckout() {
+/** 在独立窗口打开收银台，原页面继续持有草稿与上传状态。 */
+export function useCreditCheckout(anchor = "") {
+  const location = useAppLocation();
+  const client = useQueryClient();
   const submitting = useRef(false);
+  const popup = useRef<Window | null>(null);
+  const activeFlow = useRef<string | null>(null);
   const checkout = useMutation({
     mutationFn: async (pack: string) => {
+      const key = crypto.randomUUID();
+      const returnTo = checkoutReturnPathSchema.safeParse(
+        `${location.pathnameWithLocale}${anchor || (location.hash === "#pricing" ? location.hash : "")}`,
+      ).data;
       const response = await imageRequest("wallet/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pack, key: crypto.randomUUID() }),
+        body: JSON.stringify({ pack, key, returnTo }),
       });
-      return creditCheckoutSchema.parse(await response.json());
+      const { url } = creditCheckoutSchema.parse(await response.json());
+      return { key, url, path: location.pathnameWithLocale };
     },
-    onSuccess: ({ url }) => window.location.assign(url),
+    onSuccess: ({ key, url, path }) => {
+      activeFlow.current = key;
+      watchCheckoutReturn(key, () => {
+        // 回跳只刷新余额，账单在用户打开时读取。
+        void client.invalidateQueries({ queryKey: ["wallet"] }, { cancelRefetch: false });
+        if (activeFlow.current !== key) return;
+        activeFlow.current = null;
+        popup.current?.close();
+        popup.current = null;
+        checkout.reset();
+        const overlays = useAccountOverlays.getState();
+        if (window.location.pathname === path && overlays.dialog?.startsWith("recharge"))
+          overlays.close("dialog");
+      });
+      if (popup.current && !popup.current.closed) popup.current.location.replace(url);
+    },
     onError: () => {
+      popup.current?.close();
+      popup.current = null;
+    },
+    onSettled: () => {
       submitting.current = false;
     },
   });
-  const { reset } = checkout;
-  useEffect(() => {
-    const restoreCheckout = (event: PageTransitionEvent) => {
-      // 从收银台返回缓存的页面时，恢复购买按钮并清除上一次状态。
-      if (!event.persisted) return;
-      submitting.current = false;
-      reset();
-    };
-    window.addEventListener("pageshow", restoreCheckout);
-    return () => window.removeEventListener("pageshow", restoreCheckout);
-  }, [reset]);
   return {
     error: checkout.error,
     variables: checkout.variables,
-    isOpening: checkout.isPending || checkout.isSuccess,
-    buy(pack: string) {
+    isOpening: checkout.isPending,
+    url: checkout.data?.url,
+    focusCheckout() {
+      if (!popup.current || popup.current.closed) return false;
+      popup.current.focus();
+      return true;
+    },
+    buy(pack: string, userInitiated = true) {
       // 在按钮加载态渲染前拦住连点，整次请求只创建一个收银台。
       if (submitting.current) return;
       submitting.current = true;
+      // 用户改选档位后，旧窗口的回跳只刷新余额，不关闭新窗口。
+      activeFlow.current = null;
+      popup.current = userInitiated ? openCheckoutWindow() : null;
       checkout.mutate(pack);
     },
   };

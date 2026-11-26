@@ -68,6 +68,66 @@ for (const width of [1440, 320]) {
   });
 }
 
+test("checkout return keeps the original workspace and its draft in memory", async ({
+  context,
+  page,
+}) => {
+  await signIn(page);
+  const offerEnd = "2026-12-06T16:00:00Z";
+  const checkoutUrl = "https://checkout.creem.io/fixture-workspace";
+  let returnUrl = "";
+  let balanceReads = 0;
+  const billReads: string[] = [];
+  page.on("request", (request) => {
+    const { pathname } = new URL(request.url());
+    if (pathname === "/api/v1/wallet") balanceReads++;
+    if (["/api/v1/wallet/history", "/api/v1/wallet/recharges"].includes(pathname))
+      billReads.push(pathname);
+  });
+  await page.route("**/api/v1/wallet/checkout", (route) => {
+    if (route.request().method() === "GET")
+      return route.fulfill({ json: apiFixture({ packs: ["offer:trial"], offerEnd }) });
+    const { key, returnTo } = route.request().postDataJSON();
+    expect(returnTo).toBe("/zh-CN/dashboard/commerce/create");
+    returnUrl = new URL(
+      `/zh-CN/checkout/return?${new URLSearchParams({ flow: key, from: returnTo })}`,
+      page.url(),
+    ).href;
+    return route.fulfill({ json: apiFixture({ url: checkoutUrl }) });
+  });
+  await context.route(checkoutUrl, (route) => route.fulfill({ body: "Checkout fixture" }));
+  await page.clock.setFixedTime(new Date("2026-11-26T00:00:00Z"));
+  await page.goto("/zh-CN/dashboard/commerce/create");
+  const timeOrigin = await page.evaluate(() => performance.timeOrigin);
+  const draft = page.getByLabel("提示词", { exact: true });
+  await draft.fill("保留已上传的参考图片和生成参数");
+  await page
+    .getByLabel("添加参考图片", { exact: true })
+    .setInputFiles(".github/ci/browser/fixtures/studio/bedroom.webp");
+  await expect(page.locator(".reference-tile")).toHaveCount(1);
+  await page.getByRole("radio", { name: "3:4", exact: true }).click();
+  await expect(page.locator(".ratio-current")).toHaveText("3:4");
+  await page.getByRole("button", { name: "特惠充值", exact: true }).click();
+  const recharge = page.getByRole("dialog", { name: "充值积分", exact: true });
+  const [popup] = await Promise.all([
+    page.waitForEvent("popup"),
+    recharge.getByRole("button", { name: "购买 102 积分", exact: true }).click(),
+  ]);
+  await expect(popup).toHaveURL(checkoutUrl);
+  const readsBeforeReturn = balanceReads;
+  const closed = popup.waitForEvent("close");
+  await popup.goto(returnUrl, { waitUntil: "commit" });
+  await closed;
+  await expect(page).toHaveURL("/zh-CN/dashboard/commerce/create");
+  await expect(recharge).toHaveCount(0);
+  await expect(draft).toHaveValue("保留已上传的参考图片和生成参数");
+  await expect(page.locator(".ratio-current")).toHaveText("3:4");
+  await expect(page.locator(".reference-tile")).toHaveCount(1);
+  expect(await page.evaluate(() => performance.timeOrigin)).toBe(timeOrigin);
+  await expect.poll(() => balanceReads).toBe(readsBeforeReturn + 1);
+  expect(billReads).toEqual([]);
+});
+
 test("credits menu opens on hover without taking focus and works from the keyboard", async ({
   page,
 }) => {

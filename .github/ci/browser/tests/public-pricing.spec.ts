@@ -73,28 +73,38 @@ test("public pricing uses regular prices after the shared promotion expires", as
   await expect(pricing.locator(".credit-pack-bonus")).toHaveCount(0);
 });
 
-test("public pricing sends signed-in buyers directly to the selected checkout", async ({
+test("public pricing opens the selected checkout in a separate window", async ({
+  context,
   page,
 }) => {
   await mockImageApi(page);
   const offerEnd = "2026-12-06T16:00:00Z";
-  const checkouts: string[] = [];
+  const checkouts: { pack: string; returnTo: string }[] = [];
+  let publicOfferReads = 0;
   const checkoutUrl = "https://checkout.creem.io/fixture-pricing";
-  await page.route("**/api/v1/credit-pricing", (route) =>
-    route.fulfill({ json: apiFixture({ offerEnd }) }),
-  );
+  await page.route("**/api/v1/credit-pricing", (route) => {
+    publicOfferReads++;
+    return route.fulfill({ json: apiFixture({ offerEnd }) });
+  });
   await page.route("**/api/v1/wallet/checkout", (route) => {
     if (route.request().method() === "GET")
       return route.fulfill({ json: apiFixture({ packs: ["offer:catalog"], offerEnd }) });
-    checkouts.push(route.request().postDataJSON().pack);
+    const { pack, returnTo } = route.request().postDataJSON();
+    checkouts.push({ pack, returnTo });
     return route.fulfill({ json: apiFixture({ url: checkoutUrl }) });
   });
-  await page.route(checkoutUrl, (route) => route.fulfill({ body: "Checkout fixture" }));
+  await context.route(checkoutUrl, (route) => route.fulfill({ body: "Checkout fixture" }));
   await page.clock.setFixedTime(new Date("2026-11-26T00:00:00Z"));
   await page.goto("/en#pricing");
-  await page.getByRole("button", { name: "Top up 1,480 credits", exact: true }).click();
-  await expect(page).toHaveURL(checkoutUrl);
-  expect(checkouts).toEqual(["offer:catalog"]);
+  const [popup] = await Promise.all([
+    page.waitForEvent("popup"),
+    page.getByRole("button", { name: "Top up 1,480 credits", exact: true }).click(),
+  ]);
+  await expect(popup).toHaveURL(checkoutUrl);
+  await expect(page).toHaveURL("/en#pricing");
+  expect(publicOfferReads).toBe(0);
+  expect(checkouts).toEqual([{ pack: "offer:catalog", returnTo: "/en#pricing" }]);
+  await popup.close();
 });
 
 test("signing out from a workspace goes straight to the localized homepage", async ({ page }) => {

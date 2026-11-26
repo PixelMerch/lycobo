@@ -30,7 +30,8 @@ it.each([
   const scope = { userId: crypto.randomUUID(), organizationId: crypto.randomUUID() };
   const key = crypto.randomUUID();
 
-  expect(await checkout.checkout(scope, key, pack.key)).toEqual({ url: reference.url });
+  const returnTo = pack.key === "offer:trial" ? "/zh-CN/dashboard/commerce/create" : undefined;
+  expect(await checkout.checkout(scope, key, pack.key, returnTo)).toEqual({ url: reference.url });
   expect(repository.createBillingOrder).toHaveBeenCalledWith(
     scope,
     key,
@@ -41,7 +42,14 @@ it.each([
     }),
   );
   expect(provider.checkout).toHaveBeenCalledWith(
-    expect.objectContaining({ orderId, amount: pack.amount, credits: pack.credits }),
+    expect.objectContaining({
+      orderId,
+      amount: pack.amount,
+      credits: pack.credits,
+      successUrl: returnTo
+        ? `https://example.com/zh-CN/checkout/return?${new URLSearchParams({ flow: key, from: returnTo })}`
+        : "https://example.com/",
+    }),
   );
 });
 
