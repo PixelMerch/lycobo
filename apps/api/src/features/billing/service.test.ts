@@ -2,8 +2,10 @@ import { expect, it, vi } from "vitest";
 import { checkoutService } from "./service";
 
 it.each([
-  { key: "offer:trial", offset: 60_000, amount: 299, bonusCredits: 2 },
-  { key: "regular:trial", offset: -60_000, amount: 449, bonusCredits: 0 },
+  { key: "offer:trial", offset: 60_000, amount: 299, credits: 102, bonusCredits: 2 },
+  { key: "regular:trial", offset: -60_000, amount: 449, credits: 102, bonusCredits: 0 },
+  { key: "offer:bulk", offset: 60_000, amount: 9999, credits: 4800, bonusCredits: 680 },
+  { key: "regular:bulk", offset: -60_000, amount: 14999, credits: 4800, bonusCredits: 0 },
 ])("pins the actual delivery and local bonus for $key", async (pack) => {
   const customer = { customerId: "cust_fixture", accountId: "cca_fixture" };
   const orderId = crypto.randomUUID();
@@ -32,9 +34,13 @@ it.each([
   expect(repository.createBillingOrder).toHaveBeenCalledWith(
     scope,
     key,
-    expect.objectContaining({ amount: pack.amount, credits: 102, bonusCredits: pack.bonusCredits }),
+    expect.objectContaining({
+      amount: pack.amount,
+      credits: pack.credits,
+      bonusCredits: pack.bonusCredits,
+    }),
   );
   expect(provider.checkout).toHaveBeenCalledWith(
-    expect.objectContaining({ orderId, amount: pack.amount, credits: 102 }),
+    expect.objectContaining({ orderId, amount: pack.amount, credits: pack.credits }),
   );
 });

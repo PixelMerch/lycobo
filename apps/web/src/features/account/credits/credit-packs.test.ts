@@ -26,7 +26,7 @@ it("marks the clicked pack pending and blocks the other buy buttons", () => {
   expect(html).toContain("正在打开支付页面");
   expect(html.match(/data-pending="true"/g)).toHaveLength(1);
   expect(html).toContain('data-slot="spinner"');
-  expect(html).toMatch(/<button(?=[^>]*aria-label="购买 3,400 积分")(?=[^>]* disabled="")[^>]*>/);
+  expect(html).toMatch(/<button(?=[^>]*aria-label="购买 4,800 积分")(?=[^>]* disabled="")[^>]*>/);
 });
 
 it("surfaces the payment error inside the recharge dialog content", () => {

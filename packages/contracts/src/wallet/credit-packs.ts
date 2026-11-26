@@ -1,12 +1,12 @@
 import { z } from "zod";
 
-/** 前后端共享一次性积分包目录，金额统一使用美分。 */
+/** 前后端共享一次性积分包目录，基础积分对应支付渠道交付，美元金额统一使用美分。 */
 export const creditPacks = [
   { id: "trial", credits: 102, offerAmountMinor: 299, bonusCredits: 2 },
-  { id: "starter", credits: 680, offerAmountMinor: 1999, bonusCredits: 40 },
-  { id: "catalog", credits: 1360, offerAmountMinor: 3999, bonusCredits: 110 },
-  { id: "production", credits: 2040, offerAmountMinor: 5999, bonusCredits: 230 },
-  { id: "bulk", credits: 3400, offerAmountMinor: 9999, bonusCredits: 480 },
+  { id: "starter", credits: 700, offerAmountMinor: 1999, bonusCredits: 40 },
+  { id: "catalog", credits: 1480, offerAmountMinor: 3999, bonusCredits: 120 },
+  { id: "production", credits: 2540, offerAmountMinor: 5999, bonusCredits: 280 },
+  { id: "bulk", credits: 4800, offerAmountMinor: 9999, bonusCredits: 680 },
 ] as const;
 
 export const defaultCreditOfferEnd = "2026-12-06T16:00:00Z";
