@@ -365,6 +365,13 @@
       "when": 1795657685795,
       "tag": "0051_billing_local_bonus",
       "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1795674424390,
+      "tag": "0052_single_active_login",
+      "breakpoints": true
     }
   ]
 }

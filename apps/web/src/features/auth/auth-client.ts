@@ -82,12 +82,14 @@ async function authError(response: Response) {
   }
   return new Error(currentMessages(authMessages).serviceUnavailable);
 }
-/** 读取当前登录状态；未登录或登录服务未配置时返回 null。 */
-export function useEnterpriseSession() {
-  return useQuery({
+/** 读取当前登录状态，应用壳可定时发现会话被另一设备替换。 */
+export function useEnterpriseSession(watchActiveSession = false) {
+  return useQuery<EnterpriseIdentity | null>({
     queryKey: enterpriseSessionKey,
     retry: false,
     staleTime: 30000,
+    // 旧设备即使没有收到实时事件，也会在前台发现会话已被替换。访客无需定时检查。
+    refetchInterval: (query) => (watchActiveSession && query.state.data ? 30000 : false),
     queryFn: async ({ signal }) => {
       const response = await authRequest("session", { signal });
       if (response.status === 401 || response.status === 503) return null;

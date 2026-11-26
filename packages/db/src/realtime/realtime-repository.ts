@@ -28,9 +28,16 @@ export function openRealtimeRepository(url: string) {
       if (!ids.length) return;
       await sql`update realtime_outbox set delivered_at=now() where id in ${sql(ids)} and delivered_at is null`;
     },
+    /** 查询两个登录渠道的有效会话，实时推送会关闭被替换的连接。 */
     async sessions(organizationId: string) {
       const rows = await sql`select s.id from enterprise_sessions s
         join enterprise_accounts a on a.id=s.account_id
+        join organization_members m on m.organization_id=a.organization_id and m.user_id=a.user_id
+        where a.organization_id=${organizationId} and s.revoked_at is null and s.expires_at>now()
+        and a.disabled_at is null and s.credential_version=a.credential_version
+        union all
+        select s.id from enterprise_sessions s
+        join social_accounts a on a.id=s.social_account_id
         join organization_members m on m.organization_id=a.organization_id and m.user_id=a.user_id
         where a.organization_id=${organizationId} and s.revoked_at is null and s.expires_at>now()
         and a.disabled_at is null and s.credential_version=a.credential_version`;
