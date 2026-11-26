@@ -46,14 +46,16 @@ function repositoryFailure(code: string): { status: 400 | 403 | 404 | 409 | 503;
 /** 注册鉴权后的图片接口，并将业务失败转换为统一响应。 */
 export function imageRoutes(deps: ImageApiDependencies) {
   const app = new Hono<Env>();
-  const resolvePrincipal = async (c: Context) => {
+  const resolvePrincipal = async (c: Context<Env>) => {
     const bearer = c.req.header("Authorization");
     // 保留服务 API 密钥的兼容性，浏览器会话不回退到本地身份。
     if (deps.auth && bearer && /^Bearer [\w-]{43}$/.test(bearer))
       return deps.repository.authenticate(bearer.slice(7));
-    return deps.auth
-      ? (await enterprisePrincipal(c, deps.auth))?.user
-      : workbenchPrincipal(c, deps.repository, deps.session);
+    if (!deps.auth) return workbenchPrincipal(c, deps.repository, deps.session);
+    const identity = await enterprisePrincipal(c, deps.auth);
+    // 充值需要已校验的登录会话，API 密钥和本地工作台身份不具备付款权限。
+    if (identity) c.set("authenticatedSession", true);
+    return identity?.user;
   };
   app.post("/image-session", async (c) => {
     if (deps.auth) {

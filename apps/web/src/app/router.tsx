@@ -31,6 +31,13 @@ function redirectMainImageModel({ params, request }: LoaderFunctionArgs) {
 
 const localizedRoutes: RouteObject[] = [
   {
+    path: "checkout/return",
+    HydrateFallback: PageLoading,
+    lazy: async () => ({
+      Component: (await import("../features/account/checkout-return-page")).CheckoutReturnPage,
+    }),
+  },
+  {
     path: "login",
     HydrateFallback: PageLoading,
     lazy: async () => ({

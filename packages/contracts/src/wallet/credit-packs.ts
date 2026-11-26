@@ -19,6 +19,17 @@ export const checkoutOptionsSchema = z.object({
 });
 export const creditCheckoutSchema = z.object({ url: z.url({ protocol: /^https$/ }) });
 
+/** 支付回跳只允许公开页面和工作台，浏览器查询参数不进入支付渠道。 */
+export const checkoutReturnPathSchema = z
+  .string()
+  .max(160)
+  .regex(
+    /^\/(?:en|zh-CN)(?:\/?(?:#pricing)?|\/(?:dashboard(?:\/(?:commerce\/(?:create|replica|textile-set|smart-variation)|video|free-canvas|assets))?|inspiration|docs|terms|privacy|refund-policy)\/?)$/,
+  );
+
+/** 回跳编号只用于找到发起支付的浏览器窗口。 */
+export const checkoutReturnSchema = z.object({ flow: z.uuid(), from: checkoutReturnPathSchema });
+
 /** 解析服务端与展示共用的活动截止时间。 */
 export function creditOfferEnd(value: unknown) {
   return z.iso.datetime().safeParse(value).data ?? defaultCreditOfferEnd;

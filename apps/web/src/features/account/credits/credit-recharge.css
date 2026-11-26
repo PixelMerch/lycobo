@@ -265,7 +265,7 @@
   font-weight: var(--weight-semibold);
   font-variant-numeric: tabular-nums;
 }
-.credit-pack-buy.button {
+.credit-pack-buy:is(.button, .link) {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -277,6 +277,9 @@
   color: #141414;
   font-weight: var(--weight-semibold);
 }
+.credit-pack-buy.link {
+  text-decoration: none;
+}
 .credit-pack-buy.button:disabled {
   opacity: 0.75;
   cursor: default;
@@ -287,17 +290,17 @@
   line-height: var(--leading-xs);
   white-space: normal;
 }
-.credit-pack[data-featured="recommended"] .credit-pack-buy.button {
+.credit-pack[data-featured="recommended"] .credit-pack-buy:is(.button, .link) {
   background: var(--credit-pack-highlight);
 }
-.credit-pack[data-featured="best-rate"] .credit-pack-buy.button {
+.credit-pack[data-featured="best-rate"] .credit-pack-buy:is(.button, .link) {
   background: var(--studio-accent-gradient);
   color: #142000;
 }
-.credit-pack:not([data-featured]) .credit-pack-buy.button[data-hovered="true"] {
+.credit-pack:not([data-featured]) .credit-pack-buy:is(.button, .link)[data-hovered="true"] {
   background: #dcdcdc;
 }
-.credit-pack[data-featured] .credit-pack-buy.button[data-hovered="true"] {
+.credit-pack[data-featured] .credit-pack-buy:is(.button, .link)[data-hovered="true"] {
   filter: brightness(1.1);
 }
 .credit-pack-error {

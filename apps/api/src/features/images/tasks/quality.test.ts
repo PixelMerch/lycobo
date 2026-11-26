@@ -14,7 +14,7 @@ import type { CheckoutService } from "../../billing/service";
 import type { ExternalWalletService } from "../../billing/wallet-service";
 import { createCreemModerator } from "../../moderation/creem-moderation";
 import type { GenerationModerator } from "../../moderation/service";
-import type { ImageRequestRateLimits } from "../route-context";
+import type { ImageApiDependencies, ImageRequestRateLimits } from "../route-context";
 
 const unexpected = async (): Promise<never> => {
   throw new Error("Unexpected dependency call");
@@ -23,6 +23,7 @@ function fixture(
   editsEnabled = false,
   managedModelsOnly = false,
   extra: {
+    auth?: ImageApiDependencies["auth"];
     rateLimits?: ImageRequestRateLimits;
     wake?: () => Promise<void>;
     wakeBilling?: (id: string) => Promise<void>;
@@ -144,6 +145,7 @@ function fixture(
     remove: unexpected,
   };
   const app = createApp(() => {}, {
+    auth: extra.auth,
     repository,
     rateLimits: extra.rateLimits,
     moderate: extra.moderate,
@@ -792,6 +794,49 @@ it("exposes only the offer schedule to visitors and keeps checkout authenticated
   expect((await app.request("/api/v1/wallet/checkout")).status).toBe(401);
   const fallback = await fixture().app.request("/api/v1/credit-pricing");
   expect(unwrapApiData(await fallback.json())).toEqual({ offerEnd: defaultCreditOfferEnd });
+});
+
+it("permits only product page paths as checkout return targets", async () => {
+  const offerEnd = "2026-12-01T12:00:00Z";
+  const checkout = vi.fn(async () => ({ url: "https://checkout.creem.io/fixture" }));
+  const authenticate = vi.fn(async () => ({
+    user: {
+      userId: crypto.randomUUID(),
+      organizationId: crypto.randomUUID(),
+      account: "fixture",
+      role: "admin" as const,
+    },
+    sessionId: crypto.randomUUID(),
+    expiresAt: 60,
+  }));
+  const { app } = fixture(false, false, {
+    auth: {
+      config: { origins: [], secret: "fixture", secureCookie: false },
+      authenticate,
+    },
+    checkout: { offerEnd, options: unexpected, checkout },
+  });
+  const submitCheckout = (returnTo: string, token = "fixture") =>
+    app.request("/api/v1/wallet/checkout", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ pack: "offer:trial", key: crypto.randomUUID(), returnTo }),
+    });
+
+  expect((await submitCheckout("https://checkout.example/")).status).toBe(400);
+  expect((await submitCheckout("/en/login")).status).toBe(400);
+  expect((await submitCheckout("/en/dashboard/video?draft=fixture")).status).toBe(400);
+  expect((await submitCheckout("/en/dashboard/video", "A".repeat(43))).status).toBe(401);
+  expect(checkout).not.toHaveBeenCalled();
+  authenticate.mockClear();
+  expect((await submitCheckout("/en/dashboard/video")).status).toBe(200);
+  expect(authenticate).toHaveBeenCalledOnce();
+  expect(checkout).toHaveBeenCalledWith(
+    expect.any(Object),
+    expect.any(String),
+    "offer:trial",
+    "/en/dashboard/video",
+  );
 });
 
 it("validates unified credit history cursors before reading the authenticated account", async () => {

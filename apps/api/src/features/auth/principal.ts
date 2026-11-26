@@ -5,7 +5,7 @@ import type { EnterpriseAuth } from "./service";
 export const enterpriseCookie = "lycobo_enterprise_session";
 
 /** 校验 Cookie 写请求的可信来源，阻止跨站请求使用登录身份。 */
-export function trustedAuthRequest(c: Context, auth: EnterpriseAuth) {
+export function trustedAuthRequest(c: Context, auth: Pick<EnterpriseAuth, "config">) {
   const origin = c.req.header("Origin");
   return (
     !!origin &&
@@ -15,7 +15,10 @@ export function trustedAuthRequest(c: Context, auth: EnterpriseAuth) {
 }
 
 /** 按原有 Bearer 与 Cookie 规则解析企业身份，供各业务路由共用。 */
-export async function enterprisePrincipal(c: Context, auth: EnterpriseAuth) {
+export async function enterprisePrincipal(
+  c: Context,
+  auth: Pick<EnterpriseAuth, "authenticate" | "config">,
+) {
   const authorization = c.req.header("Authorization");
   if (authorization !== undefined) {
     if (!authorization.startsWith("Bearer ")) return null;

@@ -1,6 +1,7 @@
 import { BillingError, type PaymentProvider } from "@lycoboai/billing";
 import {
   checkoutPackSchema,
+  checkoutReturnPathSchema,
   creditOfferEnd,
   creditPacks,
   type ImageScope,
@@ -25,7 +26,17 @@ function readProducts(config: string | undefined): Record<string, string | undef
     .parse(JSON.parse(config));
 }
 
-/** 关联已登录的买家并创建托管收银台，商品、单价和到账积分由服务端目录确定。 */
+function checkoutReturnUrl(home: string, key: string, returnTo: string | undefined) {
+  const route = checkoutReturnPathSchema.safeParse(returnTo);
+  if (!route.success) return home;
+  // 用服务端配置的站点来源组装回跳 URL，禁止买家选择外部站点。
+  const locale = route.data.startsWith("/zh-CN") ? "zh-CN" : "en";
+  const url = new URL(`/${locale}/checkout/return`, home);
+  url.search = new URLSearchParams({ flow: key, from: route.data }).toString();
+  return url.href;
+}
+
+/** 按站内买家和服务端目录创建收银台，将支付窗口交回发起页面。 */
 export function checkoutService(
   repository: BillingRepository,
   provider: PaymentProvider,
@@ -59,7 +70,7 @@ export function checkoutService(
       const eligible = await repository.billingEmail(scope);
       return { packs: eligible ? available().map((pack) => pack.key) : [], offerEnd };
     },
-    async checkout(scope: ImageScope, key: string, packKey: string) {
+    async checkout(scope: ImageScope, key: string, packKey: string, returnTo?: string) {
       const pack = available().find(({ key }) => key === packKey);
       if (!pack) throw new BillingError("BILLING_UNAVAILABLE");
       // 已有渠道客户记录也要重新校验当前工作区的充值资格。
@@ -78,7 +89,7 @@ export function checkoutService(
         ...pack,
         orderId: order.id,
         customerId: customer.customerId,
-        successUrl: config.successUrl,
+        successUrl: checkoutReturnUrl(config.successUrl, key, returnTo),
       });
       await repository.saveBillingCheckout(scope, order.id, checkout);
       return { url: checkout.url };

@@ -44,7 +44,7 @@ export type ImageApiDependencies = {
   // 没有推送传输时，在入队后唤醒后台处理。
   wake?: (() => Promise<void>) | undefined;
   signAsset?: DeliverySigner | undefined;
-  auth?: EnterpriseAuth | undefined;
+  auth?: Pick<EnterpriseAuth, "authenticate" | "config"> | undefined;
   store: ImageStore;
   enabled: boolean;
   managedModelsOnly?: boolean;
@@ -55,7 +55,9 @@ export type ImageApiDependencies = {
   validate: (input: z.infer<typeof imageGenerationInputSchema>) => void;
   resolutions: (model: z.infer<typeof imageGenerationInputSchema>["model"]) => string[];
 };
-export type Env = { Variables: { principal: ImagePrincipal; requestId: string } };
+export type Env = {
+  Variables: { principal: ImagePrincipal; authenticatedSession?: boolean; requestId: string };
+};
 export const id = z.uuid();
 /** 返回图片 API 的业务错误，并保留请求编号和 HTTP 状态。 */
 export const fail = (
