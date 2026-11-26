@@ -1,10 +1,17 @@
 import { defineMessages } from "../../../i18n/messages";
 
-/** 企业生图 API 和技能配置的双语文案。 */
+/** 企业定时生图入口与首次连接的双语文案。 */
 export const accountImageAutomationMessages = defineMessages({
   "zh-CN": {
-    keyTitle: "生图 API Key",
-    keyScope: "仅用于当前企业账号的生图和结果查询。",
+    title: "定时生图",
+    description: "在豆包工作里设置生图时间、提示词和分辨率。",
+    doubaoWork: "豆包工作",
+    openDoubao: "打开豆包工作",
+    setup: "首次连接设置",
+    setupHint: "在豆包工作添加 Lycobo 连接器，填入连接地址和生图 Key，再导入技能。",
+    connection: "连接地址",
+    copyAddress: "复制连接地址",
+    keyTitle: "生图 Key",
     activeUntil: (date: string) => `有效至 ${date}`,
     inactive: "未启用",
     loading: "正在读取 Key 状态",
@@ -16,16 +23,20 @@ export const accountImageAutomationMessages = defineMessages({
     copyKey: "复制 Key",
     failed: "暂时无法管理 API Key，请稍后重试。",
     retry: "重试",
-    connector: "豆包工作",
-    connectorHint: "连接器使用 Bearer Key 鉴权。安装技能后，在豆包工作里设置定时任务。",
-    mcp: "MCP 接口",
-    api: "生图 API",
-    copyAddress: "复制地址",
+    skill: "Lycobo 生图技能",
     download: "下载技能",
   },
   en: {
-    keyTitle: "Image generation API key",
-    keyScope: "Generate images and read results for this enterprise account.",
+    title: "Scheduled image generation",
+    description: "Set the schedule, prompt, and image resolution in Doubao Work.",
+    doubaoWork: "Doubao Work",
+    openDoubao: "Open Doubao Work",
+    setup: "First-time setup",
+    setupHint:
+      "Add a Lycobo connector in Doubao Work using the URL and image API key, then import the skill.",
+    connection: "Connector URL",
+    copyAddress: "Copy connector URL",
+    keyTitle: "Image API key",
     activeUntil: (date) => `Expires on ${date}`,
     inactive: "Inactive",
     loading: "Loading key status",
@@ -37,12 +48,7 @@ export const accountImageAutomationMessages = defineMessages({
     copyKey: "Copy key",
     failed: "Couldn’t manage the API key. Try again.",
     retry: "Retry",
-    connector: "Doubao Work",
-    connectorHint:
-      "Configure the connector with Bearer authentication, install the skill, then schedule it in Doubao Work.",
-    mcp: "MCP endpoint",
-    api: "Image generation API",
-    copyAddress: "Copy address",
+    skill: "Lycobo image skill",
     download: "Download skill",
   },
 });

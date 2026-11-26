@@ -1,4 +1,4 @@
-import { Button, Link } from "@heroui/react";
+import { Button, Disclosure, Link } from "@heroui/react";
 import {
   type EnterpriseIdentity,
   imageAutomationKeyIssuedSchema,
@@ -17,17 +17,20 @@ import { SettingsGroup, SettingsRow } from "./account-settings-rows";
 
 const keyPath = `${imageAutomationPath.slice(1)}/key`;
 const skillPath = "/integrations/doubao/lycobo-image.zip";
+const doubaoWorkUrl = "https://www.doubao.com/work";
 
-/** 在个人中心为企业成员管理专用生图 Key 和豆包连接地址。 */
+/** 为企业成员提供豆包工作入口，首次连接时再加载生图 Key 设置。 */
 export function AccountImageAutomation({ account }: { account: EnterpriseIdentity }) {
   const t = useMessages(accountImageAutomationMessages);
   const locale = useLocale();
   const client = useQueryClient();
+  const [hasOpenedSetup, setHasOpenedSetup] = useState(false);
   const [key, setKey] = useState<string>();
   const updating = useRef(false);
   const queryKey = ["image-automation-key", account.organizationId, account.userId];
   const status = useQuery({
     queryKey,
+    enabled: hasOpenedSetup,
     retry: false,
     queryFn: async ({ signal }) =>
       imageAutomationKeyStatusSchema.parse(await (await imageRequest(keyPath, { signal })).json()),
@@ -62,97 +65,111 @@ export function AccountImageAutomation({ account }: { account: EnterpriseIdentit
       )
     : inactive;
   const mcp = new URL(`/api/v1${imageAutomationMcpPath}`, window.location.origin).href;
-  const api = new URL(`/api/v1${imageAutomationPath}/generations`, window.location.origin).href;
   return (
     <div className="account-settings-section">
-      <SettingsGroup title={t.keyTitle} description={t.keyScope}>
+      <SettingsGroup title={t.title} description={t.description}>
         <SettingsRow
-          label={expiry}
-          {...(expires && { hint: t.rotateHint })}
+          label={t.doubaoWork}
           action={
-            status.isError ? (
-              <Button size="sm" variant="secondary" onPress={() => void status.refetch()}>
-                {t.retry}
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                variant="secondary"
-                isDisabled={status.isPending || change.isPending}
-                onPress={() => changeKey("POST")}
-              >
-                {expires ? t.rotate : t.issue}
-              </Button>
-            )
-          }
-        />
-        {key && (
-          <SettingsRow
-            label={t.issued}
-            value={<code className="settings-automation-value">{key}</code>}
-            action={
-              <Button size="sm" variant="secondary" onPress={() => void copyToClipboard(key)}>
-                {t.copyKey}
-              </Button>
-            }
-          />
-        )}
-        {expires && (
-          <SettingsRow
-            label={t.revoke}
-            action={
-              <Button
-                size="sm"
-                variant="secondary"
-                isDisabled={change.isPending}
-                onPress={() => changeKey("DELETE")}
-              >
-                {t.revoke}
-              </Button>
-            }
-          />
-        )}
-        {(change.isError || status.isError) && <p role="alert">{t.failed}</p>}
-      </SettingsGroup>
-      <SettingsGroup title={t.connector} description={t.connectorHint}>
-        <AutomationAddress label={t.mcp} address={mcp} copy={t.copyAddress} />
-        <AutomationAddress label={t.api} address={api} copy={t.copyAddress} />
-        <SettingsRow
-          label={t.download}
-          action={
-            <Link href={skillPath} download="lycobo-image.zip">
-              {t.download}
+            <Link
+              className="settings-automation-link"
+              href={doubaoWorkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t.openDoubao}
+              <Link.Icon />
             </Link>
           }
         />
+        <Disclosure
+          className="settings-automation-setup"
+          onExpandedChange={(expanded) => {
+            if (expanded) setHasOpenedSetup(true);
+          }}
+        >
+          <Disclosure.Heading level={4}>
+            <Disclosure.Trigger className="settings-row">
+              <span className="settings-row-label">{t.setup}</span>
+              <Disclosure.Indicator />
+            </Disclosure.Trigger>
+          </Disclosure.Heading>
+          <Disclosure.Content>
+            <p className="settings-automation-hint">{t.setupHint}</p>
+            <SettingsRow
+              label={t.connection}
+              action={
+                <Button size="sm" variant="secondary" onPress={() => void copyToClipboard(mcp)}>
+                  {t.copyAddress}
+                </Button>
+              }
+            />
+            <SettingsRow
+              label={t.keyTitle}
+              hint={expiry}
+              action={
+                status.isError ? (
+                  <Button size="sm" variant="secondary" onPress={() => void status.refetch()}>
+                    {t.retry}
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    isDisabled={status.isPending || change.isPending}
+                    onPress={() => changeKey("POST")}
+                  >
+                    {expires ? t.rotate : t.issue}
+                  </Button>
+                )
+              }
+            />
+            {key && (
+              <SettingsRow
+                label={t.issued}
+                value={<code className="settings-automation-value">{key}</code>}
+                action={
+                  <Button size="sm" variant="secondary" onPress={() => void copyToClipboard(key)}>
+                    {t.copyKey}
+                  </Button>
+                }
+              />
+            )}
+            <SettingsRow
+              label={t.skill}
+              action={
+                <Link
+                  className="settings-automation-link"
+                  href={skillPath}
+                  download="lycobo-image.zip"
+                >
+                  {t.download}
+                </Link>
+              }
+            />
+            {expires && (
+              <SettingsRow
+                label={t.rotateHint}
+                action={
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    isDisabled={change.isPending}
+                    onPress={() => changeKey("DELETE")}
+                  >
+                    {t.revoke}
+                  </Button>
+                }
+              />
+            )}
+            {(change.isError || status.isError) && (
+              <p className="settings-automation-hint" role="alert">
+                {t.failed}
+              </p>
+            )}
+          </Disclosure.Content>
+        </Disclosure>
       </SettingsGroup>
     </div>
-  );
-}
-
-function AutomationAddress({
-  label,
-  address,
-  copy,
-}: {
-  label: string;
-  address: string;
-  copy: string;
-}) {
-  return (
-    <SettingsRow
-      label={label}
-      value={<code className="settings-automation-value">{address}</code>}
-      action={
-        <Button
-          size="sm"
-          variant="secondary"
-          aria-label={`${copy} ${label}`}
-          onPress={() => void copyToClipboard(address)}
-        >
-          {copy}
-        </Button>
-      }
-    />
   );
 }
