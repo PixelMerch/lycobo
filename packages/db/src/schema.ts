@@ -14,6 +14,7 @@ import {
   unique,
   uniqueIndex,
   uuid,
+  varchar,
 } from "drizzle-orm/pg-core";
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
@@ -200,6 +201,8 @@ export const organizationMembers = pgTable(
       .notNull()
       .references(() => users.id),
     role: text("role").notNull().default("member"),
+    // 企业结账联系人按工作区和主账号保存，登录身份无需关联第三方。
+    billingEmail: varchar("billing_email", { length: 254 }),
     createdAt: createdAt(),
   },
   (t) => [

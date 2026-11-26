@@ -8,6 +8,34 @@ import {
 import type { ImageRepository } from "@lycoboai/db";
 import type postgres from "postgres";
 
+async function verifyBillingContact(
+  repository: ImageRepository,
+  sql: postgres.Sql,
+  scope: ImageScope,
+) {
+  const contact = "finance@example.com";
+  const subject = crypto.randomUUID();
+  const personal = await repository.provision(`billing-personal-${subject}`, "billing-personal", 0);
+  await sql`update organization_members set role='member'
+    where organization_id=${personal.organizationId} and user_id=${personal.userId}`;
+  await sql`insert into social_accounts (supabase_user_id,user_id,organization_id,email)
+    values (${subject},${personal.userId},${personal.organizationId},'personal@example.com')`;
+  assert.equal(await repository.billingEmail(personal), "personal@example.com");
+  assert.equal(await repository.billingEmail(scope), null);
+
+  await sql`update organization_members set billing_email=${contact}
+    where organization_id=${scope.organizationId} and user_id=${scope.userId}`;
+  assert.equal(await repository.billingEmail(scope), contact);
+  await sql`insert into enterprise_accounts (account,user_id,organization_id,password_hash)
+    values (${`billing-member-${subject}`},${personal.userId},${personal.organizationId},'fixture')`;
+  // 企业子账号已有邮箱时仍不能结账；不同工作区也不能读取主账号的联系人。
+  assert.equal(await repository.billingEmail(personal), null);
+  assert.equal(
+    await repository.billingEmail({ ...scope, organizationId: personal.organizationId }),
+    null,
+  );
+}
+
 async function verifySplitOrder(
   repository: ImageRepository,
   sql: postgres.Sql,
@@ -91,11 +119,12 @@ async function verifySplitOrder(
   );
 }
 
-/** 在隔离数据库验证订单赠送分账、逐图消费、冲正和重放。 */
+/** 在隔离数据库验证结账权限、订单赠送分账、逐图消费、冲正和重放。 */
 export async function verifyBilling(repository: ImageRepository, sql: postgres.Sql) {
   const scope = await repository.provision(`billing-${crypto.randomUUID()}`, "billing-fixture", 10);
   const buyer = { customerId: "cust_fixture", accountId: "cca_fixture" };
   const providerId = "billing-fixture";
+  await verifyBillingContact(repository, sql, scope);
   await repository.saveBillingCustomer(scope, providerId, buyer);
   await verifySplitOrder(repository, sql, scope, buyer.customerId, providerId);
 

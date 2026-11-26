@@ -47,11 +47,9 @@ export function checkoutService(
         return productId ? [{ ...pack, productId }] : [];
       });
   };
-  async function resolveCustomer(scope: ImageScope) {
+  async function resolveCustomer(scope: ImageScope, email: string) {
     const existing = await repository.billingCustomer(scope, provider.id);
     if (existing) return existing;
-    const email = await repository.billingEmail(scope);
-    if (!email) return null;
     const customer = await provider.customer({ userId: scope.userId, email });
     return repository.saveBillingCustomer(scope, provider.id, customer);
   }
@@ -64,8 +62,10 @@ export function checkoutService(
     async checkout(scope: ImageScope, key: string, packKey: string) {
       const pack = available().find(({ key }) => key === packKey);
       if (!pack) throw new BillingError("BILLING_UNAVAILABLE");
-      const customer = await resolveCustomer(scope);
-      if (!customer) throw new BillingError("BILLING_UNAVAILABLE");
+      // 已有渠道客户记录也要重新校验当前工作区的充值资格。
+      const email = await repository.billingEmail(scope);
+      if (!email) throw new BillingError("BILLING_UNAVAILABLE");
+      const customer = await resolveCustomer(scope, email);
       const order = await repository.createBillingOrder(scope, key, {
         ...pack,
         provider: provider.id,
