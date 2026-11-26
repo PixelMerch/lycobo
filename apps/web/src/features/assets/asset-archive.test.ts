@@ -1,12 +1,8 @@
 import type { ImageAsset } from "@lycoboai/contracts";
 import { unzipSync } from "fflate";
 import { describe, expect, it, vi } from "vitest";
-import {
-  AssetArchiveTooLargeError,
-  archiveStamp,
-  assetArchiveLimit,
-  createAssetArchive,
-} from "./asset-archive";
+import { OriginalDownloadTooLargeError, type OriginalFile } from "../generation/original-download";
+import { archiveStamp, assetArchiveLimit, createAssetArchive } from "./asset-archive";
 
 const asset = (overrides: Partial<ImageAsset> = {}): ImageAsset => ({
   id: crypto.randomUUID(),
@@ -54,9 +50,40 @@ describe("asset archive", () => {
     const assets = [asset({ bytes: assetArchiveLimit }), asset({ bytes: 1 })];
     await expect(
       createAssetArchive(assets, new AbortController().signal, read, prepare),
-    ).rejects.toBeInstanceOf(AssetArchiveTooLargeError);
+    ).rejects.toBeInstanceOf(OriginalDownloadTooLargeError);
     expect(prepare).not.toHaveBeenCalled();
     expect(read).not.toHaveBeenCalled();
+  });
+
+  it("reads only three originals at a time and reports completed files in download order", async () => {
+    const assets = Array.from({ length: 5 }, () => asset({ public_id: undefined }));
+    const file = { bytes: new Uint8Array([1]), type: "image/png" };
+    const releases: (() => void)[] = [];
+    const reads = assets.map(
+      () => new Promise<OriginalFile>((resolve) => releases.push(() => resolve(file))),
+    );
+    const read = vi.fn((id: string) => {
+      const entry = reads[assets.findIndex((item) => item.id === id)];
+      if (!entry) throw new Error("Missing fixture original");
+      return entry;
+    });
+    const onDownloaded = vi.fn();
+    const result = createAssetArchive(
+      assets,
+      new AbortController().signal,
+      read,
+      async () => undefined,
+      onDownloaded,
+    );
+    await vi.waitFor(() => expect(read).toHaveBeenCalledTimes(3));
+    releases[2]?.();
+    await vi.waitFor(() => expect(read).toHaveBeenCalledTimes(4));
+    expect(onDownloaded).toHaveBeenCalledExactlyOnceWith(1);
+    for (const release of releases) release();
+    expect(Object.keys(unzipSync(await result))).toEqual(
+      assets.map((item, index) => `0${index + 1}-${item.id}.png`),
+    );
+    expect(onDownloaded.mock.calls.flat()).toEqual([1, 2, 3, 4, 5]);
   });
 
   it("stops without an archive once the download is cancelled", async () => {
