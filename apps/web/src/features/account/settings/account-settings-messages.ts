@@ -1,6 +1,6 @@
 import { defineMessages } from "../../../i18n/messages";
 
-/** 账户设置四个分区的双语文案。 */
+/** 账户设置分区的双语文案。 */
 export const accountSettingsMessages = defineMessages({
   "zh-CN": {
     title: "账户设置",
@@ -9,6 +9,7 @@ export const accountSettingsMessages = defineMessages({
       account: "账户",
       plan: "积分与账单",
       security: "登录与安全",
+      automation: "API 与技能",
       members: "企业成员",
     },
     members: "企业成员",
@@ -79,6 +80,7 @@ export const accountSettingsMessages = defineMessages({
       plan: "Credits & billing",
       security: "Sign-in & security",
       members: "Team members",
+      automation: "API & skills",
     },
     members: "Team members",
     balance: "Credit balance",

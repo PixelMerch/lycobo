@@ -24,7 +24,31 @@
 
 ## API
 
-所有 JSON 响应遵循 [统一返回格式](node-ts-best-practices.md#api-响应)，原业务结果放入顶层 data；错误使用 request_id、数字业务码和中文 message。未验证身份返回 401，跨组织资源返回 404。API 客户端使用 `Authorization: Bearer <LycoBo 访问令牌>`（不是供应商密钥）；浏览器支持企业 JWT HttpOnly Cookie，不开放凭证通配 CORS。图片内容接口保留二进制响应。
+### 企业生图 API 与豆包技能
+
+企业成员在「个人中心 → API 与技能」签发、更新或撤销个人 Key。每人一把，签发后 90 天有效，明文只显示一次。更换或撤销后，先前的 Key 无法发起后续请求。个人账号无法签发。每次验证 Key 时检查企业账号仍启用，结果只能由原作者在原工作区查询。
+
+| 方法 | 路径                                               | 输入与结果                                                                                                                             |
+| ---- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| POST | `/api/v1/enterprise/image-api/generations`         | Bearer 生图 Key、`Idempotency-Key` UUID，JSON 为 `prompt` 与 `resolution`。返回任务 `id`，`202` 表示已接收，重复请求返回已创建的任务。 |
+| GET  | `/api/v1/enterprise/image-api/generations/:taskId` | Bearer 生图 Key。返回任务 `status` 和 `images`，完成后提供有效期内的签名下载地址。排队或执行中的结果返回 `Retry-After`。               |
+| POST | `/api/v1/enterprise/image-api/mcp`                 | Bearer 生图 Key、Streamable HTTP。提供 `generate_image` 和 `get_image`。                                                               |
+
+分辨率支持 `1.5K`、`2K`、`4K`，默认生图模型每次生成一张方图。Key 可以访问这两类生图操作，网站登录和充值继续使用会话。API 和 MCP 与网页共用提示词审核、钱包扣费、持久任务和图片队列。提交失败时，使用原幂等键重试或查询原任务，避免重复扣费。
+
+```sh
+curl --fail-with-body https://lycobo.com/api/v1/enterprise/image-api/generations \
+  -H "Authorization: Bearer ${LYCOBO_IMAGE_API_KEY}" \
+  -H 'Idempotency-Key: 4cbaf693-df1d-44c7-838b-3dd1aa802d58' \
+  -H 'Content-Type: application/json' \
+  --data '{"prompt":"自然光下的米色亚麻床品商品图","resolution":"2K"}'
+```
+
+在豆包工作添加企业 MCP 连接器，使用个人中心中的 MCP 地址和 `Authorization: Bearer <Key>`，再导入个人中心下载的 `lycobo-image.zip` 技能。先在豆包对话里验证能调用工具，再在支持该企业连接器的执行环境中设置定时任务。例如每天 09:00（北京时间）按固定提示词生成一张 2K 商品图。Key 填在连接器设置，技能文件和定时提示词不保存 Key。 [豆包技能指南](https://open.doubao.com/document/doubao-developer-guide/skill-integration-guide)
+
+维护技能时，同步更新 `apps/web/public/integrations/doubao/lycobo-image/SKILL.md` 与该目录提供的 ZIP。压缩包只包含 `lycobo-image/SKILL.md`。
+
+REST JSON 响应遵循 [统一返回格式](node-ts-best-practices.md#api-响应)，原业务结果放入顶层 data；错误使用 request_id、数字业务码和中文 message。MCP 响应遵循 JSON-RPC。未验证身份返回 401，跨组织资源返回 404。API 客户端使用 `Authorization: Bearer <LycoBo 访问令牌>`（不是供应商密钥）；浏览器支持企业 JWT HttpOnly Cookie，不开放凭证通配 CORS。图片内容接口保留二进制响应。
 
 | 方法与路径                                                                                                              | 功能                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

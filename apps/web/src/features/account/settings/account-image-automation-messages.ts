@@ -1,0 +1,48 @@
+import { defineMessages } from "../../../i18n/messages";
+
+/** 企业生图 API 和技能配置的双语文案。 */
+export const accountImageAutomationMessages = defineMessages({
+  "zh-CN": {
+    keyTitle: "生图 API Key",
+    keyScope: "仅用于当前企业账号的生图和结果查询。",
+    activeUntil: (date: string) => `有效至 ${date}`,
+    inactive: "未启用",
+    loading: "正在读取 Key 状态",
+    issue: "生成 Key",
+    rotate: "更换 Key",
+    revoke: "撤销 Key",
+    rotateHint: "更换或撤销后，旧 Key 立即失效。",
+    issued: "Key 仅显示一次",
+    copyKey: "复制 Key",
+    failed: "暂时无法管理 API Key，请稍后重试。",
+    retry: "重试",
+    connector: "豆包工作",
+    connectorHint: "连接器使用 Bearer Key 鉴权。安装技能后，在豆包工作里设置定时任务。",
+    mcp: "MCP 接口",
+    api: "生图 API",
+    copyAddress: "复制地址",
+    download: "下载技能",
+  },
+  en: {
+    keyTitle: "Image generation API key",
+    keyScope: "Generate images and read results for this enterprise account.",
+    activeUntil: (date) => `Expires on ${date}`,
+    inactive: "Inactive",
+    loading: "Loading key status",
+    issue: "Create key",
+    rotate: "Replace key",
+    revoke: "Revoke key",
+    rotateHint: "Replacing or revoking the key immediately invalidates the old one.",
+    issued: "This key is shown once",
+    copyKey: "Copy key",
+    failed: "Couldn’t manage the API key. Try again.",
+    retry: "Retry",
+    connector: "Doubao Work",
+    connectorHint:
+      "Configure the connector with Bearer authentication, install the skill, then schedule it in Doubao Work.",
+    mcp: "MCP endpoint",
+    api: "Image generation API",
+    copyAddress: "Copy address",
+    download: "Download skill",
+  },
+});

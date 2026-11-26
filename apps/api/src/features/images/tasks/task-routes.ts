@@ -169,6 +169,42 @@ async function supportedRetryInput(deps: ImageApiDependencies, input: unknown) {
   return undefined;
 }
 
+/** 通过统一审核、钱包和持久队列接收网页或自动化生图请求。 */
+export async function submitImageTask(
+  c: Context<Env>,
+  deps: ImageApiDependencies,
+  input: z.infer<typeof imageTaskSubmissionSchema>,
+  key: string,
+) {
+  if (!deps.enabled) return fail(c, "GENERATION_NOT_CONFIGURED", "生图服务尚未启用", 503);
+  const { userPrompt, ...modelInput } = input;
+  const normalized = normalizeSubmittedTask(modelInput);
+  const scope = c.get("principal");
+  const submitted = { ...normalized, userPrompt };
+  if (deps.billing) {
+    const replay = await deps.repository.replayImageSubmission(scope, submitted, key);
+    if (replay) return c.json(replay);
+  }
+  const positions = Array.from({ length: normalized.count }, (_, index) => index);
+  const [supported, acceptedUploads, credit] = await Promise.all([
+    supportsTaskModel(deps, normalized),
+    prepareReferenceUploads(deps, scope, normalized.referenceAssetIds),
+    checkImageCredits(c, deps, normalized, positions),
+  ]);
+  if (!supported)
+    return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "当前模型暂不可用，请选择其他模型", 400);
+  const result = await deps.repository.create(
+    scope,
+    submitted,
+    key,
+    imageUnitCredits,
+    deps.managedModelsOnly,
+    acceptedUploads,
+    ...(credit ? [credit] : []),
+  );
+  return taskSubmissionResponse(c, deps, result, credit);
+}
+
 /** 校验任务与服务端上传意图，再原子接收付费生成。 */
 export function registerImageTaskSubmission(app: Hono<Env>, deps: ImageApiDependencies) {
   app.post("/image-tasks", async (c) => {
@@ -177,32 +213,7 @@ export function registerImageTaskSubmission(app: Hono<Env>, deps: ImageApiDepend
     const key = id.safeParse(c.req.header("Idempotency-Key"));
     if (!input.success || !key.success)
       return fail(c, "VALIDATION_ERROR", "请检查参数和 Idempotency-Key", 400);
-    const { userPrompt, ...modelInput } = input.data;
-    const normalized = normalizeSubmittedTask(modelInput);
-    const scope = c.get("principal");
-    const submitted = { ...normalized, userPrompt };
-    if (deps.billing) {
-      const replay = await deps.repository.replayImageSubmission(scope, submitted, key.data);
-      if (replay) return c.json(replay);
-    }
-    const positions = Array.from({ length: normalized.count }, (_, index) => index);
-    const [supported, acceptedUploads, credit] = await Promise.all([
-      supportsTaskModel(deps, normalized),
-      prepareReferenceUploads(deps, scope, normalized.referenceAssetIds),
-      checkImageCredits(c, deps, normalized, positions),
-    ]);
-    if (!supported)
-      return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "当前模型暂不可用，请选择其他模型", 400);
-    const result = await deps.repository.create(
-      scope,
-      submitted,
-      key.data,
-      imageUnitCredits,
-      deps.managedModelsOnly,
-      acceptedUploads,
-      ...(credit ? [credit] : []),
-    );
-    return taskSubmissionResponse(c, deps, result, credit);
+    return submitImageTask(c, deps, input.data, key.data);
   });
   app.post("/image-tasks/:jobId/retry", async (c) => {
     if (!deps.enabled) return fail(c, "GENERATION_NOT_CONFIGURED", "生图服务尚未启用", 503);

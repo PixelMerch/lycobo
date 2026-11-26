@@ -23,6 +23,7 @@ function fixture(
   editsEnabled = false,
   managedModelsOnly = false,
   extra: {
+    automation?: ImageRepository["automation"];
     auth?: ImageApiDependencies["auth"];
     rateLimits?: ImageRequestRateLimits;
     wake?: () => Promise<void>;
@@ -51,6 +52,13 @@ function fixture(
     .mockResolvedValue({ id: crypto.randomUUID(), replayed: false });
   const userId = crypto.randomUUID();
   const repository: ImageRepository = {
+    automation: extra.automation ?? {
+      status: unexpected,
+      rotate: unexpected,
+      revoke: unexpected,
+      authenticate: unexpected,
+      result: unexpected,
+    },
     waitingReferenceUploads: unexpected,
     close: unexpected,
     promptOptimization: extra.optimizer?.repository ?? { begin: unexpected, finish: unexpected },
@@ -837,6 +845,84 @@ it("permits only product page paths as checkout return targets", async () => {
     "offer:trial",
     "/en/dashboard/video",
   );
+});
+
+it("limits automation credentials to enterprise image calls and serves MCP without a REST envelope", async () => {
+  const key = `lcb_img_${"A".repeat(43)}`;
+  const identity = {
+    userId: crypto.randomUUID(),
+    organizationId: crypto.randomUUID(),
+    uid: "1234567890",
+    role: "member" as const,
+  };
+  const rotate = vi.fn(async () => ({ key, expiresAt: "2027-02-01T00:00:00Z" }));
+  const { app, create } = fixture(false, false, {
+    auth: {
+      config: { origins: [], secret: "fixture", secureCookie: false },
+      authenticate: async (token) => {
+        if (token !== "enterprise" && token !== "personal") return null;
+        return {
+          user: {
+            ...identity,
+            account: "fixture",
+            ...(token === "personal" && { loginMethod: "social" as const }),
+          },
+          sessionId: crypto.randomUUID(),
+          expiresAt: 60,
+        };
+      },
+    },
+    automation: {
+      authenticate: async (token) => (token === key ? identity : null),
+      rotate,
+      status: async () => ({ expiresAt: null }),
+      revoke: async () => true,
+      result: async () => ({ status: "queued", asset_ids: [] }),
+    },
+  });
+  const path = "/api/v1/enterprise/image-api";
+  const request = (route: string, token: string, body?: object) =>
+    app.request(route, {
+      method: body ? "POST" : "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+        "Idempotency-Key": crypto.randomUUID(),
+      },
+      ...(body && { body: JSON.stringify(body) }),
+    });
+  expect((await request(`${path}/key`, "personal", {})).status).toBe(403);
+  expect((await request(`${path}/key`, key, {})).status).toBe(401);
+  expect((await request("/api/v1/wallet", key)).status).toBe(401);
+  const issued = await request(`${path}/key`, "enterprise", {});
+  expect(issued.status).toBe(201);
+  expect(rotate).toHaveBeenCalledOnce();
+
+  const input = { prompt: "fixture", resolution: "2K" };
+  expect((await request(`${path}/generations`, key, input)).status).toBe(202);
+  expect(create.mock.calls[0]?.[1]).toMatchObject({ ...input, count: 1 });
+  const pending = await request(`${path}/generations/${crypto.randomUUID()}`, key);
+  expect(pending.headers.get("Retry-After")).toBe("10");
+
+  const tools = await request(`${path}/mcp`, key, { jsonrpc: "2.0", id: 1, method: "tools/list" });
+  expect(await tools.json()).toMatchObject({
+    jsonrpc: "2.0",
+    id: 1,
+    result: { tools: [{ name: "generate_image" }, { name: "get_image" }] },
+  });
+  const call = await request(`${path}/mcp`, key, {
+    jsonrpc: "2.0",
+    id: 2,
+    method: "tools/call",
+    params: { name: "generate_image", arguments: { ...input, requestId: crypto.randomUUID() } },
+  });
+  expect(await call.json()).toMatchObject({
+    jsonrpc: "2.0",
+    id: 2,
+    result: { content: [{ type: "text" }] },
+  });
+  expect(create).toHaveBeenCalledTimes(2);
 });
 
 it("validates unified credit history cursors before reading the authenticated account", async () => {

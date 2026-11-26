@@ -4,6 +4,7 @@ import {
   type Capabilities,
   type CreateTaskInput,
   createTaskSchema,
+  imageAutomationMcpPath,
 } from "@lycoboai/contracts";
 import { type Context, Hono, type MiddlewareHandler } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -88,6 +89,8 @@ function responseEnvelope(reportError: ErrorReporter | undefined): MiddlewareHan
     c.header("X-Request-Id", c.get("requestId"));
     c.header("Cache-Control", "no-store");
     await next();
+    // MCP 客户端直接读取 JSON-RPC 协议响应，不能套用站内 REST 外层结构。
+    if (c.req.path === `/api/v1${imageAutomationMcpPath}`) return;
     if (c.req.method === "HEAD" || !c.res.headers.get("Content-Type")?.includes("application/json"))
       return;
     const envelope = await jsonEnvelope(c, startedAt, reportError);

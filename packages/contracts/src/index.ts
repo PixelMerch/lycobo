@@ -32,6 +32,7 @@ export type Capabilities = z.infer<typeof capabilitiesSchema>;
 
 export * from "./api/api-response";
 export * from "./auth/auth";
+export * from "./images/image-automation";
 export * from "./images/image-events";
 export * from "./images/image-generation";
 export * from "./images/textile-generation";

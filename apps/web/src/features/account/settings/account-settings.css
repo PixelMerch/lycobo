@@ -1,6 +1,13 @@
 @import "./account-settings-groups.css";
 @import "./account-plan-usage.css";
 
+/* 地址与一次性 Key 在窄屏换行，复制操作保留在当前行。 */
+.settings-automation-value {
+  overflow-wrap: anywhere;
+  white-space: normal;
+  user-select: all;
+}
+
 /*
  * 账户设置：宽屏左侧栏依次为身份、分区列表与底部的退出登录，
  * 右侧分区面板单独滚动、顶部居中显示分区标题；手机改为顶部页签。

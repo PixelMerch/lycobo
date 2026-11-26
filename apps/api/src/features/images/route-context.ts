@@ -56,7 +56,12 @@ export type ImageApiDependencies = {
   resolutions: (model: z.infer<typeof imageGenerationInputSchema>["model"]) => string[];
 };
 export type Env = {
-  Variables: { principal: ImagePrincipal; authenticatedSession?: boolean; requestId: string };
+  Variables: {
+    principal: ImagePrincipal;
+    authenticatedSession?: boolean;
+    enterpriseSession?: boolean;
+    requestId: string;
+  };
 };
 export const id = z.uuid();
 /** 返回图片 API 的业务错误，并保留请求编号和 HTTP 状态。 */

@@ -1,5 +1,5 @@
 import { BillingError } from "@lycoboai/billing";
-import { defaultCreditOfferEnd } from "@lycoboai/contracts";
+import { defaultCreditOfferEnd, imageAutomationPath } from "@lycoboai/contracts";
 import { ImageRepositoryError, VariationError, WalletError } from "@lycoboai/db";
 import { type Context, Hono } from "hono";
 import { enterprisePrincipal } from "../auth/principal";
@@ -7,6 +7,7 @@ import { ModerationError } from "../moderation/service";
 import { registerImageWallet } from "../wallet/wallet-routes";
 import { registerImageAssetDelivery, registerImageAssetLibrary } from "./assets/asset-routes";
 import { imageDeliveries } from "./assets/delivery";
+import { registerImageAutomation } from "./automation/routes";
 import { registerImageEvents } from "./events/event-routes";
 import { registerImageModels } from "./model-routes";
 import { registerImagePlanning, registerPromptOptimization } from "./planning/planning-routes";
@@ -48,13 +49,21 @@ export function imageRoutes(deps: ImageApiDependencies) {
   const app = new Hono<Env>();
   const resolvePrincipal = async (c: Context<Env>) => {
     const bearer = c.req.header("Authorization");
+    const automationPath = `/api/v1${imageAutomationPath}`;
+    if (c.req.path.startsWith(`${automationPath}/`) && c.req.path !== `${automationPath}/key`)
+      return bearer?.startsWith("Bearer ")
+        ? deps.repository.automation.authenticate(bearer.slice(7))
+        : null;
     // 保留服务 API 密钥的兼容性，浏览器会话不回退到本地身份。
     if (deps.auth && bearer && /^Bearer [\w-]{43}$/.test(bearer))
       return deps.repository.authenticate(bearer.slice(7));
     if (!deps.auth) return workbenchPrincipal(c, deps.repository, deps.session);
     const identity = await enterprisePrincipal(c, deps.auth);
     // 充值需要已校验的登录会话，API 密钥和本地工作台身份不具备付款权限。
-    if (identity) c.set("authenticatedSession", true);
+    if (identity) {
+      c.set("authenticatedSession", true);
+      c.set("enterpriseSession", identity.user.loginMethod !== "social");
+    }
     return identity?.user;
   };
   app.post("/image-session", async (c) => {
@@ -115,6 +124,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
   registerPromptOptimization(app, deps);
   registerImagePlanning(app, deps);
   registerImageWallet(app, deps);
+  registerImageAutomation(app, deps);
   registerImageTaskSubmission(app, deps);
   const delivery = deps.signAsset ? imageDeliveries(deps.repository, deps.signAsset) : undefined;
   registerImageTaskHistory(app, deps, delivery);
