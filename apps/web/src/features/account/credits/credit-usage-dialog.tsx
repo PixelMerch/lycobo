@@ -1,4 +1,5 @@
 import { Modal, ToggleButton, ToggleButtonGroup } from "@heroui/react";
+import type { WalletSource } from "@lycoboai/contracts";
 import { IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
@@ -6,6 +7,7 @@ import { useMessages } from "../../../i18n/messages";
 import { formatCredits } from "../account-format";
 import { useWallet, type WalletEntryView } from "../wallet-client";
 import { CreditUsageList } from "./credit-usage-list";
+import { CreditWalletSwitch } from "./credit-wallet-switch";
 import { creditsMessages } from "./credits-messages";
 import "../account-panel.css";
 import "./credit-usage.css";
@@ -16,6 +18,10 @@ const views: WalletEntryView[] = ["spent", "earned"];
 export function CreditUsageDialog({ onClose }: { onClose: () => void }) {
   const [view, setView] = useState<WalletEntryView>("spent");
   const wallet = useWallet();
+  const [selectedSource, setSource] = useState<WalletSource>("local");
+  const purchased = wallet.data?.purchasedBalance;
+  const source = purchased === undefined ? "local" : selectedSource;
+  const balance = source === "purchased" ? purchased : wallet.data?.balance;
   const t = useMessages(creditsMessages);
   return (
     <Modal
@@ -34,6 +40,9 @@ export function CreditUsageDialog({ onClose }: { onClose: () => void }) {
               </Modal.CloseTrigger>
             </Modal.Header>
             <Modal.Body className="credit-usage-content">
+              {purchased !== undefined && (
+                <CreditWalletSwitch value={source} onChange={setSource} />
+              )}
               <div className="credit-usage-toolbar">
                 <ToggleButtonGroup
                   aria-label={t.usageView}
@@ -55,12 +64,12 @@ export function CreditUsageDialog({ onClose }: { onClose: () => void }) {
                 </ToggleButtonGroup>
                 <span className="credit-usage-balance">
                   {t.availableBefore}
-                  <b>{wallet.data ? formatCredits(wallet.data.balance) : "—"}</b>
+                  <b>{balance == null ? "—" : formatCredits(balance)}</b>
                   {t.availableAfter}
                 </span>
               </div>
               {/* 切换视图回到列表顶部，已读取的记录保留在查询缓存中。 */}
-              <CreditUsageList key={view} view={view} />
+              <CreditUsageList key={`${source}:${view}`} source={source} view={view} />
             </Modal.Body>
           </Modal.Dialog>
         </Modal.Container>

@@ -2,6 +2,7 @@ import {
   checkoutOptionsSchema,
   creditCheckoutSchema,
   rechargeOrdersSchema,
+  type WalletSource,
   walletBalanceSchema,
   walletEntriesSchema,
 } from "@lycoboai/contracts";
@@ -22,7 +23,11 @@ export function useWallet() {
 export type WalletEntryView = "spent" | "earned";
 
 /** 使用流水游标读取积分收支，按视图和批量大小独立缓存。 */
-export function useWalletEntries(pageSize = 20, view?: WalletEntryView) {
+export function useWalletEntries(
+  pageSize = 20,
+  view?: WalletEntryView,
+  source: WalletSource = "local",
+) {
   const session = useImageSession();
   return useInfiniteQuery({
     queryKey: [
@@ -31,6 +36,7 @@ export function useWalletEntries(pageSize = 20, view?: WalletEntryView) {
       session.data?.userId,
       pageSize,
       view,
+      source,
     ],
     enabled: session.isSuccess,
     retry: false,
@@ -39,6 +45,7 @@ export function useWalletEntries(pageSize = 20, view?: WalletEntryView) {
     queryFn: async ({ signal, pageParam }) => {
       const params = new URLSearchParams({ limit: String(pageSize) });
       if (view) params.set("view", view);
+      if (source === "purchased") params.set("source", source);
       if (pageParam) params.set("before", pageParam);
       const response = await imageRequest(`wallet/entries?${params}`, { signal });
       return walletEntriesSchema.parse(await response.json());

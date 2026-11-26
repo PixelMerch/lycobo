@@ -22,9 +22,10 @@ export function HeaderBenefits({
   const menu = useHoverMenu();
   const openOverlay = useAccountOverlays((state) => state.open);
   const t = useMessages(accountMenuMessages);
-  const { purchaseEntry, lowPrice, recharge } = useMessages(creditsMessages);
+  const { purchaseEntry, lowPrice, recharge, walletSources } = useMessages(creditsMessages);
   // 读取失败或尚未读到时显示“—”，不把未知余额当成 0。
   const balance = wallet.data ? formatCredits(wallet.data.balance) : "—";
+  const purchased = wallet.data?.purchasedBalance;
   function openFromMenu(key: string | number) {
     menu.close();
     // 菜单收起后积分胶囊仍在，弹窗关闭时焦点回到这里。
@@ -61,9 +62,17 @@ export function HeaderBenefits({
             onAction={openFromMenu}
           >
             <Dropdown.Section>
-              <Header className="credits-menu-balance">
-                <span>{t.balance}</span>
-                <strong>{balance}</strong>
+              <Header>
+                <div className="credits-menu-balance">
+                  <span>{purchased === undefined ? t.balance : walletSources.local}</span>
+                  <strong>{balance}</strong>
+                </div>
+                {purchased !== undefined && (
+                  <div className="credits-menu-balance">
+                    <span>{walletSources.purchased}</span>
+                    <strong>{purchased === null ? "—" : formatCredits(purchased)}</strong>
+                  </div>
+                )}
               </Header>
               <Dropdown.Item id="recharge" textValue={recharge} className="credits-menu-action">
                 <UiIcon icon={IconCoins} size="navigation" />

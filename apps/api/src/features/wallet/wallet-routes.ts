@@ -1,4 +1,9 @@
-import { checkoutPackSchema, defaultCreditOfferEnd, imageUnitCredits } from "@lycoboai/contracts";
+import {
+  checkoutPackSchema,
+  defaultCreditOfferEnd,
+  imageUnitCredits,
+  walletSourceSchema,
+} from "@lycoboai/contracts";
 import type { Hono } from "hono";
 import { z } from "zod";
 import { enterprisePrincipal } from "../auth/principal";
@@ -8,10 +13,11 @@ import { type Env, fail, type ImageApiDependencies } from "../images/route-conte
 export function registerImageWallet(app: Hono<Env>, deps: ImageApiDependencies) {
   app.get("/wallet", async (c) => {
     const scope = c.get("principal");
-    const balance = deps.billing
-      ? await deps.billing.balance(scope)
-      : (await deps.repository.wallet(scope)).balance;
-    return c.json({ balance, unitCredits: imageUnitCredits });
+    const [{ balance }, purchasedBalance] = await Promise.all([
+      deps.repository.wallet(scope),
+      deps.billing?.balance(scope).catch(() => null),
+    ]);
+    return c.json({ balance, unitCredits: imageUnitCredits, purchasedBalance });
   });
   app.get("/wallet/checkout", async (c) =>
     c.json(
@@ -35,6 +41,7 @@ export function registerImageWallet(app: Hono<Env>, deps: ImageApiDependencies) 
       .object({
         limit: z.coerce.number().int().min(1).max(100).default(20),
         view: z.enum(["spent", "earned"]).optional(),
+        source: walletSourceSchema.default("local"),
         before: z
           .string()
           .regex(/^[1-9][0-9]{0,18}$/)
@@ -43,11 +50,13 @@ export function registerImageWallet(app: Hono<Env>, deps: ImageApiDependencies) 
       })
       .safeParse(c.req.query());
     if (!parsed.success) return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
-    const { limit, before, view } = parsed.data;
+    const { limit, before, view, source } = parsed.data;
     const scope = c.get("principal");
+    if (source === "local")
+      return c.json({ data: await deps.repository.walletEntries(scope, limit, before, view) });
     const data = deps.billing
       ? await deps.repository.billingEntries(scope, deps.billing.provider, limit, before, view)
-      : await deps.repository.walletEntries(scope, limit, before, view);
+      : [];
     return c.json({ data });
   });
   app.get("/wallet/recharges", async (c) => {

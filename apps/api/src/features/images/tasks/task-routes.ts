@@ -33,9 +33,10 @@ async function taskSubmissionResponse<T extends { replayed: boolean }>(
   c: Context<Env>,
   deps: ImageApiDependencies,
   result: T & { id: string },
+  credit?: CreditAuthorization,
 ) {
   if (!result.replayed) {
-    if (deps.billing) await deps.wakeBilling?.(result.id);
+    if (credit) await deps.wakeBilling?.(result.id);
     else await deps.wake?.();
   }
   return c.json(result, result.replayed ? 200 : 202);
@@ -62,31 +63,54 @@ async function prepareReferenceUploads(
   return referenceIds.filter((_, index) => states[index]?.status === "pending");
 }
 
+async function selectGenerationWallet(
+  deps: ImageApiDependencies,
+  scope: Env["Variables"]["principal"],
+  cost: number,
+  isRetry: boolean,
+) {
+  const { billing } = deps;
+  if (!billing || (await deps.repository.wallet(scope)).balance >= cost) return;
+  try {
+    return await billing.generationAccount(scope, cost);
+  } catch (error) {
+    // 重试事务会先归还本地旧尝试的积分，再验证能否按原规则扣费。
+    if (isRetry && error instanceof BillingError && error.code === "INSUFFICIENT_CREDITS") return;
+    throw error;
+  }
+}
+
 async function checkImageCredits(
   c: Context<Env>,
   deps: ImageApiDependencies,
   input: ImageGenerationInput,
   positions: readonly number[],
-  cost: number,
+  isRetry = false,
 ): Promise<CreditAuthorization | undefined> {
   if (positions.length === 0) return;
-  const { billing, moderate } = deps;
+  const scope = c.get("principal");
+  const wallet = await selectGenerationWallet(
+    deps,
+    scope,
+    positions.length * imageUnitCredits,
+    isRetry,
+  );
+  const moderate = wallet ? deps.purchasedModerate : deps.moderate;
   if (!moderate) {
-    if (billing) throw new BillingError("BILLING_UNAVAILABLE");
+    if (wallet) throw new BillingError("BILLING_UNAVAILABLE");
     return;
   }
-  // 审核消费者实际使用的文案。外部账本每张图使用独立审核结果，以便按图冲正。
+  // 先确定扣费钱包，再提交对应审核。购买积分逐图使用独立审核结果，便于按原交易冲正。
   const prompts = positions.map((position) => textileItemInput(input, position).prompt);
   const instructions = input.localEdit?.regions.map((region) => region.prompt) ?? [];
-  const texts = billing
-    ? prompts.map((prompt) => [prompt, ...instructions].join("\n"))
-    : [...prompts, ...instructions];
-  const [wallet, approvals] = await Promise.all([
-    billing?.generationAccount(c.get("principal"), cost),
-    billing
-      ? moderate(texts, c.get("requestId"), c.req.raw.signal, true)
-      : moderate(texts, c.get("requestId"), c.req.raw.signal),
-  ]);
+  const approvals = wallet
+    ? await moderate(
+        prompts.map((prompt) => [prompt, ...instructions].join("\n")),
+        c.get("requestId"),
+        c.req.raw.signal,
+        true,
+      )
+    : await moderate([...prompts, ...instructions], c.get("requestId"), c.req.raw.signal);
   if (!wallet) return;
   if (
     !approvals ||
@@ -126,11 +150,7 @@ async function screenImageRetry(
         (item.status === "failed" || item.status === "needs_reconciliation"),
     );
   const positions = candidates.map((item) => item.position);
-  // 原尝试仍待核对时，先允许落库冲正；后台扣费以实际余额为准。
-  const cost = candidates.some((item) => item.status === "needs_reconciliation")
-    ? 0
-    : positions.length * imageUnitCredits;
-  const credit = await checkImageCredits(c, deps, input, positions, cost);
+  const credit = await checkImageCredits(c, deps, input, positions, true);
   return { positions, credit };
 }
 
@@ -169,7 +189,7 @@ export function registerImageTaskSubmission(app: Hono<Env>, deps: ImageApiDepend
     const [supported, acceptedUploads, credit] = await Promise.all([
       supportsTaskModel(deps, normalized),
       prepareReferenceUploads(deps, scope, normalized.referenceAssetIds),
-      checkImageCredits(c, deps, normalized, positions, positions.length * imageUnitCredits),
+      checkImageCredits(c, deps, normalized, positions),
     ]);
     if (!supported)
       return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "当前模型暂不可用，请选择其他模型", 400);
@@ -182,7 +202,7 @@ export function registerImageTaskSubmission(app: Hono<Env>, deps: ImageApiDepend
       acceptedUploads,
       ...(credit ? [credit] : []),
     );
-    return taskSubmissionResponse(c, deps, result);
+    return taskSubmissionResponse(c, deps, result, credit);
   });
   app.post("/image-tasks/:jobId/retry", async (c) => {
     if (!deps.enabled) return fail(c, "GENERATION_NOT_CONFIGURED", "生图服务尚未启用", 503);
@@ -211,17 +231,17 @@ export function registerImageTaskSubmission(app: Hono<Env>, deps: ImageApiDepend
       approved?.positions,
       approved?.credit,
     );
-    return taskSubmissionResponse(c, deps, result);
+    return taskSubmissionResponse(c, deps, result, approved?.credit);
   });
 }
 
+/** 注册任务历史、状态查询和可靠队列的恢复入口。 */
 export function registerImageTaskHistory(
   app: Hono<Env>,
   deps: ImageApiDependencies,
   delivery: ImageDeliveries | undefined,
 ) {
-  // A task still queued while its owner polls means the submission wake was lost or the
-  // consumer was busy; retry the wake at most every 15 seconds per task in this instance.
+  // 查询排队任务可恢复丢失的唤醒，每个任务在此实例内最多每 15 秒补一次。
   const wokenAt = new Map<string, number>();
   const queuedJob = z.object({
     id: z.uuid(),
@@ -267,7 +287,7 @@ export function registerImageTaskHistory(
     if (!parsed.success) return fail(c, "VALIDATION_ERROR", "任务编号无效", 400);
     const scope = c.get("principal");
     const jobs = await deps.repository.getMany(scope, [...new Set(parsed.data)]);
-    // One recovery wake per batch; the consumer drains all durable due work.
+    // 同批状态查询只唤醒一次，由消费者领取全部到期待执行项。
     const recover = jobs.find((job) => {
       const value = queuedJob.safeParse(job);
       return (
@@ -297,6 +317,7 @@ export function registerImageTaskHistory(
   });
 }
 
+/** 允许组织管理员依证据核对失败，并沿用原账本结算。 */
 export function registerImageTaskReconciliation(app: Hono<Env>, deps: ImageApiDependencies) {
   app.post("/image-tasks/:jobId/items/:itemId/reconcile-failure", async (c) => {
     if (c.get("principal").role !== "admin") return fail(c, "FORBIDDEN", "需要组织管理员核对", 403);

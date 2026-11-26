@@ -61,6 +61,7 @@ function cloudflareBilling(
   return {
     dependencies: {
       billing: configured && externalWalletService(repository, configured.provider),
+      purchasedModerate: configured && createCreemModerator(env),
       checkout,
       billingWebhooks,
       wakeBilling: async (id: string) => {
@@ -120,7 +121,6 @@ export async function serveCloudflareApi(
       (event) => console.error(event),
       {
         repository,
-        moderate: createCreemModerator(env),
         ...billingRuntime.dependencies,
         store,
         uploads,

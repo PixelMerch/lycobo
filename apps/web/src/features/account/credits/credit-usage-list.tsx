@@ -1,4 +1,5 @@
 import { Button, Disclosure } from "@heroui/react";
+import type { WalletSource } from "@lycoboai/contracts";
 import { IconChevronRight } from "@tabler/icons-react";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
@@ -19,8 +20,8 @@ import { useWalletEntries, type WalletEntryView } from "../wallet-client";
 import { creditsMessages } from "./credits-messages";
 
 /** 在弹窗内部连续滚动收支，续读失败时保留已加载记录并支持重试。 */
-export function CreditUsageList({ view }: { view: WalletEntryView }) {
-  const entries = useWalletEntries(20, view);
+export function CreditUsageList({ view, source }: { view: WalletEntryView; source: WalletSource }) {
+  const entries = useWalletEntries(20, view, source);
   const session = useEnterpriseSession();
   const t = useMessages(creditsMessages);
   const rows = entries.data?.pages.flatMap((page) => page.data) ?? [];
