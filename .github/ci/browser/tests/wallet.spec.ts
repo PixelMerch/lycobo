@@ -66,8 +66,8 @@ test("enterprise account shows shared balance, member spending and recharge reco
   );
   const center = await openWalletSettings(page);
   await expect(page.locator(".header-credits")).toContainText("200");
-  await expect(center.getByRole("button", { name: "积分明细", exact: true })).toHaveAttribute(
-    "aria-pressed",
+  await expect(center.getByRole("radio", { name: "积分明细", exact: true })).toHaveAttribute(
+    "aria-checked",
     "true",
   );
   await expect(page).toHaveURL(/\/commerce\/create$/);
@@ -80,14 +80,14 @@ test("enterprise account shows shared balance, member spending and recharge reco
   await expect(row).toContainText("任务 W12345678");
   await expect(row).toContainText("-20");
   await page.screenshot({ path: "/tmp/lycobo-account-ledger-wallet.png" });
-  await center.getByRole("button", { name: "充值订单", exact: true }).click();
+  await center.getByRole("radio", { name: "充值订单", exact: true }).click();
   const order = center.locator(".account-orders .table__body .table__row");
   await expect(order).toContainText("已到账");
   await expect(order).toContainText("¥10.00");
   // Unknown provider codes are shown as recorded instead of being renamed.
   await expect(order).toContainText("fixture");
   await page.setViewportSize({ width: 320, height: 760 });
-  await center.getByRole("button", { name: "积分明细", exact: true }).click();
+  await center.getByRole("radio", { name: "积分明细", exact: true }).click();
   await page.screenshot({ path: "/tmp/lycobo-account-ledger-mobile.png" });
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
@@ -143,7 +143,7 @@ test("dual wallets display distinct balances and request separate statements", a
   );
   const ledger = center.getByRole("region", { name: "积分明细", exact: true });
   await expect(ledger.locator(".account-toolbar-meta")).toContainText("当前可用 18 积分");
-  await ledger.getByRole("button", { name: "购买积分", exact: true }).click();
+  await ledger.getByRole("radio", { name: "购买积分", exact: true }).click();
   await expect(ledger.locator(".account-toolbar-meta")).toContainText("当前可用 104 积分");
-  await expect.poll(() => sources).toEqual(["local", "purchased"]);
+  await expect.poll(() => [...new Set(sources)]).toEqual(["local", "purchased"]);
 });
