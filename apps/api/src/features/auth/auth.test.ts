@@ -202,6 +202,23 @@ describe("enterprise JWT login", () => {
       vi.unstubAllGlobals();
     }
   });
+  it("distinguishes a rejected Siteverify secret without retrying", async () => {
+    const fetchSiteverify = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(
+        Response.json({ success: false, "error-codes": ["invalid-input-secret"] }, { status: 400 }),
+      );
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.stubGlobal("fetch", fetchSiteverify);
+    try {
+      expect(await verifyPasswordTurnstile("fixture-secret", "fixture-token", origin)).toBe(false);
+      expect(fetchSiteverify).toHaveBeenCalledOnce();
+      expect(warn).toHaveBeenCalledWith({ event: "PASSWORD_TURNSTILE_REJECTED", reason: "secret" });
+    } finally {
+      warn.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
   it("saves only a supported locale for the authenticated user", async () => {
     const { app, auth, repository } = await fixture();
     const login = await auth.login(user.account, "fixture-password-123");

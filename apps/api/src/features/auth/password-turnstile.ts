@@ -40,12 +40,12 @@ async function checkSiteverify(
     return "network";
   }
   if (response.status >= 500) return "unavailable";
-  if (!response.ok) return "response";
 
   const result = verification.safeParse(await response.json().catch(() => null));
   if (!result.success) return "response";
   const data = result.data;
   if (data.success) {
+    if (!response.ok) return "response";
     if (data.action !== "password_login") return "action";
     return data.hostname === hostname ? "verified" : "hostname";
   }
