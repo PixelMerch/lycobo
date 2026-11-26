@@ -30,7 +30,7 @@
 
 Creem 正式目录按充值页配置五档一次性积分包。活动价和常规价使用不同商品，活动结束后按服务端目录切换。活动入门包 $2.99 USD，Creem 到账 102 积分，Lycobo 站内赠送 2 积分。正式交易由 Creem 的商户审核状态控制。 [Creem 生成式 AI 接入指南](https://docs.creem.io/merchant-of-record/account-reviews/gen-ai-technical-integration-guide)
 
-调整基础积分时，为受影响的活动价和常规价分别准备同价的 Creem 商品，配置对应的 AI generation credits 数量。发布时把 `BILLING_PRODUCTS` 指向新商品，与新版主站 Worker 一起生效。保留旧商品供已打开的收银台结算，历史订单继续按创建时保存的基础积分和赠送积分入账。
+调整基础积分时，为受影响的活动价和常规价分别准备同价的 Creem 商品，配置对应的 AI generation credits 数量。把完整商品映射存入 GitHub Actions 的 `cloudflare-production` 环境密钥 `BILLING_PRODUCTS`，发布工作流会随新版主站 Worker 一起应用映射。保留旧商品供已打开的收银台结算，历史订单继续按创建时保存的基础积分和赠送积分入账。
 
 正式审核验收使用经授权的专用账号生成一张商品图。账号的 Creem 生成钱包至少有 2 积分，站内余额低于 2 积分。记录线上任务编号，核对审核放行、Creem 扣费和图像生成成功，再申请复审。免费发放到 Creem 生成钱包的积分也适用于验收。
 
