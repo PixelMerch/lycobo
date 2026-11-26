@@ -1,10 +1,12 @@
 import { Button, EmptyState, Link } from "@heroui/react";
 import { IconAlertCircle, IconFileOff, IconHome, IconRefresh } from "@tabler/icons-react";
+import { useEffect } from "react";
 import { isRouteErrorResponse, useRouteError } from "react-router";
 import { UiIcon } from "../components/ui-icon";
 import { localizedPath } from "../i18n/locale-path";
 import { useLocale } from "../i18n/locale-store";
 import { useMessages } from "../i18n/messages";
+import { recoverUpdatedApp } from "./recover-updated-app";
 import { shellMessages } from "./shell-messages";
 import "./page-states.css";
 
@@ -39,6 +41,11 @@ function PageStatus({ canReload }: { canReload: boolean }) {
 /** 区分地址不存在与页面加载失败，让用户重试当前地址。 */
 export function RouteErrorPage() {
   const error = useRouteError();
+  useEffect(() => {
+    const controller = new AbortController();
+    void recoverUpdatedApp(error, controller.signal);
+    return () => controller.abort();
+  }, [error]);
   return <PageStatus canReload={!(isRouteErrorResponse(error) && error.status === 404)} />;
 }
 

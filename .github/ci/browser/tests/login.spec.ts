@@ -206,6 +206,59 @@ test("enterprise login sends a challenge token and keeps the lock message in the
   await expect(page.locator(".login-lock-notice")).toContainText("账号已锁定 1 小时");
 });
 
+test("password login shows the challenge and preserves input when verification fails", async ({
+  page,
+}) => {
+  await page.route("https://challenges.cloudflare.com/turnstile/**", (route) =>
+    route.fulfill({
+      contentType: "application/javascript",
+      body: `window.turnstile = {
+        render(el, options) {
+          const trigger = document.createElement('button');
+          trigger.type = 'button';
+          trigger.textContent = options.appearance;
+          trigger.onclick = () => options.callback('visible-challenge-token');
+          el.append(trigger);
+          return 'fixture';
+        },
+        remove() { document.querySelector('.login-challenge button')?.remove(); }
+      };`,
+    }),
+  );
+  let submissions = 0;
+  await page.route("**/api/v1/auth/enterprise/login", (route) => {
+    submissions++;
+    expect(route.request().postDataJSON()).toMatchObject({
+      captchaToken: "visible-challenge-token",
+    });
+    return route.fulfill({
+      status: 403,
+      json: {
+        request_id: crypto.randomUUID(),
+        code: 20000,
+        message: "人机验证未通过，请重试。",
+        data: {},
+        error: { code: "LOGIN_CHALLENGE_FAILED" },
+      },
+    });
+  });
+  await page.goto("/zh-CN/login");
+  await page.getByRole("button", { name: "企业账号登录", exact: true }).click();
+  await page.getByLabel("企业账号", { exact: true }).fill("merchant-fixture");
+  const password = page.getByLabel("密码", { exact: true });
+  await password.fill("fixture-password");
+  await page.getByRole("button", { name: "登录企业账号", exact: true }).click();
+  const challenge = page.getByRole("button", { name: "always", exact: true });
+  await expect(challenge).toBeVisible();
+  expect(submissions).toBe(0);
+  await challenge.click();
+  await expect(page.locator(".login-fields").getByRole("alert")).toHaveText(
+    "人机验证未通过，请重试。",
+  );
+  await expect(password).toHaveValue("fixture-password");
+  await expect(challenge).toHaveCount(0);
+});
+
 test("sending an email code shows a spinner, sends once and confirms with a toast", async ({
   page,
 }) => {
