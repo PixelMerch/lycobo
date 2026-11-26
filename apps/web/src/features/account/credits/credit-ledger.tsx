@@ -28,7 +28,7 @@ import { useWallet, useWalletEntries } from "../wallet-client";
 import { CreditWalletSwitch } from "./credit-wallet-switch";
 import { creditsMessages } from "./credits-messages";
 
-const kinds = ["all", "consume", "refund", "recharge", "opening"] as const;
+const kinds = ["all", "consume", "refund", "recharge"] as const;
 
 /** 积分收支明细表：筛选只作用于已加载的记录，不从部分历史推算合计。 */
 export function CreditLedger() {

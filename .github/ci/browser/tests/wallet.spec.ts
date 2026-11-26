@@ -41,6 +41,18 @@ test("enterprise account shows shared balance, member spending and recharge reco
             recharge_id: null,
             created_at: "2026-10-21T00:00:00Z",
           },
+          {
+            id: "1",
+            user_uid: null,
+            kind: "opening",
+            amount: 220,
+            balance_after: 220,
+            job_id: null,
+            task_id: null,
+            item_id: null,
+            recharge_id: null,
+            created_at: "2026-10-20T00:00:00Z",
+          },
         ],
       }),
     }),
@@ -73,8 +85,11 @@ test("enterprise account shows shared balance, member spending and recharge reco
   await expect(page).toHaveURL(/\/commerce\/create$/);
   const ledger = center.getByRole("region", { name: "积分明细", exact: true });
   await expect(ledger.locator(".account-toolbar-meta")).toContainText("当前可用 200 积分");
-  const row = ledger.locator(".table__body .table__row");
-  await expect(row).toHaveCount(1);
+  await expect(ledger.getByRole("radio", { name: "期初", exact: true })).toHaveCount(0);
+  const rows = ledger.locator(".table__body .table__row");
+  await expect(rows).toHaveCount(2);
+  await expect(rows.filter({ hasText: "期初余额" })).toHaveCount(1);
+  const row = rows.filter({ hasText: "任务 W12345678" });
   // A shared wallet names the spending member; unknown members keep their UID.
   await expect(row).toContainText("UID 0123456789");
   await expect(row).toContainText("任务 W12345678");
