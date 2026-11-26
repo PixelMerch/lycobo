@@ -1,4 +1,4 @@
-import type { ImageScope } from "@lycoboai/contracts";
+import type { ImageScope, walletHistorySchema } from "@lycoboai/contracts";
 import type postgres from "postgres";
 import { z } from "zod";
 
@@ -7,6 +7,10 @@ export class WalletError extends Error {
     super(code);
   }
 }
+
+type WalletHistoryRow = ReturnType<typeof walletHistorySchema.parse>["data"][number] & {
+  cursor: string;
+};
 /** 校验成员身份并锁定工作区钱包，供认证请求写入积分。 */
 export async function ensureWallet(tx: postgres.TransactionSql, scope: ImageScope) {
   const members =
@@ -94,6 +98,50 @@ export function walletRepository(sql: postgres.Sql) {
         where w.organization_id=${scope.organizationId}
         ${recent}
         ${before ? sql`and e.id < ${before}::bigint` : sql``} order by e.id desc limit ${limit}`;
+    },
+    /** 合并当前工作区站内流水与当前用户在该工作区的购买流水。 */
+    async walletHistory(
+      scope: ImageScope,
+      limit: number,
+      view?: "spent" | "earned",
+      before?: [createdAt: string, ledger: string, entryId: string],
+    ) {
+      const recent = view
+        ? sql`and (kind = 'consume') = ${view === "spent"} and created_at >= now() - interval '6 months'`
+        : sql``;
+      // 两边的主键可能相同，游标保留账本序号和 PostgreSQL 的微秒精度。
+      const cursor = before
+        ? sql`and (created_at,ledger,entry_id)<(${before[0]}::timestamptz,${before[1]}::integer,${before[2]}::bigint)`
+        : sql``;
+      // 买家看到同一订单的合计到账额，其他工作区成员只看到共享的赠送积分。
+      const rows = await sql<WalletHistoryRow[]>`
+        with history as (
+          select 0 as ledger,e.id as entry_id,u.uid as user_uid,e.kind::text as kind,e.amount,
+            e.job_id,j.public_id as task_id,e.item_id,coalesce(e.recharge_id,e.billing_order_id) as recharge_id,e.created_at
+          from wallet_entries e join organization_wallets w on w.id=e.wallet_id
+          left join generation_jobs j on j.id=e.job_id left join users u on u.id=e.user_id
+          where w.organization_id=${scope.organizationId}
+            and not exists (
+              select 1 from billing_credit_entries paid where paid.order_id=e.billing_order_id
+              and paid.organization_id=w.organization_id and paid.user_id=${scope.userId}
+            )
+          union all
+          select 1,e.id,u.uid,e.kind,e.amount+coalesce(bonus.amount,0),j.id,j.public_id,e.item_id,e.order_id,e.created_at
+          from billing_credit_entries e join users u on u.id=e.user_id
+          left join wallet_entries bonus on bonus.billing_order_id=e.order_id and bonus.user_id=e.user_id
+          left join generation_job_items i on i.id=e.item_id left join generation_jobs j on j.id=i.job_id
+          where e.organization_id=${scope.organizationId} and e.user_id=${scope.userId}
+        )
+        select concat(ledger,':',entry_id) as id,user_uid,kind,amount,job_id,task_id,item_id,recharge_id,
+          to_char(created_at at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as created_at,
+          concat(to_char(created_at at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"'),'/',ledger,'/',entry_id) as cursor
+        from history where true ${recent} ${cursor}
+        order by history.created_at desc,ledger desc,entry_id desc limit ${limit + 1}`;
+      const page = rows.slice(0, limit);
+      return {
+        data: page.map(({ cursor: _cursor, ...entry }) => entry),
+        nextCursor: (rows.length > limit ? page.at(-1)?.cursor : null) ?? null,
+      };
     },
     async rechargeOrders(scope: ImageScope, limit: number, before?: string) {
       return sql`select r.id,u.uid as user_uid,r.credits,r.amount_minor,r.currency,r.status,r.channel,r.created_at,r.paid_at

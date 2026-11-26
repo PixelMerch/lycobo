@@ -1,27 +1,22 @@
 import { Modal, ToggleButton, ToggleButtonGroup } from "@heroui/react";
-import type { WalletSource } from "@lycoboai/contracts";
 import { IconX } from "@tabler/icons-react";
 import { useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
-import { formatCredits } from "../account-format";
+import { formatCredits, totalWalletCredits } from "../account-format";
 import { useWallet, type WalletEntryView } from "../wallet-client";
 import { CreditUsageList } from "./credit-usage-list";
-import { CreditWalletSwitch } from "./credit-wallet-switch";
 import { creditsMessages } from "./credits-messages";
 import "../account-panel.css";
 import "./credit-usage.css";
 
 const views: WalletEntryView[] = ["spent", "earned"];
 
-/** 积分明细弹窗：滚动查看企业最近半年的积分消耗与获得，逐条展开说明、成员与结余。 */
+/** 查看账户最近半年的积分消耗与获得，逐条展开说明及成员。 */
 export function CreditUsageDialog({ onClose }: { onClose: () => void }) {
   const [view, setView] = useState<WalletEntryView>("spent");
   const wallet = useWallet();
-  const [selectedSource, setSource] = useState<WalletSource>("local");
-  const purchased = wallet.data?.purchasedBalance;
-  const source = purchased === undefined ? "local" : selectedSource;
-  const balance = source === "purchased" ? purchased : wallet.data?.balance;
+  const balance = totalWalletCredits(wallet.data);
   const t = useMessages(creditsMessages);
   return (
     <Modal
@@ -40,9 +35,6 @@ export function CreditUsageDialog({ onClose }: { onClose: () => void }) {
               </Modal.CloseTrigger>
             </Modal.Header>
             <Modal.Body className="credit-usage-content">
-              {purchased !== undefined && (
-                <CreditWalletSwitch value={source} onChange={setSource} />
-              )}
               <div className="credit-usage-toolbar">
                 <ToggleButtonGroup
                   aria-label={t.usageView}
@@ -69,7 +61,7 @@ export function CreditUsageDialog({ onClose }: { onClose: () => void }) {
                 </span>
               </div>
               {/* 切换视图回到列表顶部，已读取的记录保留在查询缓存中。 */}
-              <CreditUsageList key={`${source}:${view}`} source={source} view={view} />
+              <CreditUsageList key={view} view={view} />
             </Modal.Body>
           </Modal.Dialog>
         </Modal.Container>

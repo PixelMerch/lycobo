@@ -3,8 +3,6 @@ import { defineMessages } from "../../../i18n/messages";
 /** 积分与账单的文案：收支明细表、积分明细弹窗、充值订单与充值积分包。 */
 export const creditsMessages = defineMessages({
   "zh-CN": {
-    walletSource: "积分来源",
-    walletSources: { local: "站内积分", purchased: "购买积分" },
     ledgerKinds: {
       all: "全部",
       consume: "积分消耗",
@@ -30,11 +28,9 @@ export const creditsMessages = defineMessages({
       detail: "说明",
       member: "成员",
       change: "积分变动",
-      balance: "结余",
     },
     optimizationSpent: "积分消耗",
     optimizationReturned: "积分退还",
-    balanceLabel: "结余 ",
     shownEntries: (count: number, hasMore: boolean) =>
       `显示 ${count} 条${hasMore ? "，向下滚动加载更早记录" : ""} · 筛选仅针对已加载的记录`,
     reloadEntries: "重新加载收支",
@@ -44,7 +40,7 @@ export const creditsMessages = defineMessages({
     recordsUnavailable: "积分记录暂时不可用",
     reload: "重新加载",
     noRecords: { spent: "最近半年暂无消耗记录", earned: "最近半年暂无获得记录" },
-    detailLabels: { detail: "说明", member: "成员", balanceAfter: "变动后结余" },
+    detailLabels: { detail: "说明", member: "成员" },
     recharge: "充值积分",
     purchaseEntry: "特惠充值",
     lowPrice: "低价",
@@ -97,8 +93,6 @@ export const creditsMessages = defineMessages({
     reloadOrders: "重新加载订单",
   },
   en: {
-    walletSource: "Credit source",
-    walletSources: { local: "Lycobo credits", purchased: "Purchased credits" },
     ledgerKinds: {
       all: "All",
       consume: "Spent",
@@ -124,11 +118,9 @@ export const creditsMessages = defineMessages({
       detail: "Details",
       member: "Member",
       change: "Change",
-      balance: "Balance",
     },
     optimizationSpent: "Credits spent",
     optimizationReturned: "Credits returned",
-    balanceLabel: "Balance ",
     shownEntries: (count, hasMore) =>
       `Showing ${count}${hasMore ? "; scroll down for older records" : ""} · Filters apply to loaded records only`,
     reloadEntries: "Reload records",
@@ -141,7 +133,7 @@ export const creditsMessages = defineMessages({
       spent: "No spending in the last six months",
       earned: "No earnings in the last six months",
     },
-    detailLabels: { detail: "Details", member: "Member", balanceAfter: "Balance after" },
+    detailLabels: { detail: "Details", member: "Member" },
     recharge: "Buy credits",
     purchaseEntry: "Top up",
     lowPrice: "Deal",

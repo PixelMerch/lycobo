@@ -8,21 +8,25 @@ export const walletBalanceSchema = z.object({
   unitCredits: z.number().int().positive(),
   purchasedBalance: z.number().int().nonnegative().nullable().optional(),
 });
+const walletEntrySchema = z.object({
+  id: z.string().regex(/^[0-9]+$/),
+  user_uid: z.string().nullable(),
+  kind: z.enum(["opening", "consume", "refund", "recharge", "checkin"]),
+  amount: z.number().int(),
+  balance_after: z.number().int().nonnegative().nullable(),
+  job_id: z.uuid().nullable(),
+  task_id: z.string().nullable(),
+  item_id: z.uuid().nullable(),
+  recharge_id: z.uuid().nullable(),
+  created_at: z.string(),
+});
 export const walletEntriesSchema = z.object({
-  data: z.array(
-    z.object({
-      id: z.string().regex(/^[0-9]+$/),
-      user_uid: z.string().nullable(),
-      kind: z.enum(["opening", "consume", "refund", "recharge", "checkin"]),
-      amount: z.number().int(),
-      balance_after: z.number().int().nonnegative().nullable(),
-      job_id: z.uuid().nullable(),
-      task_id: z.string().nullable(),
-      item_id: z.uuid().nullable(),
-      recharge_id: z.uuid().nullable(),
-      created_at: z.string(),
-    }),
-  ),
+  data: z.array(walletEntrySchema),
+});
+/** 合并站内和购买流水，结余仍以账户当前总额为准。 */
+export const walletHistorySchema = z.object({
+  data: z.array(walletEntrySchema.omit({ balance_after: true }).extend({ id: z.string() })),
+  nextCursor: z.string().nullable(),
 });
 export const rechargeOrdersSchema = z.object({
   data: z.array(

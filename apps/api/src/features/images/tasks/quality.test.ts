@@ -21,6 +21,7 @@ function fixture(
     wakeBilling?: (id: string) => Promise<void>;
     billing?: ExternalWalletService;
     wallet?: ImageRepository["wallet"];
+    walletHistory?: ImageRepository["walletHistory"];
     moderate?: GenerationModerator | undefined;
     get?: ImageRepository["get"];
     retry?: ImageRepository["retry"];
@@ -97,6 +98,7 @@ function fixture(
     replayImageSubmission: async () => undefined,
     replayImageRetry: async () => false,
     walletEntries: unexpected,
+    walletHistory: extra.walletHistory ?? unexpected,
     rechargeOrders: unexpected,
     createRecharge: unexpected,
     settleRecharge: unexpected,
@@ -711,4 +713,34 @@ it("preserves the local balance if the purchased wallet cannot be read", async (
   expect(await response.json()).toMatchObject({
     data: { balance: 18, unitCredits: 2, purchasedBalance: null },
   });
+});
+
+it("validates unified credit history cursors before reading the authenticated account", async () => {
+  const walletHistory = vi.fn<ImageRepository["walletHistory"]>().mockResolvedValue({
+    data: [],
+    nextCursor: null,
+  });
+  const { app } = fixture(false, false, { walletHistory });
+  const headers = { Authorization: "Bearer fixture" };
+  const endpoint = "/api/v1/wallet/history";
+  for (const before of [
+    "2026-11-26T00:00:00.123456Z/0/invalid",
+    "2026-11-26T00:00:00.123456Z/2/42",
+    "2026-11-26T00:00:00.123456Z/1/9223372036854775808",
+  ]) {
+    const response = await app.request(`${endpoint}?${new URLSearchParams({ before })}`, {
+      headers,
+    });
+    expect(response.status).toBe(400);
+  }
+  expect(walletHistory).not.toHaveBeenCalled();
+  const time = "2026-11-26T00:00:00.123456Z";
+  const params = new URLSearchParams({ before: `${time}/1/42`, view: "spent", limit: "5" });
+  expect((await app.request(`${endpoint}?${params}`, { headers })).status).toBe(200);
+  expect(walletHistory).toHaveBeenCalledWith(
+    expect.objectContaining({ userId: expect.any(String), organizationId: expect.any(String) }),
+    5,
+    "spent",
+    [time, "1", "42"],
+  );
 });

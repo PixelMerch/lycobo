@@ -49,7 +49,7 @@
     grid-template-columns: auto auto minmax(0, 1fr) auto;
     grid-template-areas:
       "type type type amount"
-      "time detail member after";
+      "time detail member member";
     column-gap: 6px;
     padding: 10px var(--space-4);
     border-bottom: 1px solid #ffffff0a;
@@ -95,12 +95,6 @@
   }
   .account-ledger-table :is(.account-cell-detail, .account-cell-member)::before {
     content: "· ";
-  }
-  .account-ledger-table .account-cell-after {
-    grid-area: after;
-  }
-  .account-ledger-table .account-after-label {
-    display: inline;
   }
   .account-orders-table .table__content {
     min-width: 720px;

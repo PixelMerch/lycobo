@@ -23,7 +23,7 @@ for (const width of [1440, 320]) {
     page.on("request", (request) => {
       if (request.method() !== "GET" && !request.url().endsWith("/api/v1/image-session"))
         writes.push(request.url());
-      if (request.url().includes("/api/v1/wallet/entries")) ledgerReads++;
+      if (request.url().includes("/api/v1/wallet/history")) ledgerReads++;
     });
     await page.setViewportSize({ width, height: 900 });
     await page.clock.setFixedTime(new Date("2026-11-25T12:00:00Z"));
@@ -64,7 +64,7 @@ test("credits menu opens on hover without taking focus and works from the keyboa
   await signIn(page);
   let ledgerReads = 0;
   page.on("request", (request) => {
-    if (request.url().includes("/api/v1/wallet/entries")) ledgerReads++;
+    if (request.url().includes("/api/v1/wallet/history")) ledgerReads++;
   });
   await page.goto("/zh-CN/dashboard/commerce/create");
   const draft = page.getByLabel("提示词", { exact: true });
@@ -155,7 +155,6 @@ function ledgerEntry(
     user_uid: "0123456789",
     kind,
     amount,
-    balance_after: 200,
     job_id: null,
     task_id: null,
     item_id: null,
@@ -182,14 +181,19 @@ test("credit usage scrolls by category at a fixed height with expandable details
     ledgerEntry(399, "recharge", 1000, { recharge_id: "3f8a2c10-0000-4000-8000-000000000000" }),
   ];
   const requests: string[] = [];
-  await page.route("**/api/v1/wallet/entries?*", (route) => {
+  await page.route("**/api/v1/wallet/history?*", (route) => {
     const url = new URL(route.request().url());
     requests.push(url.search);
     const before = url.searchParams.get("before");
     const spentView = url.searchParams.get("view") === "spent";
     const data = entries.filter((entry) => (entry.kind === "consume") === spentView);
     const batch = data.filter((entry) => !before || Number(entry.id) < Number(before));
-    return route.fulfill({ json: apiFixture({ data: batch.slice(0, 20) }) });
+    return route.fulfill({
+      json: apiFixture({
+        data: batch.slice(0, 20),
+        nextCursor: batch.length > 20 ? batch[19].id : null,
+      }),
+    });
   });
   await page.goto("/commerce/create");
   const credits = page.locator(".topbar").getByRole("button", { name: "积分 200" });
@@ -220,7 +224,7 @@ test("credit usage scrolls by category at a fixed height with expandable details
   await recharge.click();
   await expect(recharge).toHaveAttribute("aria-expanded", "true");
   const details = rows.nth(1).locator(".credit-usage-detail");
-  await expect(details).toHaveText(["说明充值订单 3F8A2C10", /^成员/, "变动后结余200"]);
+  await expect(details).toHaveText(["说明充值订单 3F8A2C10", /^成员/]);
   await expect(usage).toHaveCSS("outline-style", "none");
   expect(await usage.evaluate((element) => element.clientHeight)).toBe(height);
   expect([...new Set(requests)]).toEqual([
@@ -238,15 +242,18 @@ test("credit usage keeps loaded rows when loading more fails and retries the cur
   await signIn(page);
   const first = Array.from({ length: 20 }, (_, index) => ledgerEntry(900 - index, "consume", -2));
   let failed = false;
-  await page.route("**/api/v1/wallet/entries?*", (route) => {
+  await page.route("**/api/v1/wallet/history?*", (route) => {
     const params = new URL(route.request().url()).searchParams;
-    if (!params.has("before")) return route.fulfill({ json: apiFixture({ data: first }) });
+    if (!params.has("before"))
+      return route.fulfill({ json: apiFixture({ data: first, nextCursor: "881" }) });
     expect(params.get("before")).toBe("881");
     if (!failed) {
       failed = true;
       return route.fulfill({ status: 503, json: apiFixture(null, 503) });
     }
-    return route.fulfill({ json: apiFixture({ data: [ledgerEntry(880, "consume", -2)] }) });
+    return route.fulfill({
+      json: apiFixture({ data: [ledgerEntry(880, "consume", -2)], nextCursor: null }),
+    });
   });
   await page.goto("/commerce/create");
   await page.locator(".topbar .header-credits").click();

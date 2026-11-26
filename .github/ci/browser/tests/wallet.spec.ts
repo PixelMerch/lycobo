@@ -25,16 +25,16 @@ test("enterprise account shows shared balance, member spending and recharge reco
     }),
   );
   const task = crypto.randomUUID();
-  await page.route("**/api/v1/wallet/entries?*", (route) =>
+  await page.route("**/api/v1/wallet/history?*", (route) =>
     route.fulfill({
       json: apiFixture({
+        nextCursor: null,
         data: [
           {
             id: "2",
             user_uid: "0123456789",
             kind: "consume",
             amount: -20,
-            balance_after: 200,
             job_id: task,
             task_id: "W12345678",
             item_id: crypto.randomUUID(),
@@ -46,7 +46,6 @@ test("enterprise account shows shared balance, member spending and recharge reco
             user_uid: null,
             kind: "opening",
             amount: 220,
-            balance_after: 220,
             job_id: null,
             task_id: null,
             item_id: null,
@@ -125,7 +124,7 @@ test("billing failures stay unknown and retry real reads", async ({ page }) => {
     route.fulfill({ status: 503, json: apiFixture({}, 503) }),
   );
   let reads = 0;
-  await page.route("**/api/v1/wallet/entries?*", (route) => {
+  await page.route("**/api/v1/wallet/history?*", (route) => {
     reads++;
     return route.fulfill({ status: 503, json: apiFixture({}, 503) });
   });
@@ -139,26 +138,21 @@ test("billing failures stay unknown and retry real reads", async ({ page }) => {
   await expect.poll(() => reads).toBeGreaterThan(initialReads);
 });
 
-test("dual wallets display distinct balances and request separate statements", async ({ page }) => {
+test("credit balance and statements are unified across the account", async ({ page }) => {
   await mockImageApi(page);
   await page.route("**/api/v1/wallet", (route) =>
     route.fulfill({ json: apiFixture({ balance: 18, purchasedBalance: 104, unitCredits: 2 }) }),
   );
-  const sources: string[] = [];
-  await page.route("**/api/v1/wallet/entries?*", (route) => {
-    sources.push(new URL(route.request().url()).searchParams.get("source") ?? "local");
-    return route.fulfill({ json: apiFixture({ data: [] }) });
+  await page.route("**/api/v1/wallet/history?*", (route) => {
+    expect(new URL(route.request().url()).searchParams.has("source")).toBe(false);
+    return route.fulfill({ json: apiFixture({ data: [], nextCursor: null }) });
   });
   const center = await openWalletSettings(page);
-  await expect(center.locator(".plan-usage-row").filter({ hasText: "站内积分" })).toContainText(
-    "18",
-  );
-  await expect(center.locator(".plan-usage-row").filter({ hasText: "购买积分" })).toContainText(
-    "104",
-  );
+  await expect(page.locator(".header-credits")).toContainText("122");
+  await expect(center.locator(".plan-usage-row")).toHaveCount(1);
+  await expect(center.locator(".plan-usage-row")).toContainText("122");
   const ledger = center.getByRole("region", { name: "积分明细", exact: true });
-  await expect(ledger.locator(".account-toolbar-meta")).toContainText("当前可用 18 积分");
-  await ledger.getByRole("radio", { name: "购买积分", exact: true }).click();
-  await expect(ledger.locator(".account-toolbar-meta")).toContainText("当前可用 104 积分");
-  await expect.poll(() => [...new Set(sources)]).toEqual(["local", "purchased"]);
+  await expect(ledger.locator(".account-toolbar-meta")).toContainText("当前可用 122 积分");
+  await expect(ledger.getByRole("radiogroup", { name: "积分来源" })).toHaveCount(0);
+  await expect(ledger.getByRole("columnheader", { name: "结余" })).toHaveCount(0);
 });

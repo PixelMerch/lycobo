@@ -20,7 +20,6 @@ const entry = (id: number, overrides: Record<string, unknown> = {}) => ({
   user_uid: "0123456789",
   kind: "consume",
   amount: -2,
-  balance_after: 200,
   job_id: crypto.randomUUID(),
   task_id: "W12345678",
   item_id: crypto.randomUUID(),
@@ -101,11 +100,13 @@ test("ledger filters loaded pages without losing older records or exposing payme
   await signIn(page, "ledger-fixture");
   const recent = Array.from({ length: 20 }, (_, index) => entry(30 - index, { amount: -20 }));
   const older = entry(10, { kind: "refund", amount: 20, created_at: "2026-10-21T00:00:00Z" });
-  await page.route("**/api/v1/wallet/entries?*", (route) =>
+  await page.route("**/api/v1/wallet/history?*", (route) =>
     route.fulfill({
-      json: apiFixture({
-        data: new URL(route.request().url()).searchParams.has("before") ? [older] : recent,
-      }),
+      json: apiFixture(
+        new URL(route.request().url()).searchParams.has("before")
+          ? { data: [older], nextCursor: null }
+          : { data: recent, nextCursor: "fixture-next" },
+      ),
     }),
   );
   await page.setViewportSize({ width: 1440, height: 900 });

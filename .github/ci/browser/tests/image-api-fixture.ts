@@ -93,6 +93,7 @@ export async function mockImageApi(page: Page, { signedIn = true } = {}) {
       else favorites.delete(id);
       body = { favorite };
     } else if (path.endsWith("/wallet")) body = { balance: 200, unitCredits: 2 };
+    else if (path.endsWith("/wallet/history")) body = { data: [], nextCursor: null };
     else if (path.startsWith("/api/v1/wallet/")) body = { data: [] };
     else if (path.endsWith("/image-tasks") || path.endsWith("/image-assets")) body = { data: [] };
     await route.fulfill({ json: apiFixture(body) });

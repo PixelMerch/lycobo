@@ -9,6 +9,16 @@ import { z } from "zod";
 import { enterprisePrincipal } from "../auth/principal";
 import { type Env, fail, type ImageApiDependencies } from "../images/route-context";
 
+const entryIdSchema = z
+  .string()
+  .regex(/^[1-9][0-9]{0,18}$/)
+  .refine((value) => value.length < 19 || value <= "9223372036854775807");
+const historyCursorSchema = z
+  .string()
+  .max(64)
+  .transform((value) => value.split("/"))
+  .pipe(z.tuple([z.iso.datetime(), z.enum(["0", "1"]), entryIdSchema]));
+
 /** 注册共享积分余额、收支明细与充值订单的读取接口。 */
 export function registerImageWallet(app: Hono<Env>, deps: ImageApiDependencies) {
   app.get("/wallet", async (c) => {
@@ -42,11 +52,7 @@ export function registerImageWallet(app: Hono<Env>, deps: ImageApiDependencies) 
         limit: z.coerce.number().int().min(1).max(100).default(20),
         view: z.enum(["spent", "earned"]).optional(),
         source: walletSourceSchema.default("local"),
-        before: z
-          .string()
-          .regex(/^[1-9][0-9]{0,18}$/)
-          .refine((value) => BigInt(value) <= 9223372036854775807n)
-          .optional(),
+        before: entryIdSchema.optional(),
       })
       .safeParse(c.req.query());
     if (!parsed.success) return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
@@ -58,6 +64,18 @@ export function registerImageWallet(app: Hono<Env>, deps: ImageApiDependencies) 
       ? await deps.repository.billingEntries(scope, deps.billing.provider, limit, before, view)
       : [];
     return c.json({ data });
+  });
+  app.get("/wallet/history", async (c) => {
+    const parsed = z
+      .object({
+        limit: z.coerce.number().int().min(1).max(100).default(20),
+        view: z.enum(["spent", "earned"]).optional(),
+        before: historyCursorSchema.optional(),
+      })
+      .safeParse(c.req.query());
+    if (!parsed.success) return fail(c, "VALIDATION_ERROR", "分页参数无效", 400);
+    const { limit, view, before } = parsed.data;
+    return c.json(await deps.repository.walletHistory(c.get("principal"), limit, view, before));
   });
   app.get("/wallet/recharges", async (c) => {
     const parsed = z
