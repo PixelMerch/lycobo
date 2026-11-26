@@ -44,3 +44,29 @@ it.each([
     expect.objectContaining({ orderId, amount: pack.amount, credits: pack.credits }),
   );
 });
+
+it("rejects checkout without current workspace eligibility even for an existing customer", async () => {
+  const customer = { customerId: "cust_fixture", accountId: "cca_fixture" };
+  const repository = {
+    billingCustomer: vi.fn(async () => customer),
+    billingEmail: vi.fn(async () => null),
+    saveBillingCustomer: vi.fn(),
+    createBillingOrder: vi.fn(),
+    saveBillingCheckout: vi.fn(),
+  };
+  const provider = { id: "creem-test", customer: vi.fn(), checkout: vi.fn() };
+  const checkout = checkoutService(repository, provider, {
+    products: JSON.stringify({ "offer:trial": "prod_fixture" }),
+    offerEnd: new Date(Date.now() + 60_000).toISOString(),
+    successUrl: "https://example.com/",
+  });
+  const scope = { userId: crypto.randomUUID(), organizationId: crypto.randomUUID() };
+
+  expect((await checkout.options(scope)).packs).toEqual([]);
+  await expect(checkout.checkout(scope, crypto.randomUUID(), "offer:trial")).rejects.toMatchObject({
+    code: "BILLING_UNAVAILABLE",
+  });
+  expect(repository.billingCustomer).not.toHaveBeenCalled();
+  expect(repository.createBillingOrder).not.toHaveBeenCalled();
+  expect(provider.checkout).not.toHaveBeenCalled();
+});

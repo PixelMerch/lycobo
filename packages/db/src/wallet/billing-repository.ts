@@ -22,7 +22,7 @@ type OrderInput = {
   bonusCredits: number;
 };
 
-/** 保存账户映射和订单，始终用鉴权后的站内身份选择付款账户。 */
+/** 用鉴权后的工作区身份识别可结账买家，保存渠道映射与订单。 */
 export function billingRepository(sql: postgres.Sql) {
   return {
     async billingCustomer(scope: ImageScope, provider: string) {
@@ -32,8 +32,17 @@ export function billingRepository(sql: postgres.Sql) {
       return row ? mapping.parse(row) : null;
     },
     async billingEmail(scope: ImageScope) {
-      const [row] = await sql`select email from social_accounts
-        where user_id=${scope.userId} and organization_id=${scope.organizationId} and disabled_at is null`;
+      // 企业子账号即使有关联的第三方邮箱，也不能以同一工作区身份发起充值。
+      const [row] = await sql`select
+        case when m.role='admin' then coalesce(m.billing_email,s.email) else s.email end as email
+        from organization_members m
+        left join social_accounts s on s.user_id=m.user_id and s.organization_id=m.organization_id
+          and s.disabled_at is null
+        where m.user_id=${scope.userId} and m.organization_id=${scope.organizationId}
+          and (m.role='admin' or not exists (
+            select 1 from enterprise_accounts a
+            where a.user_id=m.user_id and a.organization_id=m.organization_id
+          ))`;
       return z.email().safeParse(row?.email).data ?? null;
     },
     async saveBillingCustomer(
