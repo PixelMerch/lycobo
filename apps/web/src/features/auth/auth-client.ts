@@ -20,6 +20,7 @@ import {
 import { parseLocale } from "../../i18n/locale";
 import { rememberLocale } from "../../i18n/locale-store";
 import { currentMessages } from "../../i18n/messages";
+import { useAppNavigate } from "../../i18n/use-localized-navigation";
 import { normalizeApiResponse } from "../../lib/api-response";
 import { reportRequestFailure } from "../../lib/request-diagnostics";
 import { serverErrorMessage } from "../../lib/server-error";
@@ -152,9 +153,10 @@ export function useEmailCodeLogin() {
   });
 }
 
-/** 退出登录，成功后清空本机的登录状态与其他缓存。 */
+/** 退出登录后直接回到当前语言的首页，并清理旧身份的缓存。 */
 export function useEnterpriseLogout() {
   const client = useQueryClient();
+  const navigate = useAppNavigate();
   return useMutation({
     mutationFn: async () => {
       resetSessionRenewal();
@@ -163,6 +165,8 @@ export function useEnterpriseLogout() {
     },
     // 三处退出入口（账户菜单、设置侧栏、手机设置页）共用这里的提示，组件卸载后也会执行。
     onSuccess: async () => {
+      // 先离开受保护的工作区，避免会话清除时触发去登录页的导航。
+      await navigate("/", { replace: true });
       await clearEnterpriseSession(client);
       toast.success(currentMessages(authMessages).signedOut);
     },

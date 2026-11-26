@@ -112,16 +112,18 @@ function SignedInRedirect({ to, socialSignedIn }: { to: string; socialSignedIn: 
 }
 
 /** 右侧登录容器：正面依次为 Google、Apple、邮箱与企业账号入口，切换后显示企业账号表单。 */
-function LoginCard({
+export function LoginCard({
   returnTo,
   socialFailed,
   onClose,
   onLoginSuccess,
+  titleId = "login-title",
 }: {
   returnTo: string;
   socialFailed: boolean;
   onClose: () => void;
   onLoginSuccess: (account: EnterpriseIdentity) => void;
+  titleId?: string;
 }) {
   const [enterprise, setEnterprise] = useState(false);
   // 只有从企业账号表单返回时才把焦点放回入口；首次打开不把焦点给这个次要入口。
@@ -153,7 +155,7 @@ function LoginCard({
             <span className="login-logo-badge" aria-hidden="true">
               <img src="/brand/lycobo-focus-mark.svg" alt="" width="48" height="48" />
             </span>
-            <h1 id="login-title">{enterprise ? t.enterpriseTitle : t.title}</h1>
+            <h1 id={titleId}>{enterprise ? t.enterpriseTitle : t.title}</h1>
           </header>
           <div className="login-body">
             {enterprise ? (

@@ -18,16 +18,21 @@
   margin-top: var(--space-3);
 }
 
-.lp-pricing-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
+.lp-pricing .credit-recharge-note {
   margin-top: var(--space-5);
 }
 
-.lp-pricing-actions p {
-  color: var(--lp-muted);
-  font-size: var(--text-sm);
+.pricing-login-dialog.modal__dialog {
+  position: relative;
+  width: min(460px, calc(100vw - 24px));
+  max-height: calc(100dvh - 32px);
+  padding: clamp(26px, 5vw, 40px);
+  overflow-y: auto;
+  border: 1px solid var(--landing-border);
+  border-radius: 16px;
+  background: #1a1a1a;
+}
+
+.pricing-login-dialog .login-panel {
+  margin-inline: auto;
 }
