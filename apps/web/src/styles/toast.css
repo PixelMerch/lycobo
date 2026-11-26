@@ -8,11 +8,11 @@
 .toast {
   --glass-fill: none;
   --glass-tint: var(--surface-secondary);
-  --toast-control-size: 32px;
+  --toast-control-height: 26px;
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  padding: 6px 6px 6px var(--space-3);
   border-radius: var(--field-radius);
   text-align: start;
 }
@@ -54,7 +54,7 @@
 .toast .toast__action {
   position: relative;
   flex: none;
-  height: 26px;
+  height: var(--toast-control-height);
   min-height: 0;
   border-radius: var(--radius);
   white-space: nowrap;
@@ -62,10 +62,13 @@
 
 /* 关闭按钮参与布局，与操作按钮各占一块独立的点击区域。 */
 .toast .toast__close-button {
-  position: static;
+  position: relative;
+  inset: auto;
   flex: none;
-  width: var(--toast-control-size);
-  height: var(--toast-control-size);
+  width: var(--toast-control-height);
+  min-width: 0;
+  height: var(--toast-control-height);
+  min-height: 0;
   border: 0;
   border-radius: var(--radius);
   background: transparent;
@@ -84,13 +87,17 @@
 
 @media (pointer: coarse) {
   .toast {
-    --toast-control-size: 44px;
+    min-height: var(--control-touch-target);
+  }
+
+  .toast .toast__close-button {
+    width: var(--control-touch-target);
   }
 
   /* 扩大竖向触控范围，同时保留紧凑的按钮外观。 */
-  .toast .toast__action::after {
+  .toast :is(.toast__action, .toast__close-button)::after {
     position: absolute;
-    inset: -9px 0;
+    inset: calc((var(--toast-control-height) - var(--control-touch-target)) / 2) 0;
     content: "";
   }
 }
