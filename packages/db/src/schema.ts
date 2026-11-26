@@ -679,6 +679,7 @@ export const walletEntries = pgTable(
     jobId: uuid("job_id").references(() => generationJobs.id),
     itemId: uuid("item_id").references(() => generationJobItems.id),
     rechargeId: uuid("recharge_id").references(() => rechargeOrders.id),
+    billingOrderId: uuid("billing_order_id").references(() => billingOrders.id),
     createdAt: createdAt(),
   },
   (t) => [
@@ -688,13 +689,21 @@ export const walletEntries = pgTable(
     index("wallet_entries_job_idx").on(t.jobId),
     uniqueIndex("wallet_entries_item_kind_unique").on(t.itemId, t.kind),
     uniqueIndex("wallet_entries_recharge_unique").on(t.rechargeId),
+    uniqueIndex("wallet_entries_billing_order_unique")
+      .on(t.billingOrderId)
+      .where(sql`${t.billingOrderId} is not null`),
     check(
       "wallet_entry_amount_check",
       sql`${t.balanceAfter} >= 0 and ((${t.kind} = 'consume' and ${t.amount} < 0) or (${t.kind} in ('opening','recharge','refund','checkin') and ${t.amount} > 0))`,
     ),
     check(
       "wallet_entry_source_check",
-      sql`(${t.kind} in ('consume','refund') and ${t.jobId} is not null and ${t.itemId} is not null and ${t.rechargeId} is null) or (${t.kind} in ('consume','refund') and ${t.eventKey} like 'prompt-optimize:%' and ${t.jobId} is null and ${t.itemId} is null and ${t.rechargeId} is null) or (${t.kind} = 'recharge' and ${t.rechargeId} is not null and ${t.jobId} is null and ${t.itemId} is null) or (${t.kind} in ('opening','checkin') and ${t.jobId} is null and ${t.itemId} is null and ${t.rechargeId} is null)`,
+      sql`(${t.billingOrderId} is null and (
+        (${t.kind} in ('consume','refund') and ${t.jobId} is not null and ${t.itemId} is not null and ${t.rechargeId} is null)
+        or (${t.kind} in ('consume','refund') and ${t.eventKey} like 'prompt-optimize:%' and ${t.jobId} is null and ${t.itemId} is null and ${t.rechargeId} is null)
+        or (${t.kind} = 'recharge' and ${t.rechargeId} is not null and ${t.jobId} is null and ${t.itemId} is null)
+        or (${t.kind} in ('opening','checkin') and ${t.jobId} is null and ${t.itemId} is null and ${t.rechargeId} is null)
+      )) or (${t.billingOrderId} is not null and ${t.kind} = 'recharge' and ${t.rechargeId} is null and ${t.jobId} is null and ${t.itemId} is null)`,
     ),
   ],
 );
@@ -1141,6 +1150,7 @@ export const billingOrders = pgTable(
     transactionId: text("transaction_id"),
     amountMinor: integer("amount_minor").notNull(),
     credits: integer("credits").notNull(),
+    bonusCredits: integer("bonus_credits").notNull().default(0),
     paidAt: timestamp("paid_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
@@ -1151,6 +1161,7 @@ export const billingOrders = pgTable(
     index("billing_orders_owner").on(t.organizationId, t.userId, t.createdAt, t.id),
     index("billing_orders_user").on(t.userId),
     check("billing_orders_value", sql`${t.amountMinor} > 0 and ${t.credits} > 0`),
+    check("billing_orders_bonus_credits", sql`${t.bonusCredits} >= 0`),
   ],
 ).enableRLS();
 

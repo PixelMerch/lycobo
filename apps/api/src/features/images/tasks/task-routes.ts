@@ -95,12 +95,12 @@ async function checkImageCredits(
     positions.length * imageUnitCredits,
     isRetry,
   );
-  const moderate = wallet ? deps.purchasedModerate : deps.moderate;
+  const { moderate } = deps;
   if (!moderate) {
     if (wallet) throw new BillingError("BILLING_UNAVAILABLE");
     return;
   }
-  // 先确定扣费钱包，再提交对应审核。购买积分逐图使用独立审核结果，便于按原交易冲正。
+  // 两个钱包都须审核。购买积分逐图保存审核结果，便于按原交易冲正。
   const prompts = positions.map((position) => textileItemInput(input, position).prompt);
   const instructions = input.localEdit?.regions.map((region) => region.prompt) ?? [];
   const approvals = wallet

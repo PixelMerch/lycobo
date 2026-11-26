@@ -22,7 +22,6 @@ function fixture(
     billing?: ExternalWalletService;
     wallet?: ImageRepository["wallet"];
     moderate?: GenerationModerator | undefined;
-    purchasedModerate?: GenerationModerator | undefined;
     get?: ImageRepository["get"];
     retry?: ImageRepository["retry"];
     providerRetryCandidates?: ImageRepository["providerRetryCandidates"];
@@ -136,7 +135,6 @@ function fixture(
   const app = createApp(() => {}, {
     repository,
     moderate: extra.moderate,
-    purchasedModerate: extra.purchasedModerate,
     billing: extra.billing,
     wakeBilling: extra.wakeBilling,
     store,
@@ -638,7 +636,7 @@ it("persists separate per-image billing approvals and routes the task to billing
       generationAccount,
       balance: unexpected,
     },
-    purchasedModerate: moderate,
+    moderate,
     wake,
     wakeBilling,
   });
@@ -658,7 +656,7 @@ it("persists separate per-image billing approvals and routes the task to billing
 });
 
 it("returns insufficient credits before persisting a generation in external billing mode", async () => {
-  const purchasedModerate = vi.fn<GenerationModerator>(async () => ["mod_one"]);
+  const moderate = vi.fn<GenerationModerator>(async () => ["mod_one"]);
   const { create, submit } = fixture(false, false, {
     billing: {
       provider: "fixture",
@@ -668,16 +666,16 @@ it("returns insufficient credits before persisting a generation in external bill
       balance: unexpected,
     },
     wallet: async () => ({ balance: 1 }),
-    purchasedModerate,
+    moderate,
   });
   const rejected = await submit();
   expect(rejected.status).toBe(409);
   expect(await rejected.json()).toMatchObject({ error: { code: "INSUFFICIENT_CREDITS" } });
   expect(create).not.toHaveBeenCalled();
-  expect(purchasedModerate).not.toHaveBeenCalled();
+  expect(moderate).not.toHaveBeenCalled();
 });
 
-it("spends the local wallet alone when it covers the task even with purchased credits enabled", async () => {
+it("screens local-funded tasks before charging only the local wallet", async () => {
   const generationAccount = vi.fn(async () => ({ provider: "fixture", accountId: "cca_fixture" }));
   const moderate = vi.fn<GenerationModerator>(async () => ["mod_one", "mod_two"]);
   const wakeBilling = vi.fn(async () => {});
@@ -685,14 +683,18 @@ it("spends the local wallet alone when it covers the task even with purchased cr
   const { create, submit } = fixture(false, false, {
     billing: { provider: "fixture", generationAccount, balance: unexpected },
     wallet: async () => ({ balance: 4 }),
-    purchasedModerate: moderate,
+    moderate,
     wake,
     wakeBilling,
   });
   expect((await submit(undefined, { count: 2 })).status).toBe(202);
   expect(generationAccount).not.toHaveBeenCalled();
   expect(create.mock.calls[0]?.[6]).toBeUndefined();
-  expect(moderate).not.toHaveBeenCalled();
+  expect(moderate).toHaveBeenCalledOnce();
+  expect(moderate.mock.calls[0]?.[3]).toBeUndefined();
+  expect(moderate.mock.invocationCallOrder[0]).toBeLessThan(
+    create.mock.invocationCallOrder[0] ?? 0,
+  );
   expect(wake).toHaveBeenCalledOnce();
   expect(wakeBilling).not.toHaveBeenCalled();
 });

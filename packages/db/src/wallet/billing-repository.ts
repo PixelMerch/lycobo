@@ -1,7 +1,7 @@
 import type { ImageScope } from "@lycoboai/contracts";
 import type postgres from "postgres";
 import { z } from "zod";
-import { WalletError } from "./wallet-repository";
+import { appendWalletEntry, lockOrganizationWallet, WalletError } from "./wallet-repository";
 
 const mapping = z.object({ customerId: z.string(), accountId: z.string() });
 const orderRow = z.object({
@@ -10,6 +10,7 @@ const orderRow = z.object({
   customerId: z.string(),
   amount: z.number().int(),
   credits: z.number().int(),
+  bonusCredits: z.number().int().nonnegative(),
   url: z.string().nullable(),
 });
 type OrderInput = {
@@ -18,6 +19,7 @@ type OrderInput = {
   customerId: string;
   amount: number;
   credits: number;
+  bonusCredits: number;
 };
 
 /** 保存账户映射和订单，始终用鉴权后的站内身份选择付款账户。 */
@@ -53,15 +55,16 @@ export function billingRepository(sql: postgres.Sql) {
     async createBillingOrder(scope: ImageScope, key: string, input: OrderInput) {
       return sql.begin(async (tx) => {
         const [inserted] = await tx`insert into billing_orders
-          (organization_id,user_id,idempotency_key,provider,product_id,customer_id,amount_minor,credits)
-          select ${scope.organizationId},${scope.userId},${key},${input.provider},${input.productId},${input.customerId},${input.amount},${input.credits}
+          (organization_id,user_id,idempotency_key,provider,product_id,customer_id,amount_minor,credits,bonus_credits)
+          select ${scope.organizationId},${scope.userId},${key},${input.provider},${input.productId},${input.customerId},
+            ${input.amount},${input.credits},${input.bonusCredits}
           where exists(select 1 from organization_members where user_id=${scope.userId} and organization_id=${scope.organizationId})
           on conflict (organization_id,user_id,idempotency_key) do nothing
           returning id`;
         if (inserted) return { id: z.uuid().parse(inserted.id), url: null, fresh: true };
         const [existing] =
           await tx`select id,provider,product_id as "productId",customer_id as "customerId",
-          amount_minor as amount,credits,checkout_url as url from billing_orders
+          amount_minor as amount,credits,bonus_credits as "bonusCredits",checkout_url as url from billing_orders
           where organization_id=${scope.organizationId} and user_id=${scope.userId} and idempotency_key=${key}`;
         if (!existing) throw new WalletError("FORBIDDEN");
         const order = orderRow.parse(existing);
@@ -70,7 +73,8 @@ export function billingRepository(sql: postgres.Sql) {
           order.productId !== input.productId ||
           order.customerId !== input.customerId ||
           order.amount !== input.amount ||
-          order.credits !== input.credits
+          order.credits !== input.credits ||
+          order.bonusCredits !== input.bonusCredits
         )
           throw new WalletError("IDEMPOTENCY_CONFLICT");
         return { id: order.id, url: order.url, fresh: false };
@@ -102,8 +106,20 @@ export function billingRepository(sql: postgres.Sql) {
           where id=${order.id} and provider=${order.provider} and product_id=${order.productId}
           and customer_id=${order.customerId} and amount_minor=${order.amount}
           and (checkout_id is null or checkout_id=${order.checkoutId}) and paid_at is null
-          returning organization_id,user_id,credits`;
+          returning organization_id,user_id,credits,bonus_credits`;
         if (!changed) return;
+        const bonus = z.number().int().nonnegative().parse(changed.bonus_credits);
+        // 用付款时保存的工作区结算；重复回调无法再次更新订单并领取奖励。
+        if (bonus > 0) {
+          const wallet = await lockOrganizationWallet(tx, z.uuid().parse(changed.organization_id));
+          await appendWalletEntry(tx, wallet.id, {
+            eventKey: `billing-bonus:${order.id}`,
+            kind: "recharge",
+            amount: bonus,
+            userId: z.uuid().parse(changed.user_id),
+            billingOrderId: order.id,
+          });
+        }
         await tx`insert into billing_credit_entries (provider,organization_id,user_id,kind,amount,order_id)
           values (${order.provider},${changed.organization_id},${changed.user_id},'recharge',${changed.credits},${order.id})
           on conflict (order_id) do nothing`;
@@ -137,7 +153,7 @@ export function billingRepository(sql: postgres.Sql) {
     },
     async billingOrders(scope: ImageScope, limit: number, before?: string) {
       return sql`with orders as (
-        select r.id,u.uid as user_uid,r.credits,r.amount_minor,'USD' as currency,
+        select r.id,u.uid as user_uid,r.credits+r.bonus_credits as credits,r.amount_minor,'USD' as currency,
           case when r.paid_at is null then 'pending' else 'paid' end as status,
           r.provider as channel,r.created_at,r.paid_at
         from billing_orders r join users u on u.id=r.user_id

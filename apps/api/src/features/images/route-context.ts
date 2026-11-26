@@ -13,7 +13,6 @@ import type { WorkbenchSession } from "./session";
 export type ImageApiDependencies = {
   repository: ImageRuntimeRepository;
   moderate?: GenerationModerator | undefined;
-  purchasedModerate?: GenerationModerator | undefined;
   billing?: ExternalWalletService | undefined;
   checkout?: CheckoutService | undefined;
   wakeBilling?: ((jobId: string) => Promise<void>) | undefined;

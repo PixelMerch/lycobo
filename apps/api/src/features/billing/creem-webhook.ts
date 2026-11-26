@@ -35,7 +35,7 @@ function json(raw: Uint8Array): unknown {
   }
 }
 
-/** 验证原始请求签名，再按本地订单关联核对支付；积分由 Creem 自动发放。 */
+/** 验证原始请求签名并核对订单，Creem 发购买积分，站内事务结算赠送积分。 */
 export function creemWebhookRoutes(
   secret: string,
   repository: Pick<ImageRuntimeRepository, "confirmBillingOrder" | "refreshBillingAccount">,
