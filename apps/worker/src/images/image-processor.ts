@@ -1,4 +1,8 @@
-import { type ImageGenerationInput, imageOutputDimensions } from "@lycoboai/contracts";
+import {
+  type ImageGenerationInput,
+  type ImageScope,
+  imageOutputDimensions,
+} from "@lycoboai/contracts";
 import type { ImageRuntimeRepository } from "@lycoboai/db";
 import {
   type CapabilityOverrides,
@@ -40,8 +44,11 @@ function legacyProvider(input: ImageGenerationInput, deps: ImageProcessorDepende
   return deps.provider;
 }
 
-/** 领取前等待参考图，只有图片就绪后才进入供应商执行与计费结算。 */
-export async function processImageItem(itemId: string, deps: ImageProcessorDependencies) {
+/** 领取前等待参考图，执行后返回已领取图片的账号，用于继续投递该账号的队列。 */
+export async function processImageItem(
+  itemId: string,
+  deps: ImageProcessorDependencies,
+): Promise<ImageScope | undefined> {
   const started = performance.now();
   const timing = (stage: string, since: number) =>
     reportGenerationTiming(deps.provider?.onTiming, {
@@ -60,11 +67,15 @@ export async function processImageItem(itemId: string, deps: ImageProcessorDepen
   );
   timing("claim", started);
   if (!job) return;
+  const scope = { organizationId: job.organizationId, userId: job.userId };
   if (references === "failed") {
     await deps.repository.finish(job, { errorCode: "REFERENCE_PROCESSING_FAILED", unknown: false });
-    return;
+    return scope;
   }
-  if (job.configuredProvider) return processConfiguredImage(job, deps);
+  if (job.configuredProvider) {
+    await processConfiguredImage(job, deps);
+    return scope;
+  }
   let submitted = false;
   try {
     const provider = legacyProvider(job.input, deps);
@@ -104,4 +115,5 @@ export async function processImageItem(itemId: string, deps: ImageProcessorDepen
       requestId: known ? error.requestId : undefined,
     });
   }
+  return scope;
 }

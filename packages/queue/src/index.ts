@@ -1,3 +1,4 @@
+import type { ImageScope } from "@lycoboai/contracts";
 import { z } from "zod";
 
 export const diagnosticJobSchema = z.strictObject({ runId: z.uuid() });
@@ -15,12 +16,17 @@ export interface ImageQueueSender {
 export interface OutboxRepository {
   leaseOutbox(
     transport: "queue",
+    scope?: ImageScope,
   ): Promise<Array<{ id: string; itemId: string; leaseToken: string }>>;
   ackOutbox(id: string, leaseToken: string): Promise<void>;
 }
 /** 向持久队列投递已领取的意图，发送成功后才确认租约。 */
-export async function dispatchImageOutbox(repository: OutboxRepository, queue: ImageQueueSender) {
-  const events = await repository.leaseOutbox("queue");
+export async function dispatchImageOutbox(
+  repository: OutboxRepository,
+  queue: ImageQueueSender,
+  scope?: ImageScope,
+) {
+  const events = await repository.leaseOutbox("queue", scope);
   let sent = 0;
   for (const event of events) {
     await queue.send(imageQueueJobSchema.parse({ version: 1, itemId: event.itemId }));

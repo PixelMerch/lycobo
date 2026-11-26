@@ -15,12 +15,79 @@ import {
 } from "./image-repository-types";
 import type { imageSettlement } from "./image-settlement";
 
+// 等待上游异步结果的图片仍占用账号并发名额。
+const accountImageConcurrency = 5;
+
+function countRunningImages(
+  tx: postgres.TransactionSql,
+  organizationId: string | postgres.PendingQuery<postgres.Row[]>,
+  userId: string | postgres.PendingQuery<postgres.Row[]>,
+) {
+  return tx`select count(*)::int from (
+    select 1 from generation_jobs active_job join generation_job_items active_item on active_item.job_id=active_job.id
+    where active_job.organization_id=${organizationId} and active_job.user_id=${userId}
+      and active_job.status='running' and not (active_job.input ? 'video')
+      and active_item.status='running' and active_item.superseded_at is null
+    limit ${accountImageConcurrency}
+  ) active_images`;
+}
+
+type ImageOutboxCandidate = {
+  id: string;
+  item_id: string;
+  organization_id: string;
+  user_id: string;
+  status: string;
+  running: number;
+};
+
+function withinImageCapacity(rows: readonly ImageOutboxCandidate[]) {
+  const offered = new Map<string, number>();
+  return rows.filter((row) => {
+    // 同批最多投递剩余名额，已在运行的状态读取独立处理。
+    if (row.status !== "queued") return true;
+    const key = `${row.organization_id}:${row.user_id}`;
+    const count = offered.get(key) ?? 0;
+    if (row.running + count >= accountImageConcurrency) return false;
+    offered.set(key, count + 1);
+    return true;
+  });
+}
+
+async function lockImageClaim(tx: postgres.TransactionSql, itemId: string, tasksSince?: Date) {
+  const [candidate] =
+    await tx`select i.job_id,i.status,j.organization_id,j.user_id from generation_job_items i join generation_jobs j on j.id=i.job_id
+    where i.id=${itemId} ${tasksSince ? tx`and i.created_at>=${tasksSince}` : tx``} and (i.status='queued' or (i.status='running' and exists(select 1 from provider_executions e where e.item_id=${itemId} and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now()))))`;
+  if (!candidate) return;
+  // 来自不同任务的首发领取按账号串行，避免多个消费者同时抢到同一个余量。
+  if (candidate.status === "queued")
+    await tx`select user_id from organization_members where organization_id=${candidate.organization_id} and user_id=${candidate.user_id} for no key update`;
+  // 与完成结算和人工核对使用相同的加锁顺序，避免同一任务的子项死锁。
+  await tx`select id from generation_jobs where id=${candidate.job_id} for update`;
+  const [row] =
+    await tx`select i.id,i.status,i.position,i.job_id,j.organization_id,j.user_id,j.input,j.provider_model,j.provider_snapshot,e.phase,e.task_id,e.status_path,e.deadline_at,e.poll_failures from generation_job_items i join generation_jobs j on j.id=i.job_id left join provider_executions e on e.item_id=i.id
+    where i.id=${itemId}
+    and not exists(select 1 from generation_credit_charges c where c.item_id=i.id and c.state<>'paid')
+    and (i.status='queued' or (i.status='running' and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now()))) for update of i skip locked`;
+  return row;
+}
+
+async function canStartImage(tx: postgres.TransactionSql, row: postgres.Row, itemId: string) {
+  if (row.status !== "queued") return true;
+  const [capacity] = await countRunningImages(tx, String(row.organization_id), String(row.user_id));
+  if (Number(capacity?.count) < accountImageConcurrency) return true;
+  // 消息已送达但名额满，归还持久意图，等名额释放再投递。
+  await tx`update generation_outbox set dispatched_at=null,next_attempt_at=least(next_attempt_at,now()),lease_token=null,lease_expires_at=null where item_id=${itemId}`;
+  return false;
+}
+
 async function leaseProviderExecution(
   tx: postgres.TransactionSql,
   itemId: string,
   leaseMs: number,
   row: {
     provider_snapshot?: unknown;
+    status?: unknown;
     deadline_at?: unknown;
     phase?: unknown;
     task_id?: unknown;
@@ -32,10 +99,13 @@ async function leaseProviderExecution(
     ? providerSnapshotSchema.parse(row.provider_snapshot)
     : null;
   if (!snapshot) return undefined;
-  const deadlineAt = row.deadline_at
+  let deadlineAt = row.deadline_at
     ? new Date(String(row.deadline_at))
     : new Date(Date.now() + snapshot.taskTimeoutSeconds * 1000);
-  await tx`insert into provider_executions(item_id,phase,deadline_at,lease_until) values (${itemId},'submitting',${deadlineAt},now()+${leaseMs}*interval '1 millisecond') on conflict(item_id) do update set lease_until=excluded.lease_until,next_poll_at=case when provider_executions.phase='polling' then provider_executions.next_poll_at else null end,poll_count=provider_executions.poll_count+1`;
+  // 手动恢复只读取原任务，三分钟核对窗口从实际领取起算。
+  if (row.status === "queued" && row.phase === "polling")
+    deadlineAt = new Date(Date.now() + 180_000);
+  await tx`insert into provider_executions(item_id,phase,deadline_at,lease_until) values (${itemId},'submitting',${deadlineAt},now()+${leaseMs}*interval '1 millisecond') on conflict(item_id) do update set deadline_at=excluded.deadline_at,lease_until=excluded.lease_until,next_poll_at=case when provider_executions.phase='polling' then provider_executions.next_poll_at else null end,poll_count=provider_executions.poll_count+1`;
   return {
     snapshot,
     phase: String(row.phase ?? "submitting"),
@@ -78,23 +148,31 @@ export function imageExecutionRepository(
 ) {
   const { refreshJob, refund } = settlement;
   return {
-    async leaseOutbox(transport: "local" | "queue" = "local") {
+    async leaseOutbox(transport: "local" | "queue" = "local", scope?: ImageScope) {
       return sql.begin(async (tx) => {
         // 为已确认的首次投递预留消费时间，避免积压时反复复制排队消息。
         const recoveryWindow =
           transport === "queue"
             ? tx`and (i.status<>'queued' or o.dispatched_at is null or o.next_attempt_at<=now()-interval '5 minutes')`
             : tx``;
-        const rows =
-          await tx`select o.id,o.item_id from generation_outbox o join generation_job_items i on i.id=o.item_id
-          where ${tasksSince ? sql`i.created_at>=${tasksSince} and` : sql``} (i.status='queued' or (i.status='running' and exists(select 1 from provider_executions e where e.item_id=i.id and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now())))) and o.next_attempt_at<=now() and (o.lease_expires_at is null or o.lease_expires_at<now())
+        const rows = await tx<
+          ImageOutboxCandidate[]
+        >`select o.id,o.item_id,j.organization_id,j.user_id,i.status,capacity.running
+          from generation_outbox o join generation_job_items i on i.id=o.item_id join generation_jobs j on j.id=i.job_id
+          cross join lateral (${countRunningImages(tx, tx`j.organization_id`, tx`j.user_id`)}) capacity(running)
+          where ${tasksSince ? tx`i.created_at>=${tasksSince} and` : tx``}
+          ${scope ? tx`j.organization_id=${scope.organizationId} and j.user_id=${scope.userId} and` : tx``}
+          ((i.status='queued' and capacity.running<${accountImageConcurrency}
+            and not exists(select 1 from generation_credit_charges c where c.item_id=i.id and c.state<>'paid'))
+            or (i.status='running' and exists(select 1 from provider_executions e where e.item_id=i.id and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now()))))
+          and o.next_attempt_at<=now() and (o.lease_expires_at is null or o.lease_expires_at<now())
           ${recoveryWindow}
-          order by o.next_attempt_at limit 20 for update of o skip locked`;
+          order by o.next_attempt_at,i.created_at,i.position,i.id limit 20 for update of o skip locked`;
         const result: Array<{ id: string; itemId: string; leaseToken: string }> = [];
-        for (const row of rows) {
+        for (const row of withinImageCapacity(rows)) {
           const token = randomUUID();
           await tx`update generation_outbox set lease_token=${token},lease_expires_at=now()+interval '30 seconds' where id=${row.id}`;
-          result.push({ id: String(row.id), itemId: String(row.item_id), leaseToken: token });
+          result.push({ id: row.id, itemId: row.item_id, leaseToken: token });
         }
         return result;
       });
@@ -110,21 +188,12 @@ export function imageExecutionRepository(
     ): Promise<ClaimedImage | null> {
       const leaseMs = Math.min(requestedLeaseMs, 90000);
       return sql.begin(async (tx) => {
-        const [candidate] =
-          await tx`select job_id from generation_job_items where id=${itemId} ${tasksSince ? tx`and created_at>=${tasksSince}` : tx``} and (status='queued' or (status='running' and exists(select 1 from provider_executions e where e.item_id=${itemId} and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now()))))`;
-        if (!candidate) return null;
-        // 与完成结算和人工核对使用相同的加锁顺序，避免同一任务的子项死锁。
-        await tx`select id from generation_jobs where id=${candidate.job_id} for update`;
-        const [row] =
-          await tx`select i.id,i.position,i.job_id,j.organization_id,j.user_id,j.input,j.provider_model,j.provider_snapshot,e.phase,e.task_id,e.status_path,e.deadline_at,e.poll_failures from generation_job_items i join generation_jobs j on j.id=i.job_id left join provider_executions e on e.item_id=i.id
-          where i.id=${itemId}
-          and not exists(select 1 from generation_credit_charges c where c.item_id=i.id and c.state<>'paid')
-          and (i.status='queued' or (i.status='running' and e.phase='polling' and e.next_poll_at<=now() and (e.lease_until is null or e.lease_until<now()))) for update of i skip locked`;
-        if (!row) return null;
+        const row = await lockImageClaim(tx, itemId, tasksSince);
+        if (!row || !(await canStartImage(tx, row, itemId))) return null;
         const input = imageGenerationInputSchema.parse(row.input);
         const executionToken = randomUUID();
         const configuredProvider = await leaseProviderExecution(tx, itemId, leaseMs, row);
-        await tx`update generation_job_items set status='running',worker_id=${workerId},execution_token=${executionToken},provider=${configuredProvider?.snapshot.adapter ?? "vakv"},attempts=attempts+case when status='queued' then 1 else 0 end,
+        await tx`update generation_job_items set status='running',worker_id=${workerId},execution_token=${executionToken},provider=${configuredProvider?.snapshot.adapter ?? "vakv"},attempts=attempts+${Number(row.status === "queued" && row.phase !== "polling")},
           started_at=coalesce(started_at,now()),lease_expires_at=now()+${leaseMs} * interval '1 millisecond' where id=${itemId}`;
         await tx`update generation_jobs set status='running',updated_at=now() where id=${row.job_id}`;
         await recordImageEvent(tx, String(row.organization_id), "task", String(row.job_id));

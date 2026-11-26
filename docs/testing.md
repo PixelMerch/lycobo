@@ -75,6 +75,8 @@ DATABASE_URL=postgresql://lycoboai:local_dev_only@127.0.0.1:55432/lycoboai ALLOW
 
 素材库批量下载与历史整组下载复用三路原图读取和 256 MB 总大小限制，浏览器收齐文件后再按原顺序打包。单元测试覆盖并发上限、下载进度、下载中超限和取消。
 
+`test:images` 的 `verify-image-account-queue.ts` 验证连续提交超过 5 张、不同任务同时领取、不同账号名额独立，以及完成后给排队项补位。
+
 历史时间断言使用浏览器自身时区计算，不能写死本机的 UTC+8 时间。可通过 GitHub Actions 的 `browser_grep` 定位失败用例。
 
 浏览器 fixture 有三处容易出错：内联图片必须是校验正确的真实图片，新版 Chromium 拒绝解码 CRC 损坏的 PNG，参考图会停在“无法解码”；`<a download>` 发起的下载不经过 `page.route`，要核对下载内容时像 `video-creation.spec.ts` 那样起本地 HTTP 服务，否则只核对下载地址；参考图最多三张并行上传、到达顺序不固定，fixture 要按上传内容（例如图片宽度）而不是到达顺序分配素材 ID。

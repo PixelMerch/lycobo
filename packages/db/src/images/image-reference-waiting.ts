@@ -9,7 +9,8 @@ export function imageReferenceWaiting(sql: postgres.Sql) {
           where not exists(select 1 from media_assets a where a.id=r.value::uuid
             and a.organization_id=j.organization_id and a.storage_deleted_at is null)) as ids
         from generation_job_items i join generation_jobs j on j.id=i.job_id
-        where i.id=${itemId} and i.status='queued'`;
+        where i.id=${itemId} and i.status='queued'
+          and not exists(select 1 from provider_executions e where e.item_id=i.id and e.phase='polling')`;
       if (!job || !Array.isArray(job.ids) || job.ids.length === 0) return null;
       return {
         organizationId: String(job.organization_id),
