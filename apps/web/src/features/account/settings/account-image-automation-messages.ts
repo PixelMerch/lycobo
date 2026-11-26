@@ -5,8 +5,9 @@ export const accountImageAutomationMessages = defineMessages({
   "zh-CN": {
     title: "定时生图",
     description: "在豆包工作里设置生图时间、提示词和分辨率。",
-    doubaoWork: "豆包工作",
-    openDoubao: "打开豆包工作",
+    doubaoDesktop: "豆包桌面版",
+    desktopRequired: "需先安装豆包桌面版。",
+    openDoubao: "打开豆包客户端",
     setup: "首次连接设置",
     setupHint: "在豆包工作添加 Lycobo 连接器，填入连接地址和生图 Key，再导入技能。",
     connection: "连接地址",
@@ -29,8 +30,9 @@ export const accountImageAutomationMessages = defineMessages({
   en: {
     title: "Scheduled image generation",
     description: "Set the schedule, prompt, and image resolution in Doubao Work.",
-    doubaoWork: "Doubao Work",
-    openDoubao: "Open Doubao Work",
+    doubaoDesktop: "Doubao Desktop",
+    desktopRequired: "Requires the Doubao desktop app.",
+    openDoubao: "Open Doubao app",
     setup: "First-time setup",
     setupHint:
       "Add a Lycobo connector in Doubao Work using the URL and image API key, then import the skill.",

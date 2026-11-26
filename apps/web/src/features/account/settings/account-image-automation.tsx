@@ -17,9 +17,10 @@ import { SettingsGroup, SettingsRow } from "./account-settings-rows";
 
 const keyPath = `${imageAutomationPath.slice(1)}/key`;
 const skillPath = "/integrations/doubao/lycobo-image.zip";
-const doubaoWorkUrl = "https://www.doubao.com/work";
+// 豆包桌面版的注册协议会将客户端的聊天窗口带到前台。
+const doubaoDesktopUrl = "doubaoapp://active-chat";
 
-/** 为企业成员提供豆包工作入口，首次连接时再加载生图 Key 设置。 */
+/** 为企业成员提供豆包客户端入口，首次连接时再加载生图 Key 设置。 */
 export function AccountImageAutomation({ account }: { account: EnterpriseIdentity }) {
   const t = useMessages(accountImageAutomationMessages);
   const locale = useLocale();
@@ -69,14 +70,10 @@ export function AccountImageAutomation({ account }: { account: EnterpriseIdentit
     <div className="account-settings-section">
       <SettingsGroup title={t.title} description={t.description}>
         <SettingsRow
-          label={t.doubaoWork}
+          label={t.doubaoDesktop}
+          hint={t.desktopRequired}
           action={
-            <Link
-              className="settings-automation-link"
-              href={doubaoWorkUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <Link className="settings-automation-link" href={doubaoDesktopUrl}>
               {t.openDoubao}
               <Link.Icon />
             </Link>
