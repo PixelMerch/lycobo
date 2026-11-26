@@ -22,6 +22,8 @@ Docker 开发可使用 `docker compose up --build`，对外前端端口8081；�
 
 本地切换到包含新迁移的版本后，重新执行上述 `pnpm db:migrate` 命令。余额正常但积分明细显示不可用时，先检查本地 PostgreSQL 是否已应用最新计费迁移。
 
+生产旧标签页请求已下线的路由分块时，只有检测到线上 HTML 已换成新的入口脚本才自动刷新当前地址一次。普通运行错误或离线仍显示手动重试。
+
 宿主机 `pnpm dev` 与 Docker `studio` 共用 5173、8787、8791 端口，切换前先停止原开发进程。如果提示 `address already in use`，用 `lsof -nP -iTCP:8787 -sTCP:LISTEN` 确认占用者，再停止属于本项目的进程。Docker 启动器为前端选择 `dev:docker`，监听容器的 `0.0.0.0`；容器健康后通过 `http://127.0.0.1:8081` 访问。
 
 日常运行 `pnpm check`。隔离集成和手动浏览器检查见 [测试说明](testing.md)。
