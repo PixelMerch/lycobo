@@ -7,6 +7,7 @@ import {
   walletEntriesSchema,
 } from "@lycoboai/contracts";
 import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { imageRequest, useImageSession } from "../generation/generation-client";
 export function useWallet() {
   const session = useImageSession();
@@ -87,7 +88,8 @@ export function useCheckoutOptions() {
 
 /** 创建托管收银台并跳转，网络异常时保持当前积分弹框。 */
 export function useCreditCheckout() {
-  return useMutation({
+  const submitting = useRef(false);
+  const checkout = useMutation({
     mutationFn: async (pack: string) => {
       const response = await imageRequest("wallet/checkout", {
         method: "POST",
@@ -97,5 +99,30 @@ export function useCreditCheckout() {
       return creditCheckoutSchema.parse(await response.json());
     },
     onSuccess: ({ url }) => window.location.assign(url),
+    onError: () => {
+      submitting.current = false;
+    },
   });
+  const { reset } = checkout;
+  useEffect(() => {
+    const restoreCheckout = (event: PageTransitionEvent) => {
+      // 从收银台返回缓存的页面时，恢复购买按钮并清除上一次状态。
+      if (!event.persisted) return;
+      submitting.current = false;
+      reset();
+    };
+    window.addEventListener("pageshow", restoreCheckout);
+    return () => window.removeEventListener("pageshow", restoreCheckout);
+  }, [reset]);
+  return {
+    error: checkout.error,
+    variables: checkout.variables,
+    isOpening: checkout.isPending || checkout.isSuccess,
+    buy(pack: string) {
+      // 在按钮加载态渲染前拦住连点，整次请求只创建一个收银台。
+      if (submitting.current) return;
+      submitting.current = true;
+      checkout.mutate(pack);
+    },
+  };
 }

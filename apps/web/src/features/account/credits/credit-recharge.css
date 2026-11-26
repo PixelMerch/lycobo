@@ -116,6 +116,7 @@
   text-align: center;
 }
 .credit-pack-grid {
+  --credit-pack-banner-height: 30px;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 18px var(--space-3);
@@ -124,8 +125,14 @@
   list-style: none;
 }
 .credit-pack {
-  position: relative;
   display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-radius: 16px;
+}
+.credit-pack-surface {
+  display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: flex-start;
   min-width: 0;
@@ -142,22 +149,25 @@
 .credit-pack[data-featured="best-rate"] {
   --credit-pack-highlight: var(--studio-accent);
 }
-.credit-pack[data-featured]:is(:focus-within, :hover) {
-  border-color: var(--credit-pack-highlight);
+/* 彩色外卡在默认态露出顶条和描边，内容保留原有深色面板。 */
+.credit-pack[data-featured] {
+  padding: 0 3px 3px;
+  background: var(--credit-pack-highlight);
+}
+.credit-pack[data-featured] .credit-pack-surface {
+  border: 0;
+  border-radius: 12px;
 }
 .credit-pack-recommendation {
-  position: absolute;
-  inset: 0 12px auto auto;
-  z-index: 1;
-  max-width: calc(100% - 24px);
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: var(--credit-pack-highlight);
+  display: grid;
+  min-height: var(--credit-pack-banner-height);
+  padding: 4px 8px;
+  place-items: center;
   color: #141414;
   font-size: var(--text-xs);
   line-height: var(--leading-xs);
-  font-weight: var(--weight-medium);
-  transform: translateY(-50%);
+  font-weight: var(--weight-semibold);
+  text-align: center;
 }
 .credit-pack-value {
   display: flex;
@@ -231,34 +241,51 @@
   font-weight: var(--weight-semibold);
   font-variant-numeric: tabular-nums;
 }
-.credit-pack-buy:is(.button, .link) {
+.credit-pack-buy.button {
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   width: 100%;
   min-height: 44px;
   border-radius: 8px;
-}
-.credit-pack-buy:is(.link, .button:disabled) {
   background: #fff;
   color: #141414;
   font-weight: var(--weight-semibold);
-  text-decoration: none;
 }
 .credit-pack-buy.button:disabled {
   opacity: 0.75;
   cursor: default;
 }
-.credit-pack[data-featured="best-rate"] .credit-pack-buy:is(.link, .button:disabled) {
+.credit-pack-buy.button[data-pending="true"] {
+  padding-inline: 6px;
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+  white-space: normal;
+}
+.credit-pack[data-featured="recommended"] .credit-pack-buy.button {
+  background: var(--credit-pack-highlight);
+}
+.credit-pack[data-featured="best-rate"] .credit-pack-buy.button {
   background: var(--studio-accent-gradient);
   color: #142000;
 }
-.credit-pack-buy.link:is(:hover, [data-hovered="true"]) {
+.credit-pack:not([data-featured]) .credit-pack-buy.button[data-hovered="true"] {
   background: #dcdcdc;
-  text-decoration: none;
 }
-.credit-pack[data-featured="best-rate"] .credit-pack-buy.link:is(:hover, [data-hovered="true"]) {
+.credit-pack[data-featured] .credit-pack-buy.button[data-hovered="true"] {
   filter: brightness(1.1);
+}
+.credit-pack-error {
+  margin: 8px 0 0;
+  color: var(--danger);
+  font-size: var(--text-xs);
+  line-height: var(--leading-xs);
+}
+@media (min-width: 1100px) {
+  .credit-pack:not([data-featured]) {
+    margin-top: var(--credit-pack-banner-height);
+  }
 }
 @media (max-width: 1099px) {
   .credit-pack-grid {
@@ -270,7 +297,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 10px;
   }
-  .credit-pack {
+  .credit-pack-surface {
     min-height: 290px;
   }
 }
