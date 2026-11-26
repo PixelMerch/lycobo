@@ -60,7 +60,7 @@
     outline-color: var(--landing-focus);
   }
 
-  .landing-account-controls .account-avatar[data-avatar-preset] {
+  .landing-account-controls .account-avatar[data-avatar-preset="black"] {
     --avatar-ink: var(--landing-foreground);
   }
 }

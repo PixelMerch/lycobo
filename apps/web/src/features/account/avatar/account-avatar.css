@@ -1,11 +1,16 @@
 /*
  * 预设头像配色：每个预设一组渐变起止色与首字母颜色。头像在各处尺寸不同，
- * 颜色只在这里决定；没选过时组件给出 lime（品牌青柠到薄荷）。
+ * 未选择时使用黑底白字，青柠及其他彩色预设保留各自的渐变。
  */
 [data-avatar-preset] {
   --avatar-from: var(--brand);
   --avatar-to: var(--brand-light);
   --avatar-ink: #142000;
+}
+[data-avatar-preset="black"] {
+  --avatar-from: #1f1f1f;
+  --avatar-to: var(--avatar-from);
+  --avatar-ink: #f5f5f5;
 }
 [data-avatar-preset="mint"] {
   --avatar-from: #4fe3b0;
@@ -63,10 +68,16 @@
   --avatar-ink: #111511;
 }
 .avatar[data-avatar-preset],
-.avatar[data-avatar-preset] .avatar__fallback,
 .avatar-preset-swatch {
   border-radius: 50%;
   background: linear-gradient(135deg, var(--avatar-from), var(--avatar-to));
   color: var(--avatar-ink);
   font-weight: var(--weight-semibold);
+}
+/* 底色由头像容器绘制，首字母层继承配色，避免叠加半透明底色。 */
+.avatar[data-avatar-preset] .avatar__fallback {
+  border-radius: inherit;
+  background: transparent;
+  color: inherit;
+  font-weight: inherit;
 }

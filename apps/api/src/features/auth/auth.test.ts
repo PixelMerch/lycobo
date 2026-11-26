@@ -271,10 +271,10 @@ describe("enterprise JWT login", () => {
     expect((await put({ avatarPreset: "sky", userId: crypto.randomUUID() }, bearer)).status).toBe(
       400,
     );
-    const saved = await put({ avatarPreset: "sky" }, bearer);
+    const saved = await put({ avatarPreset: "black" }, bearer);
     expect(saved.status).toBe(200);
-    expect(unwrapApiData(await saved.json())).toMatchObject({ avatarPreset: "sky" });
-    expect(repository.setAvatarPreset).toHaveBeenCalledWith(user.userId, "sky");
+    expect(unwrapApiData(await saved.json())).toMatchObject({ avatarPreset: "black" });
+    expect(repository.setAvatarPreset).toHaveBeenCalledWith(user.userId, "black");
     // Cookie 登录的写请求来自不可信来源时不能改头像。
     const hostile = await put(
       { avatarPreset: "rose" },

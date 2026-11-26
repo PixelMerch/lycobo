@@ -68,16 +68,14 @@
 }
 .landing-account-controls .avatar[data-avatar-preset],
 .landing-control-popover .avatar[data-avatar-preset] {
-  --avatar-from: #292929;
-  --avatar-to: var(--avatar-from);
-  --avatar-ink: #f5f5f5;
   font-size: var(--landing-control-font-size);
 }
-.landing-account-controls .account-avatar[data-avatar-preset] {
+/* 只有默认黑色头像沿用顶栏的透明底板，彩色预设直接显示用户所选配色。 */
+.landing-account-controls .account-avatar[data-avatar-preset="black"] {
   --avatar-from: var(--site-header-button-fill);
 }
-.landing-account-controls .account-avatar[data-avatar-preset] .avatar__fallback {
-  background: transparent;
+.landing-control-popover .avatar[data-avatar-preset="black"] {
+  --avatar-from: #292929;
 }
 .landing-header-controls
   :is(
@@ -197,7 +195,12 @@
     [data-focus-visible="true"]
   )
   .account-avatar[data-avatar-preset] {
-  --avatar-from: var(--site-header-nav-hover-fill);
+  &[data-avatar-preset="black"] {
+    --avatar-from: var(--site-header-nav-hover-fill);
+  }
+  &:not([data-avatar-preset="black"]) {
+    filter: brightness(1.12);
+  }
 }
 .landing-header-controls
   :is(

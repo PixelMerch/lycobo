@@ -31,7 +31,7 @@ Compose 修改环境变量后运行 `docker compose up -d --no-deps --wait api`�
 | GET /api/v1/auth/session           | 验证 JWT 后返回 `{userId,organizationId,role,account}`，另带可选 `uid`、`avatarPreset` 与 `preferredLocale`（偏好未选择为 null）；未登录／过期返回 401                                |
 | POST /api/v1/auth/refresh          | 仅接受可信 Origin 和 HttpOnly 刷新 Cookie；轮换刷新凭据并签发新访问 Token，返回同登录的字段；刷新 Token 不进入 JSON                                                                   |
 | POST /api/v1/auth/password         | 已登录；JSON `{currentPassword,newPassword}`，新密码 12–256 字符；验证旧密码，原子更新密码并撤销该账号全部会话                                                                        |
-| PUT /api/v1/auth/avatar            | 已登录；Cookie 写请求同样校验可信 Origin；JSON `{avatarPreset}` 只接受 12 个预设 id 或 null（恢复默认），未知 id 或多余字段返回 400；只更新当前会话用户，返回带 `avatarPreset` 的身份 |
+| PUT /api/v1/auth/avatar            | 已登录；Cookie 写请求同样校验可信 Origin；JSON `{avatarPreset}` 只接受 13 个预设 id 或 null（恢复默认），未知 id 或多余字段返回 400；只更新当前会话用户，返回带 `avatarPreset` 的身份 |
 | POST /api/v1/auth/logout           | 撤销服务端会话并删除 Cookie；重复退出可安全返回 HTTP 200、code=0、data={}                                                                                                             |
 | PUT /api/v1/auth/locale            | 已登录且 Cookie 请求来源可信；只接受 `{"preferredLocale":"zh-CN"}` 或 `{"preferredLocale":"en"}`，按会话用户写入并返回更新后的身份                                                    |
 | POST /api/v1/image-session         | 企业模式下读取当前 JWT 身份，不再创建本地身份                                                                                                                                         |
@@ -81,7 +81,7 @@ Siteverify 在 Workers 中使用 `redirect: "manual"` 并拒绝 3xx，确保请�
 
 用户 2026-11-10 决定取消头像上传，头像只能从预设中选择，不涉及文件上传或对象存储。迁移 0044 为 `users` 新增可空的 `avatar_preset` 和 CHECK 约束（只允许 2–32 位小写短 id），未选择为 null。新代码会读取这一列，因此必须先应用迁移再部署 API，否则会话查询会失败。
 
-契约 `enterpriseAvatarChangeSchema` 写入时严格限定为 `avatarPresetIds` 中的 12 个 id 或 null；身份响应读取时只要求短字符串且可缺省，后续部署新增预设时旧页面不会登录失败，只显示默认头像。登录、续期和会话响应都从同一身份查询返回 `avatarPreset`，前端保存成功后用返回的身份更新登录状态，顶部栏、账户菜单和设置立即同步，换设备登录也一样。配色只在前端定义，服务端只保存 id。
+契约 `enterpriseAvatarChangeSchema` 写入时严格限定为 `avatarPresetIds` 中的 13 个 id 或 null。未选择或当前版本无法识别的预设在界面上显示为黑色，用户也可以从彩色头像切回黑色。身份响应读取时接受可缺省的短字符串，以便兼容新增预设。登录、续期和会话响应都从同一身份查询返回 `avatarPreset`，前端保存成功后用返回的身份更新登录状态，顶部栏、账户菜单和设置立即同步，换设备登录也一样。配色只在前端定义，服务端只保存 id。新增预设沿用已有格式约束，无需迁移。
 
 `test:auth` 隔离集成覆盖：新账号为 null、保存后会话返回新值、其他用户不受影响、数据库拒绝非法 id；单元测试覆盖未登录、未知预设、多余字段、恶意来源和恢复默认。
 
