@@ -29,6 +29,7 @@ function activeBilling(env: CloudflareEnv & OptionalBindings, trustedOrigin: str
   if (
     mode !== "creem" ||
     !key?.startsWith("creem_") ||
+    key.startsWith("creem_test_") ||
     !env.CREEM_WEBHOOK_SECRET ||
     !trustedOrigin ||
     env.CREEM_MODERATION_ENABLED !== "true"
@@ -61,7 +62,7 @@ function cloudflareBilling(
   return {
     dependencies: {
       billing: configured && externalWalletService(repository, configured.provider),
-      purchasedModerate: configured && createCreemModerator(env),
+      moderate: createCreemModerator(env),
       checkout,
       billingWebhooks,
       wakeBilling: async (id: string) => {

@@ -36,7 +36,12 @@ export function checkoutService(
   const available = () => {
     const includeOffer = Date.now() < Date.parse(offerEnd);
     return creditPacks
-      .map((pack) => pricedCreditPack(pack, includeOffer))
+      .map((pack) => ({
+        ...pricedCreditPack(pack, includeOffer),
+        // 正式收银台只交付购买积分，站内赠送额度随订单保存。
+        credits: pack.credits,
+        bonusCredits: includeOffer ? pack.bonusCredits : 0,
+      }))
       .flatMap((pack) => {
         const productId = products[pack.key];
         return productId ? [{ ...pack, productId }] : [];

@@ -1,20 +1,22 @@
 import assert from "node:assert/strict";
 import { BillingError, type BillingProvider, settleGenerationCredits } from "@lycoboai/billing";
-import { imageGenerationInputSchema } from "@lycoboai/contracts";
+import { type ImageScope, imageGenerationInputSchema } from "@lycoboai/contracts";
 import type { ImageRepository } from "@lycoboai/db";
 import type postgres from "postgres";
 
-/** 在隔离数据库用虚拟钱包验证付款关联、逐图消费、冲正和重放。 */
-export async function verifyBilling(repository: ImageRepository, sql: postgres.Sql) {
-  const scope = await repository.provision(`billing-${crypto.randomUUID()}`, "billing-fixture", 10);
-  const buyer = { customerId: "cust_fixture", accountId: "cca_fixture" };
-  const providerId = "billing-fixture";
-  await repository.saveBillingCustomer(scope, providerId, buyer);
+async function verifySplitOrder(
+  repository: ImageRepository,
+  sql: postgres.Sql,
+  scope: ImageScope,
+  customerId: string,
+  providerId: string,
+) {
   const order = await repository.createBillingOrder(scope, crypto.randomUUID(), {
     provider: providerId,
     productId: "prod_fixture",
-    customerId: buyer.customerId,
-    credits: 104,
+    customerId,
+    credits: 102,
+    bonusCredits: 2,
     amount: 299,
   });
   const payment = {
@@ -22,17 +24,49 @@ export async function verifyBilling(repository: ImageRepository, sql: postgres.S
     provider: providerId,
     checkoutId: "ch_fixture",
     productId: "prod_fixture",
-    customerId: buyer.customerId,
+    customerId,
     transactionId: "tran_fixture",
     amount: 299,
   };
   await repository.confirmBillingOrder({ ...payment, amount: 1 });
   assert.equal((await repository.billingOrders(scope, 10))[0]?.status, "pending");
+  assert.equal((await repository.wallet(scope)).balance, 10);
   await Promise.all([
     repository.confirmBillingOrder(payment),
     repository.confirmBillingOrder(payment),
   ]);
-  assert.equal((await repository.billingOrders(scope, 10))[0]?.status, "paid");
+  const [paid] = await repository.billingOrders(scope, 10);
+  assert.equal(paid?.status, "paid");
+  assert.equal(paid?.credits, 104);
+  assert.equal((await repository.wallet(scope)).balance, 12);
+  const statement = await repository.walletEntries(scope, 10);
+  assert.deepEqual(
+    statement.filter((entry) => entry.recharge_id === order.id).map((entry) => entry.amount),
+    [2],
+  );
+  const other = await repository.provision(
+    `billing-other-${crypto.randomUUID()}`,
+    "billing-other-fixture",
+    0,
+  );
+  const [otherWallet] =
+    await sql`select id from organization_wallets where organization_id=${other.organizationId}`;
+  assert.ok(otherWallet);
+  // 即使绕过应用服务，原订单的赠送积分也不能写到其他工作区。
+  await assert.rejects(
+    sql`insert into wallet_entries(wallet_id,user_id,event_key,kind,amount,balance_after,billing_order_id)
+      values (${otherWallet.id},${scope.userId},${`billing-bonus:${order.id}`},'recharge',2,2,${order.id})`,
+    /WALLET_RECHARGE_MISMATCH/,
+  );
+}
+
+/** 在隔离数据库验证订单赠送分账、逐图消费、冲正和重放。 */
+export async function verifyBilling(repository: ImageRepository, sql: postgres.Sql) {
+  const scope = await repository.provision(`billing-${crypto.randomUUID()}`, "billing-fixture", 10);
+  const buyer = { customerId: "cust_fixture", accountId: "cca_fixture" };
+  const providerId = "billing-fixture";
+  await repository.saveBillingCustomer(scope, providerId, buyer);
+  await verifySplitOrder(repository, sql, scope, buyer.customerId, providerId);
 
   const debits = new Map<string, string>();
   const reversals = new Set<string>();
@@ -42,7 +76,7 @@ export async function verifyBilling(repository: ImageRepository, sql: postgres.S
     checkout: async () => {
       throw new Error("UNEXPECTED_CHECKOUT");
     },
-    balance: async () => 104 - 2 * (debits.size - reversals.size),
+    balance: async () => 102 - 2 * (debits.size - reversals.size),
     debit: async ({ itemId, approval }) => {
       assert.match(approval, /^approval-/);
       if (approval === "approval-declined") throw new BillingError("INSUFFICIENT_CREDITS");
@@ -83,22 +117,22 @@ export async function verifyBilling(repository: ImageRepository, sql: postgres.S
     settleGenerationCredits(provider, repository, task.id),
   ]);
   assert.equal(debits.size, 1);
-  assert.equal(await provider.balance(buyer.accountId), 102);
+  assert.equal(await provider.balance(buyer.accountId), 100);
   const claimed = await repository.claim(first, "billing-fixture", 1500);
   assert.ok(claimed);
   await repository.finish(claimed, { errorCode: "PROVIDER_TEST_FAILED", unknown: false });
   await settleGenerationCredits(provider, repository, task.id);
   await settleGenerationCredits(provider, repository, task.id);
   assert.equal(reversals.size, 1);
-  assert.equal(await provider.balance(buyer.accountId), 104);
-  assert.equal((await repository.wallet(scope)).balance, 10);
+  assert.equal(await provider.balance(buyer.accountId), 102);
+  assert.equal((await repository.wallet(scope)).balance, 12);
   const entries = await repository.billingEntries(scope, provider.id, 10);
   assert.deepEqual(
     entries.map((entry) => [entry.kind, entry.amount]),
     [
       ["refund", 2],
       ["consume", -2],
-      ["recharge", 104],
+      ["recharge", 102],
     ],
   );
 

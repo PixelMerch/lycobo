@@ -26,21 +26,21 @@
 
 站点公开三份政策和统一客服邮箱 `support@lycobo.com`，当前价格与档位由充值弹框和结账显示。用户协议第 5 节为可接受使用政策。申请时，Creem 商家资料和收据使用同一客服邮箱。发布正式政策前确认运营主体法定信息、生效日期与隐私披露。退款页面中的 Creem 条款适用于通过 Creem 成交的订单。 [Creem 商家审核指南](https://docs.creem.io/merchant-of-record/account-reviews/account-reviews)
 
-Creem 正式目录已建活动入门包 **Lycobo Trial · 104 AI Image Credits**，价格为一次性付费 $2.99 USD。正式收款仍待审核。接入代码默认走本地账本，Creem 使用独立开关。 [Creem 生成式 AI 接入指南](https://docs.creem.io/merchant-of-record/account-reviews/gen-ai-technical-integration-guide)
+Creem 正式目录按充值页配置五档一次性积分包。活动价和常规价使用不同商品，活动结束后按服务端目录切换。活动入门包 $2.99 USD，Creem 到账 102 积分，Lycobo 站内赠送 2 积分。正式交易由 Creem 的商户审核状态控制。 [Creem 生成式 AI 接入指南](https://docs.creem.io/merchant-of-record/account-reviews/gen-ai-technical-integration-guide)
 
 ### 支付渠道与积分扣费
 
 - Lycobo 维护套餐、用户与工作区归属、站内订单、任务和计费记录。支付渠道负责创建收银台、确认付款和处理订单退款，生成流程通过统一的积分钱包服务查询余额、扣费和退回积分。
-- 后台手动发放、站内奖励及未来签到积分记入 Lycobo 本地账本。Creem 收银台成交的积分进入 Creem 钱包，两边分别显示余额和流水。
+- 后台手动发放、站内奖励及未来签到积分记入 Lycobo 本地账本。通过 Lycobo 购买的基础积分由 Creem 发放，活动赠送积分在已验签且匹配站内订单的支付回调中发到原工作区站内钱包。两边分别显示余额和流水，订单显示总到账积分。
 - Creem 的商品、客户、钱包和交易编号存放在服务端渠道记录中，用站内订单和任务 ID 关联。Creem 售出的积分以 Creem 钱包为准，站内记录用于展示和对账，到账通知只触发刷新。同一个生成请求只从为它选定的钱包扣费，失败冲正沿用原交易及钱包。
-- 更换渠道时，新订单可走新的支付适配器。已有订单的退款继续按原渠道处理。Creem 钱包未消费的余额需逐账户对账后，按双方确认的方案继续履约或迁移，同一份余额只能由一个钱包接受消费。当前分账模式只针对 Creem 购买积分任务调用 Creem 审核。Creem 公开规则要求同一生成产品的所有生成路径通过其审核，正式销售或申请重审前须确认此分账模式的适用范围。 [Creem 生成式 AI 要求](https://docs.creem.io/merchant-of-record/account-reviews/gen-ai-requirements)
+- 更换渠道时，新订单可走新的支付适配器。已有订单的退款继续按原渠道处理。Creem 钱包未消费的余额需逐账户对账后，按双方确认的方案继续履约或迁移，同一份余额只能由一个钱包接受消费。开启 Creem 审核时，两个钱包支持的图片生成路径都在模型调用前审核，Creem 钱包扣费还须保存逐图审批 ID。 [Creem 生成式 AI 要求](https://docs.creem.io/merchant-of-record/account-reviews/gen-ai-requirements)
 
 ### Creem 验证与切换
 
-1. 在隔离库应用 `0050_billing_adapters`。测试环境创建独立商品并配置审核型 AI generation credits 交付。API 与图片 Consumer 使用同一环境的 `CREEM_API_KEY`，本地开发只传递 `creem_test_` 测试密钥。
+1. 在隔离库应用 `0050_billing_adapters` 和 `0051_billing_local_bonus`。测试环境创建独立商品并配置审核型 AI generation credits 交付。API 与图片 Consumer 使用同一环境的 `CREEM_API_KEY`，本地开发只传递 `creem_test_` 测试密钥。
 2. API 配置 `BILLING_PROVIDER=creem`、`CREEM_MODERATION_ENABLED=true`、`CREEM_WEBHOOK_SECRET`，并通过 `BILLING_PRODUCTS` 映射可售商品，例如 `{"offer:trial":"prod_…"}`。Creem webhook 指向 `/api/v1/webhooks/creem`，订阅 `checkout.completed` 和 `credits.granted`。正式目录与测试目录独立。
-3. 买家需有登录身份关联的邮箱。付款成功后由 Creem 自动发放积分。验签回调关联站内订单、预期金额、商品与买家，记录收支并通知界面刷新。购买积分以 Creem 实际余额为准，站内流水用于查看和对账。提示词优化仍使用既有本地计费。
-4. 模型、参考图和余额预查并行。先确定购买积分账户，再为每个输出保存独立的审核结果和扣费意图。确认该笔扣费后才向图片消费者提交。明确失败按原交易冲正。结果未知时保留原操作，由后台用同一幂等键或原交易 ID 对账。
+3. 买家需有登录身份关联的邮箱。Creem 自动发放套餐基础积分。验签回调匹配站内订单、预期金额、商品和买家，在同一事务中标记已付款并记录站内赠送流水，回调重放不重复赠送。提示词优化仍使用既有本地计费。
+4. 模型、参考图和余额预查并行。选定扣费钱包后审核图片生成提示词，审核通过后才持久化生成任务。使用 Creem 购买积分时，为每张图片保存独立审批和扣费意图，扣费成功后才投递任务。明确失败按原交易冲正，结果未知则保留原操作并用幂等键或交易 ID 对账。
 5. 切换新购买渠道前先核对 Creem 未消费余额。旧订单和充值记录保留，已接收的 Creem 扣费与冲正按原渠道继续，需保留原密钥和后台结算。已有站内积分继续在原账本履约。
 
 ## 模型与价格

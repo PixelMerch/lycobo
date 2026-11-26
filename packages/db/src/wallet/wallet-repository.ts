@@ -7,17 +7,23 @@ export class WalletError extends Error {
     super(code);
   }
 }
+/** 校验成员身份并锁定工作区钱包，供认证请求写入积分。 */
 export async function ensureWallet(tx: postgres.TransactionSql, scope: ImageScope) {
   const members =
     await tx`select user_id from organization_members where organization_id=${scope.organizationId} and user_id=${scope.userId} for share`;
   if (!members.length) throw new WalletError("FORBIDDEN");
+  return lockOrganizationWallet(tx, scope.organizationId);
+}
+
+/** 锁定已确认归属的工作区钱包，例如验签成功且匹配的原始付款订单。 */
+export async function lockOrganizationWallet(tx: postgres.TransactionSql, organizationId: string) {
   await tx`insert into organization_wallets (organization_id)
-    values (${scope.organizationId}) on conflict (organization_id) do nothing`;
+    values (${organizationId}) on conflict (organization_id) do nothing`;
   const [wallet] = await tx`select id,balance from organization_wallets
-    where organization_id=${scope.organizationId} for update`;
+    where organization_id=${organizationId} for update`;
   return z.object({ id: z.uuid(), balance: z.number().int().nonnegative() }).parse(wallet);
 }
-// Caller holds the wallet row lock. Balance and append-only entry commit together.
+/** 持有钱包行锁时写入幂等流水，并在同一事务中更新余额。 */
 export async function appendWalletEntry(
   tx: postgres.TransactionSql,
   walletId: string,
@@ -29,6 +35,7 @@ export async function appendWalletEntry(
     jobId?: string;
     itemId?: string;
     rechargeId?: string;
+    billingOrderId?: string;
   },
 ) {
   const [prior] =
@@ -38,8 +45,9 @@ export async function appendWalletEntry(
     await tx`update organization_wallets set balance=balance+${entry.amount},updated_at=now()
     where id=${walletId} and balance+${entry.amount}>=0 returning balance`;
   if (!balance) throw new WalletError("INSUFFICIENT_CREDITS");
-  await tx`insert into wallet_entries (wallet_id,event_key,kind,amount,balance_after,user_id,job_id,item_id,recharge_id)
-    values (${walletId},${entry.eventKey},${entry.kind},${entry.amount},${balance.balance},${entry.userId},${entry.jobId ?? null},${entry.itemId ?? null},${entry.rechargeId ?? null})`;
+  await tx`insert into wallet_entries (wallet_id,event_key,kind,amount,balance_after,user_id,job_id,item_id,recharge_id,billing_order_id)
+    values (${walletId},${entry.eventKey},${entry.kind},${entry.amount},${balance.balance},${entry.userId},
+      ${entry.jobId ?? null},${entry.itemId ?? null},${entry.rechargeId ?? null},${entry.billingOrderId ?? null})`;
   return true;
 }
 function checkRechargeOrder(
@@ -80,7 +88,8 @@ export function walletRepository(sql: postgres.Sql) {
       const recent = view
         ? sql`and (e.kind = 'consume') = ${view === "spent"} and e.created_at >= now() - interval '6 months'`
         : sql``;
-      return sql`select e.id::text,u.uid as user_uid,e.kind,e.amount,e.balance_after,e.job_id,j.public_id as task_id,e.item_id,e.recharge_id,e.created_at
+      return sql`select e.id::text,u.uid as user_uid,e.kind,e.amount,e.balance_after,e.job_id,j.public_id as task_id,e.item_id,
+        coalesce(e.recharge_id,e.billing_order_id) as recharge_id,e.created_at
         from wallet_entries e join organization_wallets w on w.id=e.wallet_id left join generation_jobs j on j.id=e.job_id left join users u on u.id=e.user_id
         where w.organization_id=${scope.organizationId}
         ${recent}
