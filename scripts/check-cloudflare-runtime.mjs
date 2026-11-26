@@ -53,6 +53,10 @@ try {
   ).json();
   assert.equal(optimizer.optimized, true, "Prompt optimization failed inside workerd");
   assert.equal(optimizer.requests, 1);
+  const turnstile = await (
+    await fetch(`${url}/turnstile-runtime`, { signal: AbortSignal.timeout(5000) })
+  ).json();
+  assert.deepEqual(turnstile, { verified: true, redirected: false, requests: 2 });
   const response = await fetch(url, { signal: AbortSignal.timeout(30000) });
   assert.equal(response.status, 200);
   const result = await response.json();

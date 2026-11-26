@@ -26,21 +26,30 @@ function rejectChallenge(reason: Rejection) {
 async function checkSiteverify(
   body: URLSearchParams,
   hostname: string,
+  request: typeof fetch,
 ): Promise<"verified" | Rejection> {
   let response: Response;
   try {
-    response = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+    response = await request("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body,
-      redirect: "error",
+      // Workers 只支持 follow 和 manual；手动拒绝跳转以免把验证密钥转发出去。
+      redirect: "manual",
       signal: AbortSignal.timeout(4000),
     });
   } catch {
     return "network";
   }
+  if (response.status >= 300 && response.status < 400) return "response";
   if (response.status >= 500) return "unavailable";
+  return readSiteverifyResult(response, hostname);
+}
 
+async function readSiteverifyResult(
+  response: Response,
+  hostname: string,
+): Promise<"verified" | Rejection> {
   const result = verification.safeParse(await response.json().catch(() => null));
   if (!result.success) return "response";
   const data = result.data;
@@ -62,6 +71,7 @@ export async function verifyPasswordTurnstile(
   token: string,
   origin: string,
   address?: string | null,
+  request: typeof fetch = fetch,
 ) {
   const hostname = URL.parse(origin)?.hostname;
   if (!hostname) return rejectChallenge("hostname");
@@ -72,8 +82,10 @@ export async function verifyPasswordTurnstile(
     idempotency_key: crypto.randomUUID(),
   });
   if (address) body.set("remoteip", address);
-  const first = await checkSiteverify(body, hostname);
+  const first = await checkSiteverify(body, hostname, request);
   const result =
-    first === "network" || first === "unavailable" ? await checkSiteverify(body, hostname) : first;
+    first === "network" || first === "unavailable"
+      ? await checkSiteverify(body, hostname, request)
+      : first;
   return result === "verified" || rejectChallenge(result);
 }
