@@ -120,8 +120,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/contracts
       '@rive-app/canvas-advanced':
-        specifier: 2.51.0
-        version: 2.51.0
+        specifier: 2.54.0
+        version: 2.54.0
       '@tabler/icons-react':
         specifier: 3.52.0
         version: 3.52.0(react@19.3.1)
@@ -1227,8 +1227,8 @@ packages:
   '@remix-run/route-pattern@0.22.1':
     resolution: {integrity: sha512-czdGJWh09Lapvcqt7Vb09KlrU2PhRJ8xQaI+AItTuD9aDJ5MAgxnS38lnys6Ll+6RJEqPiaUqTwIQhVLwFvv+w==}
 
-  '@rive-app/canvas-advanced@2.51.0':
-    resolution: {integrity: sha512-z2rH58d2MFcoBy81I/PeeedyT8XtQR2uEaiW0EHPeZTGQ24ZHJvpwYfls9yeWpcypUDgGDd//bZ0bhZZVKbJKQ==}
+  '@rive-app/canvas-advanced@2.54.0':
+    resolution: {integrity: sha512-/YeoqMDD/gXlDNRqNPVl8QA4XNRn+HmpnfAAD5m/3EKb3xRBAR8h2r+qZyg0FcvCeRcCBDijO8Uk6idFHhiD8g==}
 
   '@rolldown/binding-android-arm-eabi@1.2.13':
     resolution: {integrity: sha512-Vu/NICrgdRvUOeaJZIyB2FP63s6fO/4ud5l8dXmxDx9yDyn+mN0y+gsvsVviSli+T361Aqo0h46EuMoobrwawA==}
@@ -3647,7 +3647,7 @@ snapshots:
 
   '@remix-run/route-pattern@0.22.1': {}
 
-  '@rive-app/canvas-advanced@2.51.0': {}
+  '@rive-app/canvas-advanced@2.54.0': {}
 
   '@rolldown/binding-android-arm-eabi@1.2.13':
     optional: true
