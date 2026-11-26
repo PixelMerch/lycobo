@@ -3,10 +3,12 @@ import type { ImageAsset } from "@lycoboai/contracts";
 import { IconDownload, IconListCheck, IconX } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
+import { useLocale } from "../../i18n/locale-store";
 import { useMessages } from "../../i18n/messages";
 import { toast } from "../../lib/toast";
 import { downloadAsset } from "../generation/generation-client";
-import { AssetArchiveTooLargeError, archiveStamp, createAssetArchive } from "./asset-archive";
+import { OriginalDownloadTooLargeError } from "../generation/original-download";
+import { archiveStamp, createAssetArchive } from "./asset-archive";
 import { assetsMessages } from "./assets-messages";
 
 function toggled(current: ReadonlySet<string>, id: string) {
@@ -62,32 +64,30 @@ function saveArchive(bytes: Uint8Array, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
-async function packAndSave(assets: ImageAsset[], signal: AbortSignal, name: string) {
-  const bytes = await createAssetArchive(assets, signal);
-  signal.throwIfAborted();
-  saveArchive(bytes, name);
-}
-
 /** 批量下载：选 1 项直接下载原文件，多项打包成 ZIP；离开页面时取消还在进行的打包。 */
 function useSelectionDownload() {
   const t = useMessages(assetsMessages);
-  const [packing, setPacking] = useState(false);
+  const [progress, setProgress] = useState<{ downloaded: number; total: number } | null>(null);
   const active = useRef<AbortController | null>(null);
   useEffect(() => () => active.current?.abort(), []);
   async function pack(assets: ImageAsset[]) {
     const controller = new AbortController();
     active.current = controller;
-    setPacking(true);
+    setProgress({ downloaded: 0, total: assets.length });
     // 一次最多打包 256MB，按慢速网络留出 5 分钟；超时与手动取消都不会产出半个压缩包。
     const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(300_000)]);
     try {
-      await packAndSave(assets, signal, t.archiveName(archiveStamp()));
+      const bytes = await createAssetArchive(assets, signal, undefined, undefined, (downloaded) =>
+        setProgress({ downloaded, total: assets.length }),
+      );
+      signal.throwIfAborted();
+      saveArchive(bytes, t.archiveName(archiveStamp()));
     } catch (error) {
       if (controller.signal.aborted) return;
-      toast.danger(error instanceof AssetArchiveTooLargeError ? t.tooLarge : t.archiveFailed);
+      toast.danger(error instanceof OriginalDownloadTooLargeError ? t.tooLarge : t.archiveFailed);
     } finally {
       active.current = null;
-      if (!controller.signal.aborted) setPacking(false);
+      if (!controller.signal.aborted) setProgress(null);
     }
   }
   function download(assets: ImageAsset[]) {
@@ -96,7 +96,7 @@ function useSelectionDownload() {
     if (assets.length === 1) downloadAsset(first.id);
     else void pack(assets);
   }
-  return { packing, download };
+  return { progress, download };
 }
 
 /** 多选时的操作条：已选数量、全选（只选已经加载出来的）、下载与退出多选。 */
@@ -108,8 +108,18 @@ function AssetSelectionBar({
   selection: AssetSelection;
 }) {
   const t = useMessages(assetsMessages);
-  const { packing, download } = useSelectionDownload();
+  const locale = useLocale();
+  const { progress, download } = useSelectionDownload();
   const chosen = assets.filter((asset) => selection.selected.has(asset.id));
+  let downloadLabel = t.downloadSelected(chosen.length);
+  if (progress)
+    downloadLabel =
+      progress.downloaded === progress.total
+        ? t.packing
+        : t.downloadProgress(
+            progress.downloaded.toLocaleString(locale),
+            progress.total.toLocaleString(locale),
+          );
   return (
     <Toolbar aria-label={t.selection} className="asset-selection-bar">
       <span className="asset-selection-count" aria-live="polite">
@@ -129,11 +139,11 @@ function AssetSelectionBar({
         variant="primary"
         className="asset-selection-download"
         isDisabled={!chosen.length}
-        isPending={packing}
+        isPending={!!progress}
         onPress={() => download(chosen)}
       >
         <UiIcon icon={IconDownload} size="small" />
-        {packing ? t.packing : t.downloadSelected(chosen.length)}
+        {downloadLabel}
       </Button>
       <Button
         isIconOnly

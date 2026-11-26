@@ -21,6 +21,7 @@ import { processImageItem } from "../src/images/image-processor";
 import { startImageProviderFixture } from "./fixtures/image-provider-fixture";
 import { verifyBilling } from "./verifications/verify-billing";
 import { verifyGenerationMigration } from "./verifications/verify-generation-migration";
+import { verifyImageAccountQueue } from "./verifications/verify-image-account-queue";
 import {
   verifyBrowserImageSession,
   verifyExhaustedWallet,
@@ -378,6 +379,7 @@ try {
   await verifyExhaustedWallet(repository, app, first, headers, key);
   await verifyImageFeatures(databaseUrl, repository, sql, store, png, app);
   await verifyBilling(repository, sql);
+  await verifyImageAccountQueue(repository);
   await sql`update generation_api_keys set revoked_at=now() where id=${first.keyId}`;
   assert.equal((await app.request("/api/v1/image-models", { headers })).status, 401);
   console.info(

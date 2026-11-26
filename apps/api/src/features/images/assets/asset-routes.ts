@@ -2,6 +2,7 @@ import { assetFavoriteLimit, assetToolSchema, assetTypeSchema } from "@lycoboai/
 import { ImageRepositoryError } from "@lycoboai/db";
 import { maxImageBytes } from "@lycoboai/storage/core";
 import type { Context, Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
 import { type Env, fail, type ImageApiDependencies, id } from "../route-context";
 import type { ImageDeliveries } from "./delivery";
@@ -105,12 +106,17 @@ async function redirectAssetContent(
   return c.redirect(thumbnail ? urls.thumbnail_url : urls.url, 302);
 }
 
+/** 注册受限的参考图上传、上传回执和素材交付链接。 */
 export function registerImageAssetDelivery(
   app: Hono<Env>,
   deps: ImageApiDependencies,
   delivery: ImageDeliveries | undefined,
 ) {
-  app.post("/image-assets", async (c) => {
+  const uploadSizeLimit = bodyLimit({
+    maxSize: maxImageBytes,
+    onError: (c) => fail(c, "PAYLOAD_TOO_LARGE", "图片超过 10MB", 413),
+  });
+  app.post("/image-assets", uploadSizeLimit, async (c) => {
     if (!["image/png", "image/jpeg", "image/webp"].includes(c.req.header("Content-Type") ?? ""))
       return fail(c, "INVALID_IMAGE", "仅支持 PNG、JPEG、WebP", 400);
     const bytes = new Uint8Array(await c.req.arrayBuffer());
@@ -145,7 +151,7 @@ export function registerImageAssetDelivery(
       c.get("principal"),
       [...new Set(input.data.ids)].map((id) => ({ id })),
     );
-    // Never issue capabilities for missing, expired, or other-workspace objects.
+    // 只为当前工作区内有效的素材签发访问链接。
     return c.json({ data: assets.filter((asset) => asset.delivery) });
   });
   app.get("/image-assets/:id/delivery", async (c) => {

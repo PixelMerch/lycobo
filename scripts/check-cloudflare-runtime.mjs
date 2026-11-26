@@ -57,6 +57,10 @@ try {
     await fetch(`${url}/turnstile-runtime`, { signal: AbortSignal.timeout(5000) })
   ).json();
   assert.deepEqual(turnstile, { verified: true, redirected: false, requests: 2 });
+  const rateLimit = await (
+    await fetch(`${url}/rate-limit-runtime`, { signal: AbortSignal.timeout(5000) })
+  ).json();
+  assert.deepEqual(rateLimit, { attempts: [true, true, false], independent: true });
   const response = await fetch(url, { signal: AbortSignal.timeout(30000) });
   assert.equal(response.status, 200);
   const result = await response.json();
@@ -76,7 +80,7 @@ try {
   }
   assert(queueCompleted, "Local Queue did not persist its result");
   console.info(
-    "Local workerd verified prompt optimization request options, scrypt credentials, Images decoding/WebP output, private R2 writes and Queue delivery (fixture only)",
+    "Local workerd verified Rate Limiting bindings, prompt optimization request options, scrypt credentials, Images decoding/WebP output, private R2 writes and Queue delivery (fixture only)",
   );
 } finally {
   if (child.pid && process.platform !== "win32") process.kill(-child.pid, "SIGTERM");

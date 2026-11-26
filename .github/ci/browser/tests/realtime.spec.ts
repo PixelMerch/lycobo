@@ -30,7 +30,7 @@ function jobFixture() {
   };
 }
 
-test("one live connection replaces history polling and updates the task by detail", async ({
+test("one live connection replaces history polling and updates the task through the status batch", async ({
   page,
 }) => {
   await mockImageEvents(page);
@@ -41,9 +41,9 @@ test("one live connection replaces history polling and updates the task by detai
     historyReads++;
     return route.fulfill({ json: apiFixture({ data: [job] }) });
   });
-  await page.route(`**/api/v1/image-tasks/${job.id}`, (route) => {
+  await page.route(`**/api/v1/image-tasks/status?ids=${job.id}`, (route) => {
     details++;
-    return route.fulfill({ json: apiFixture(job) });
+    return route.fulfill({ json: apiFixture({ data: [job] }) });
   });
   await page.goto("/commerce/create");
   await expect(page.locator(".generation-job")).toContainText(job.prompt);
@@ -97,8 +97,8 @@ test("reconnect uses the last cursor, calibrates missed state and keeps a single
   await page.route("**/api/v1/image-tasks*", (route) =>
     route.fulfill({ json: apiFixture({ data: [job] }) }),
   );
-  await page.route(`**/api/v1/image-tasks/${job.id}`, (route) =>
-    route.fulfill({ json: apiFixture(job) }),
+  await page.route(`**/api/v1/image-tasks/status?ids=${job.id}`, (route) =>
+    route.fulfill({ json: apiFixture({ data: [job] }) }),
   );
   await page.goto("/commerce/create");
   await expect(page.locator("html")).toHaveAttribute("data-ws-active", "1");
@@ -202,9 +202,9 @@ test("only wallet events refresh balance, task states do not duplicate the read"
   await page.route("**/api/v1/image-tasks*", (route) =>
     route.fulfill({ json: apiFixture({ data: [job] }) }),
   );
-  await page.route(`**/api/v1/image-tasks/${job.id}`, (route) => {
+  await page.route(`**/api/v1/image-tasks/status?ids=${job.id}`, (route) => {
     details++;
-    return route.fulfill({ json: apiFixture(job) });
+    return route.fulfill({ json: apiFixture({ data: [job] }) });
   });
   await page.goto("/commerce/create");
   await expect(page.locator(".generation-job")).toBeVisible();

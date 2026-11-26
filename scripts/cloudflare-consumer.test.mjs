@@ -75,6 +75,7 @@ it.each([
     vi.mocked(processImageItem).mockImplementationOnce(async (_itemId, deps) => {
       if (scenario.kind === "poll") deps.onDeferred(7000);
       else deps.onWebhookAccepted(scenario.ready);
+      return { userId: crypto.randomUUID(), organizationId: crypto.randomUUID() };
     });
     const send = vi.fn(async () => undefined);
     const env = {
@@ -91,6 +92,50 @@ it.each([
     expect(message.retry).not.toHaveBeenCalled();
     expect(openRealtimeRepository).toHaveBeenCalledTimes(1);
     expect(close).toHaveBeenCalledOnce();
+  },
+);
+
+it.each([true, false])(
+  "refills the same account only after the current image releases a slot (%s)",
+  async (claimed) => {
+    const scope = { userId: crypto.randomUUID(), organizationId: crypto.randomUUID() };
+    const next = {
+      id: crypto.randomUUID(),
+      itemId: crypto.randomUUID(),
+      leaseToken: crypto.randomUUID(),
+    };
+    const leaseOutbox = vi.fn(async () => [next]);
+    const ackOutbox = vi.fn(async () => undefined);
+    vi.mocked(openCloudflareRuntime).mockResolvedValue({
+      repository: { close: vi.fn(), leaseOutbox, ackOutbox },
+      store: {},
+      policy: {},
+    });
+    vi.mocked(processImageItem).mockResolvedValueOnce(claimed ? scope : undefined);
+    const send = vi.fn(async () => undefined);
+    const env = {
+      HYPERDRIVE: { connectionString: "fixture-only" },
+      CLOUDFLARE_CONSUMER_ENABLED: "true",
+      CLOUDFLARE_GENERATION_ENABLED: "true",
+      IMAGE_QUEUE: { send },
+    };
+    const message = {
+      body: { version: 1, itemId: crypto.randomUUID() },
+      ack: vi.fn(),
+      retry: vi.fn(),
+    };
+    await consumeCloudflareImages({ messages: [message] }, env);
+    expect(message.ack).toHaveBeenCalledOnce();
+    expect(message.retry).not.toHaveBeenCalled();
+    if (claimed) {
+      expect(leaseOutbox).toHaveBeenCalledExactlyOnceWith("queue", scope);
+      expect(send).toHaveBeenCalledExactlyOnceWith({ version: 1, itemId: next.itemId });
+      expect(ackOutbox).toHaveBeenCalledExactlyOnceWith(next.id, next.leaseToken);
+    } else {
+      expect(leaseOutbox).not.toHaveBeenCalled();
+      expect(send).not.toHaveBeenCalled();
+      expect(openRealtimeRepository).not.toHaveBeenCalled();
+    }
   },
 );
 

@@ -47,21 +47,23 @@ async function setup(page: Page, identity?: { userId: string; organizationId: st
   await page.route("**/api/v1/image-tasks*", (route) =>
     route.fulfill({ json: apiFixture({ data: [job] }) }),
   );
+  const finished = {
+    ...job,
+    status: "succeeded",
+    completed_at: new Date().toISOString(),
+    items: job.items.map((item) => ({
+      ...item,
+      status: "succeeded",
+      output_asset_id: crypto.randomUUID(),
+      width: 1024,
+      height: 1024,
+    })),
+  };
   await page.route(`**/api/v1/image-tasks/${job.id}`, (route) =>
-    route.fulfill({
-      json: apiFixture({
-        ...job,
-        status: "succeeded",
-        completed_at: new Date().toISOString(),
-        items: job.items.map((item) => ({
-          ...item,
-          status: "succeeded",
-          output_asset_id: crypto.randomUUID(),
-          width: 1024,
-          height: 1024,
-        })),
-      }),
-    }),
+    route.fulfill({ json: apiFixture(finished) }),
+  );
+  await page.route(`**/api/v1/image-tasks/status?ids=${job.id}`, (route) =>
+    route.fulfill({ json: apiFixture({ data: [finished] }) }),
   );
   return { job, scope };
 }
@@ -177,18 +179,22 @@ test("visible other page offers a result without navigating and desktop permissi
   await expect(page.locator("html")).not.toHaveAttribute("data-desktop-notices");
   await hidden(page, true);
   const second = crypto.randomUUID();
-  await page.route(`**/api/v1/image-tasks/${second}`, (route) =>
+  await page.route(`**/api/v1/image-tasks/status?ids=${second}`, (route) =>
     route.fulfill({
       json: apiFixture({
-        ...job,
-        id: second,
-        status: "succeeded",
-        completed_at: new Date().toISOString(),
-        items: job.items.map((item) => ({
-          ...item,
-          status: "succeeded",
-          output_asset_id: crypto.randomUUID(),
-        })),
+        data: [
+          {
+            ...job,
+            id: second,
+            status: "succeeded",
+            completed_at: new Date().toISOString(),
+            items: job.items.map((item) => ({
+              ...item,
+              status: "succeeded",
+              output_asset_id: crypto.randomUUID(),
+            })),
+          },
+        ],
       }),
     }),
   );
@@ -214,9 +220,9 @@ test("two tabs share one completion receipt", async ({ page, context }) => {
   };
   let reads = 0;
   for (const tab of [page, second]) {
-    await tab.route(`**/api/v1/image-tasks/${first.job.id}`, (route) => {
+    await tab.route(`**/api/v1/image-tasks/status?ids=${first.job.id}`, (route) => {
       reads++;
-      return route.fulfill({ json: apiFixture(result) });
+      return route.fulfill({ json: apiFixture({ data: [result] }) });
     });
     await goHome(tab);
     await hidden(tab, false);

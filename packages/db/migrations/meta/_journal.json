@@ -379,6 +379,13 @@
       "when": 1795675005989,
       "tag": "0053_push_session_revocation",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1795676608831,
+      "tag": "0054_image_account_capacity",
+      "breakpoints": true
     }
   ]
 }

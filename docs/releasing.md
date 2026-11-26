@@ -96,13 +96,21 @@ Node API、Sharp、S3 与 LISTEN/SSE 仅用于隔离本地开发及测试。生�
 
 任务、扣费和 outbox 在同一个 PostgreSQL 事务中提交。API 只投递已持久化的意图，独立消费者受租约、执行令牌和幂等约束保护；有歧义的供应商提交不能自动重投。
 
-图片队列每个消费者调用处理一条消息，Cloudflare 按积压自动扩展，全队列最多 10 个调用并行。异步供应商接单后释放消费者，由延迟消息或回调继续读取原任务；供应商内部的异步执行可能重叠。首次投递失败仍由 outbox 租约恢复。已确认入队且仍在排队的项优先由 Queue 处理，outbox 在原到期时间后额外等待 5 分钟再补投。供应商结果查询和回调唤醒沿用原到期时间。
+图片队列每个消费者调用处理一条消息，Cloudflare 按积压自动扩展，全队列最多 10 个调用并行。每个工作区账号最多 5 张正在生成的图片，异步供应商等待结果时仍占账号名额。满额时，剩余图片保留 PostgreSQL 排队意图，消费者释放名额后立即尝试补位，Cron 负责兜底。首次投递失败仍由 outbox 租约恢复。已确认入队且仍在排队的项优先由 Queue 处理，outbox 在原到期时间后额外等待 5 分钟再补投。供应商结果查询和回调唤醒沿用原到期时间。
+
+启用账号并发限制前先应用 `0054_image_account_capacity`，为运行中的图片任务建立局部索引。
 
 `CLOUDFLARE_TASKS_SINCE=2026-11-06T02:05:11.556Z` 是固定接管时间，部署不能重置。任务认领、超时处理和恢复都保持该边界，防止旧执行被重新计费。当前两个 Worker 的 `CLOUDFLARE_GENERATION_ENABLED`、`CLOUDFLARE_CONSUMER_ENABLED` 与 `IMAGE_WEBHOOK_ENABLED` 均为 `true`。
 
 生图 Key 使用独立的 `lycobo-cloudflare`。Webhook 接收地址为 `https://lycobo.com/api/v1/webhooks/fluxport/images`，按原始请求体做 HMAC 签名与时间窗口校验。没有回调的中转站通过延迟消息查询原任务，不依赖浏览器保持在线，详见 [图片回调](image-generation-api.md#图片-webhook-与延迟查询)。
 
 提示词优化与规划同样受生成开关约束。检查、构建、部署、健康探测和签名拒绝测试均不需要调用真实付费模型；真实生成由用户按明确额度测试。
+
+### API 限流
+
+Cloudflare Security rules 的站点级规则 `Lycobo API rate limit` 按来源 IP 限制 `/api/v1/` 每 10 秒 120 次，超出暂停 10 秒。`/api/v1/webhooks/` 继续使用各自的验签。边缘规则由 Cloudflare 管理，独立于 Worker 版本。部署前后从控制台核对规则已启用。 [WAF 限流规则](https://developers.cloudflare.com/waf/rate-limiting-rules/)
+
+主站 Worker 使用 Wrangler 的三组 `ratelimits` 绑定，在鉴权后、模型审核和文件处理前按账号限制。绑定计数按 Cloudflare 节点近似执行。使用 `429` 与 `Retry-After` 观察触发情况，发布后仅做正常调用冒烟，限流验证使用测试环境。 [Worker 限流绑定](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
 
 ### 绑定与 Secrets
 

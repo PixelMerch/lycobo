@@ -33,6 +33,14 @@ async function turnstileRuntimeProbe() {
   return { verified, redirected, requests };
 }
 
+async function rateLimitRuntimeProbe(limiter) {
+  const key = crypto.randomUUID();
+  const attempts = [];
+  for (let index = 0; index < 3; index++) attempts.push((await limiter.limit({ key })).success);
+  const independent = await limiter.limit({ key: crypto.randomUUID() });
+  return { attempts, independent: independent.success };
+}
+
 /** 隔离本地运行时探测，不进入生产 Worker，也不调用真实付费模型。 */
 export default {
   async fetch(request, env) {
@@ -41,6 +49,8 @@ export default {
       return realtimeRuntime(request, env);
     if (url.pathname === "/optimizer-runtime") return Response.json(await optimizerRuntimeProbe());
     if (url.pathname === "/turnstile-runtime") return Response.json(await turnstileRuntimeProbe());
+    if (url.pathname === "/rate-limit-runtime")
+      return Response.json(await rateLimitRuntimeProbe(env.FIXTURE_RATE_LIMIT));
     if (url.pathname === "/queue-result")
       return Response.json({
         completed: !!(await env.MEDIA.head(`queue-${url.searchParams.get("id")}`)),

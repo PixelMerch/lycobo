@@ -34,8 +34,8 @@ try {
         await drainImageOutbox({
           repository,
           stopStartingAt: Date.now() + 5000,
-          process: (itemId, onDeferred, onWebhookAccepted) =>
-            processImageItem(itemId, {
+          process: async (itemId, onDeferred, onWebhookAccepted) => {
+            await processImageItem(itemId, {
               repository,
               store,
               workerId: `local:${randomUUID()}`,
@@ -46,7 +46,8 @@ try {
               editsEnabled: policy.editsEnabled,
               onDeferred,
               onWebhookAccepted,
-            }),
+            });
+          },
         });
       } catch {
         console.error("LOCAL_CONSUMER_FAILED");

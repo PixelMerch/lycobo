@@ -65,6 +65,9 @@ export async function verifyStandaloneModels(
     assert.equal((await repository.providerRetryCandidates(other, task.id)).length, 0);
     assert.equal((await repository.providerRetryCandidates(owner, task.id)).length, 1);
     await repository.resumeProvider(owner, task.id, String(item.id));
+    assert.equal((await repository.get(owner, task.id))?.status, "queued");
+    // 模拟队列等待跨过旧期限，领取时应恢复核对窗口而非重发生成。
+    await sql`update provider_executions set deadline_at=now()-interval '1 minute' where item_id=${item.id}`;
     assert.equal(
       await repository.finish(claimed, { errorCode: "LATE_OLD_WORKER", unknown: true }),
       false,
@@ -87,6 +90,8 @@ export async function verifyStandaloneModels(
     assert.equal(recovered?.status, "succeeded");
     assert.ok(recovered?.items[0].output_asset_id);
     assert.equal(lookups, 1);
+    const [attempt] = await sql`select attempts from generation_job_items where id=${item.id}`;
+    assert.equal(attempt?.attempts, 1);
     assert.equal(
       (await repository.wallet(owner)).balance,
       200 - imageUnitCredits,

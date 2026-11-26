@@ -1,9 +1,10 @@
-import type { MessageBatch } from "@cloudflare/workers-types";
+import type { Message, MessageBatch } from "@cloudflare/workers-types";
 import { creemBillingProvider, drainGenerationCredits } from "@lycoboai/billing";
 import { openRealtimeRepository } from "@lycoboai/db";
 import {
   dispatchImageOutbox,
   dispatchRealtime,
+  type ImageQueueJob,
   imageQueueJobSchema,
   imageVariantJobSchema,
 } from "@lycoboai/queue";
@@ -11,6 +12,44 @@ import { recoverCloudflareUploads, uploadJobSchema } from "@lycoboai/storage/upl
 import { processImageItem } from "../images/image-processor";
 import { type CloudflareImageEnv, openCloudflareRuntime } from "./cloudflare-runtime";
 import { processCloudflareVariants } from "./cloudflare-variants";
+
+async function consumeImage(
+  job: ImageQueueJob,
+  message: Message<unknown>,
+  env: CloudflareImageEnv,
+  runtime: Awaited<ReturnType<typeof openCloudflareRuntime>>,
+) {
+  let nextPollMs: number | undefined;
+  const scope = await processImageItem(job.itemId, {
+    repository: runtime.repository,
+    prepareReferences: (itemId) => prepareReferences(itemId, runtime),
+    store: runtime.store,
+    workerId: `cloudflare:${crypto.randomUUID()}`,
+    standaloneKey: env.STANDALONE_IMAGE_API_KEY,
+    overrides: runtime.policy.overrides,
+    editsEnabled: runtime.policy.editsEnabled,
+    requireMainImageReferenceUrls: true,
+    deliverReference: runtime.deliverReference,
+    onDeferred: (delayMs) => {
+      nextPollMs = delayMs;
+    },
+    // 回调可能丢失或先于提交回执到达，延迟消息只核查原任务，不重投生图。
+    onWebhookAccepted: (ready) => {
+      nextPollMs = ready ? 2000 : 60000;
+    },
+    onTiming: (event) => console.info({ event: "IMAGE_STAGE", ...event }),
+  });
+  if (nextPollMs !== undefined)
+    await env.IMAGE_QUEUE.send(job, { delaySeconds: Math.max(2, Math.ceil(nextPollMs / 1000)) });
+  message.ack();
+  if (scope && nextPollMs === undefined) {
+    // 完成后直接补位，投递失败由现有 Cron 恢复，已处理的消息无需再消费。
+    await dispatchImageOutbox(runtime.repository, env.IMAGE_QUEUE, scope).catch(() =>
+      console.error("IMAGE_OUTBOX_DISPATCH_FAILED"),
+    );
+  }
+  return !!scope;
+}
 
 /** 独立消费图片消息，传输失败可重试，付费尝试始终受数据库领取保护。 */
 export async function consumeCloudflareImages(
@@ -50,39 +89,21 @@ export async function consumeCloudflareImages(
           message.retry({ delaySeconds: 60 });
           continue;
         }
-        let nextPollMs: number | undefined;
-        needsRealtime = true;
-        await processImageItem(parsed.data.itemId, {
-          repository: runtime.repository,
-          prepareReferences: (itemId) => prepareReferences(itemId, runtime),
-          store: runtime.store,
-          workerId: `cloudflare:${crypto.randomUUID()}`,
-          standaloneKey: env.STANDALONE_IMAGE_API_KEY,
-          overrides: runtime.policy.overrides,
-          editsEnabled: runtime.policy.editsEnabled,
-          requireMainImageReferenceUrls: true,
-          deliverReference: runtime.deliverReference,
-          onDeferred: (delayMs) => {
-            nextPollMs = delayMs;
+        const claimed = await consumeImage(parsed.data, message, env, runtime).catch(
+          (error: unknown) => {
+            // 消费失败前可能已提交领取事件，继续尝试投递。
+            needsRealtime = true;
+            throw error;
           },
-          // 回调可能丢失或先于提交回执到达，延迟消息只核查原任务，不重投生图。
-          onWebhookAccepted: (ready) => {
-            nextPollMs = ready ? 2000 : 60000;
-          },
-          onTiming: (event) => console.info({ event: "IMAGE_STAGE", ...event }),
-        });
-        if (nextPollMs !== undefined)
-          await env.IMAGE_QUEUE.send(parsed.data, {
-            delaySeconds: Math.max(2, Math.ceil(nextPollMs / 1000)),
-          });
-        message.ack();
+        );
+        needsRealtime ||= claimed;
       } catch {
         message.retry({ delaySeconds: 30 });
         console.error("IMAGE_QUEUE_CONSUMPTION_FAILED");
       }
     }
   } finally {
-    // 纯变体修复只写 R2，不产生业务事件；其余任务即使部分失败也立即尝试投递。
+    // 纯变体修复和未领取的图片不产生业务事件，积压通知由现有 Cron 恢复。
     await closeAfterRealtime(runtime, env, { enabled: needsRealtime });
   }
 }
