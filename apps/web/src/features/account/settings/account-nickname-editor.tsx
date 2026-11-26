@@ -1,4 +1,4 @@
-import { Button, Form, Input, Label, TextField, toast } from "@heroui/react";
+import { Button, Form, Input, Label, TextField } from "@heroui/react";
 import {
   type EnterpriseIdentity,
   enterpriseIdentitySchema,
@@ -10,6 +10,7 @@ import { useMessages } from "../../../i18n/messages";
 import { normalizeApiResponse } from "../../../lib/api-response";
 import { useErrorToast } from "../../../lib/error-toast";
 import { sessionFetch } from "../../../lib/session-fetch";
+import { toast } from "../../../lib/toast";
 import { enterpriseSessionKey } from "../../auth/auth-client";
 import { accountSettingsMessages } from "./account-settings-messages";
 

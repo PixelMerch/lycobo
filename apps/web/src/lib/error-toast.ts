@@ -1,5 +1,5 @@
-import { toast } from "@heroui/react";
 import { useEffect, useRef } from "react";
+import { toast } from "./toast";
 
 /**
  * Surfaces a request failure once as a top danger toast.

@@ -106,6 +106,8 @@ CSS 负责主题与尺寸，约定见 [Web 规则](../apps/web/AGENTS.md)。
 
 不要用裸 `<p role="alert">` 或自建 `.empty-state` 重做组件已有的语义。
 
+应用 Toast 通过 `apps/web/src/lib/toast.ts` 统一设置 3 秒自动关闭。局部修补的右下角队列共用该时长。操作和关闭按钮各占独立点击区，长文案可换行，悬停与键盘焦点沿用 HeroUI 的计时行为。
+
 ## 组合规则
 
 - 组件用复合结构（`Card.Header`、`Modal.Dialog`），不要退化成大量自定义 props。

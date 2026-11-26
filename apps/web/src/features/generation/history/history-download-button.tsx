@@ -1,10 +1,11 @@
-import { Button, Tooltip, toast } from "@heroui/react";
+import { Button, Tooltip } from "@heroui/react";
 import type { ImageJob } from "@lycoboai/contracts";
 import { IconDownload } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
+import { toast } from "../../../lib/toast";
 import { prepareDownloadDeliveries } from "../download-deliveries";
 import { type OriginalChunkObserver, readOriginal } from "../original-download";
 import { createHistoryArchive, historyDownloadEntries } from "./history-download";

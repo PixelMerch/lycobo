@@ -1,6 +1,6 @@
-import { toast } from "@heroui/react";
 import { currentMessages } from "../i18n/messages";
 import { libMessages } from "./lib-messages";
+import { toast } from "./toast";
 
 /** 复制文字并用顶部提示告知结果；不传成功提示时显示“复制成功”。 */
 export async function copyToClipboard(value: string, success?: string) {

@@ -1,4 +1,4 @@
-import { Button, Link, toast } from "@heroui/react";
+import { Button, Link } from "@heroui/react";
 import type { EnterpriseIdentity } from "@lycoboai/contracts";
 import { IconBuilding, IconChevronRight, IconX } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -11,6 +11,7 @@ import { parseLocale } from "../../i18n/locale";
 import { localizedPath } from "../../i18n/locale-path";
 import { useLocale } from "../../i18n/locale-store";
 import { currentMessages, useMessages } from "../../i18n/messages";
+import { toast } from "../../lib/toast";
 import { type LegalDocumentId, legalPaths } from "../legal/legal-document";
 import { legalMessages } from "../legal/legal-messages";
 import { useEnterpriseSession } from "./auth-client";

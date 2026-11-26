@@ -1,4 +1,4 @@
-import { Button, Tooltip, toast } from "@heroui/react";
+import { Button, Tooltip } from "@heroui/react";
 import {
   type ImageJob,
   imageJobSchema,
@@ -15,6 +15,7 @@ import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
 import { currentMessages, useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
+import { toast } from "../../../lib/toast";
 import {
   assetContentUrl,
   hasPendingSubmission,

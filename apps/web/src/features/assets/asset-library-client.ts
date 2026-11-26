@@ -1,4 +1,3 @@
-import { toast } from "@heroui/react";
 import {
   type AssetTool,
   assetFavoriteIdsResponseSchema,
@@ -10,6 +9,7 @@ import {
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { currentMessages } from "../../i18n/messages";
 import { useErrorToast } from "../../lib/error-toast";
+import { toast } from "../../lib/toast";
 import { imageRequest, useImageSession } from "../generation/generation-client";
 import { assetsMessages } from "./assets-messages";
 

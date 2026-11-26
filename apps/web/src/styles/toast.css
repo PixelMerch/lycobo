@@ -1,54 +1,101 @@
-/* Top toasts fit their message and stay centred in the full viewport. */
-.toast-region {
+/* 顶部提示随内容收窄，居中锚点不占用页面的点按区域。 */
+.toast-region--top {
   left: 50%;
-  width: fit-content;
+  width: 0;
   min-width: 0;
 }
+
 .toast {
   --glass-fill: none;
-  --glass-tint: #1e1e1e;
+  --glass-tint: var(--surface-secondary);
+  --toast-control-size: 32px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  border-radius: var(--field-radius);
+  text-align: start;
+}
+
+.toast-region--top .toast {
   inset-inline: auto;
   left: 50%;
   width: max-content;
-  max-width: calc(100vw - 2rem);
-  padding: 8px 16px;
-  gap: 3px;
+  max-width: min(460px, calc(100vw - 24px));
   translate: -50% 0;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
 }
-.toast__indicator {
+
+.toast .toast__indicator {
   position: static;
+  flex: none;
+  padding: 0;
   transform: none;
 }
-.toast__content {
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-.toast__title,
-.toast__description {
-  text-align: center;
-}
-/* HeroUI's padded indicator otherwise adds extra space only on the left. */
-.toast-region--top .toast {
-  gap: 8px;
-}
-.toast-region--top .toast__indicator {
-  padding: 0;
-}
-.toast-region--top .toast__content {
-  flex-grow: 0;
+
+.toast .toast__content {
+  flex: 0 1 auto;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
-/* Task status notices (local editing) use their own bottom-right region: they
- * are transient progress feedback, so they sit away from the picture and the
- * form and never push the centred copy toasts around. HeroUI positions toasts
- * absolutely, so the region needs an explicit width — otherwise it collapses to
- * zero and the toast is clipped at the viewport edge. */
+.toast .toast__title {
+  color: var(--foreground);
+  font-size: var(--text-base);
+  line-height: var(--leading-base);
+  font-weight: var(--weight-medium);
+}
+
+.toast .toast__description {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}
+
+.toast .toast__action {
+  position: relative;
+  flex: none;
+  height: 26px;
+  min-height: 0;
+  border-radius: var(--radius);
+  white-space: nowrap;
+}
+
+/* 关闭按钮参与布局，与操作按钮各占一块独立的点击区域。 */
+.toast .toast__close-button {
+  position: static;
+  flex: none;
+  width: var(--toast-control-size);
+  height: var(--toast-control-size);
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted);
+}
+
+.toast[data-frontmost="true"]:not([data-exiting="true"]) .toast__close-button {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+.toast .toast__close-button:is(:hover, [data-hovered="true"], :focus-visible) {
+  background: var(--default);
+  color: var(--foreground);
+}
+
+@media (pointer: coarse) {
+  .toast {
+    --toast-control-size: 44px;
+  }
+
+  /* 扩大竖向触控范围，同时保留紧凑的按钮外观。 */
+  .toast .toast__action::after {
+    position: absolute;
+    inset: -9px 0;
+    content: "";
+  }
+}
+
+/* 局部修补用独立的右下角区域，给绝对定位的提示保留宽度。 */
 .toast-region.toast-region--bottom-end {
   inset-inline-start: auto;
   left: auto;
@@ -57,9 +104,8 @@
   width: min(360px, calc(100vw - 32px));
   max-width: none;
 }
+
 .toast-region--bottom-end .toast {
-  /* Static-in-flow placement lets the notice shrink to its text and align to
-   * the right edge, instead of stretching across the whole 360px region. */
   position: relative;
   inset-inline: auto;
   left: auto;
@@ -69,65 +115,14 @@
   min-width: 0;
   max-width: 100%;
   margin-inline-start: auto;
-  padding: 10px 14px;
-  gap: 8px;
   translate: none;
-  align-items: flex-start;
-  justify-content: flex-start;
-  text-align: start;
-  border-radius: 12px;
 }
-.toast-region--bottom-end .toast__content {
-  align-items: flex-start;
-  justify-content: flex-start;
-  text-align: start;
-}
-.toast-region--bottom-end .toast__title,
-.toast-region--bottom-end .toast__description {
-  text-align: start;
-}
-.toast-region--bottom-end .toast__title {
-  color: #eee;
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-  font-weight: var(--weight-medium);
-}
-.toast-region--bottom-end .toast__description {
-  color: #a8a8a8;
-  font-size: var(--text-xs);
-  line-height: var(--leading-xs);
-}
-.toast-region--bottom-end .toast__indicator {
-  color: #eee;
-}
+
 @media (max-width: 767px) {
   .toast-region.toast-region--bottom-end {
     right: 16px;
     bottom: 16px;
     left: 16px;
     width: auto;
-  }
-}
-
-/* 带操作的顶部提示让按钮和标题保持同排。 */
-.toast-region--top .toast:has(.toast-compact-action) {
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  column-gap: var(--space-3);
-  padding-block: var(--space-2);
-}
-.toast-region--top .toast:has(.toast-compact-action) .toast__title {
-  color: var(--foreground);
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
-}
-.toast-region--top .toast-compact-action {
-  grid-column: 3;
-  grid-row: 1;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-@media (max-width: 767px) {
-  .toast-region--top .toast-compact-action {
-    min-height: 44px;
   }
 }

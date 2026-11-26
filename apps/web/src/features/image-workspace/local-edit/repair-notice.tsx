@@ -1,19 +1,13 @@
 import { Toast } from "@heroui/react";
 import { useEffect, useRef } from "react";
 import { currentMessages } from "../../../i18n/messages";
+import { toastTimeout } from "../../../lib/toast";
 import { imageWorkspaceMessages } from "../image-workspace-messages";
 
-/**
- * Local-edit status channel. It deliberately uses its own queue and a
- * bottom-right region: task progress is transient feedback, so it must not sit
- * inside the form, cover the picture, or stack with the global top toasts
- * ("复制成功").
- */
+/* 局部修补使用右下角独立队列，避免与顶部全局提示叠放。 */
 const repairQueue = new Toast.Queue({ maxVisibleToasts: 2 });
 
-const NOTICE_TIMEOUT = 8000;
-
-/** Mounts the bottom-right region once per preview workspace. */
+/** 在预览工作区挂载右下角状态提示。 */
 export function RepairNoticeRegion() {
   return <Toast.Provider placement="bottom end" queue={repairQueue} maxVisibleToasts={2} />;
 }
@@ -32,10 +26,7 @@ function repairMessage(stage: string | null) {
   return stage && endedStatuses.includes(stage) ? t.editFailed : null;
 }
 
-/**
- * Announces the edit task once per state change. The toast auto-dismisses, so
- * repeated polls of the same state never re-notify.
- */
+/** 修补任务每次切换状态只提示一次，避免轮询重复通知。 */
 export function useRepairNotice({
   jobId,
   status,
@@ -46,8 +37,7 @@ export function useRepairNotice({
   succeeded: boolean;
 }) {
   const shown = useRef<string | null>(null);
-  /* Collapse "not loaded yet", queued and running into one stage, so polling
-   * the same task cannot post the same notice twice. */
+  /* 尚未加载、排队和运行中的状态共用一条进行中提示。 */
   const stage = jobId ? repairStage(status, succeeded) : null;
   const key = jobId && stage ? `${jobId}:${stage}` : null;
   useEffect(() => {
@@ -58,6 +48,6 @@ export function useRepairNotice({
     if (shown.current === key) return;
     shown.current = key;
     const message = repairMessage(stage);
-    if (message) repairQueue.add({ title: message }, { timeout: NOTICE_TIMEOUT });
+    if (message) repairQueue.add({ title: message }, { timeout: toastTimeout });
   }, [key, stage]);
 }

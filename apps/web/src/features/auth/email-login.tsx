@@ -1,7 +1,8 @@
-import { Button, Form, InputGroup, Label, Spinner, TextField, toast } from "@heroui/react";
+import { Button, Form, InputGroup, Label, Spinner, TextField } from "@heroui/react";
 import { type EnterpriseIdentity, emailCodeSendSchema } from "@lycoboai/contracts";
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import { currentMessages, useMessages } from "../../i18n/messages";
+import { toast } from "../../lib/toast";
 import { useEmailCodeLogin } from "./auth-client";
 import { authMessages } from "./auth-messages";
 import { useLoginTurnstile } from "./use-login-turnstile";
