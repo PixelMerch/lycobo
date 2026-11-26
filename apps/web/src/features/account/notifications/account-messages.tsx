@@ -1,8 +1,9 @@
-import { Button, Popover, Tabs, Tooltip, toast } from "@heroui/react";
+import { Button, Popover, Tabs, Tooltip } from "@heroui/react";
 import { IconBell } from "@tabler/icons-react";
 import { type Ref, useCallback, useEffect, useId, useRef, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { currentMessages, useMessages } from "../../../i18n/messages";
+import { toast } from "../../../lib/toast";
 import { useNotifications, useSiteRelease } from "../../realtime/client";
 import { NotificationBody } from "./account-news-body";
 import { notificationsMessages } from "./notifications-messages";
@@ -194,9 +195,7 @@ function useReleaseAnnouncement(openRelease: (release: Release) => void) {
     announced.current = version;
     const messages = currentMessages(notificationsMessages);
     const id = toast.info(messages.newVersion, {
-      timeout: 10000,
       actionProps: {
-        className: "toast-compact-action",
         size: "sm",
         variant: "tertiary",
         children: messages.viewVersion,

@@ -1,4 +1,3 @@
-import { toast } from "@heroui/react";
 import { variationCapabilitiesSchema } from "@lycoboai/contracts";
 import {
   type QueryClient,
@@ -9,6 +8,7 @@ import {
 } from "@tanstack/react-query";
 import { type Dispatch, type SetStateAction, useRef, useState } from "react";
 import { currentMessages } from "../../../i18n/messages";
+import { toast } from "../../../lib/toast";
 import {
   imageRequest,
   uploadImageReferences,

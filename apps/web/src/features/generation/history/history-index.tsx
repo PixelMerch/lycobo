@@ -1,4 +1,4 @@
-import { Button, toast } from "@heroui/react";
+import { Button } from "@heroui/react";
 import type { ImageJob } from "@lycoboai/contracts";
 import { IconPhotoX, IconTrash } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
@@ -8,6 +8,7 @@ import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
 import { currentMessages, useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
+import { toast } from "../../../lib/toast";
 import { LibraryDialog } from "../../assets/library-dialog";
 import { useDeleteHistoryTask, useImageHistory } from "../generation-client";
 import { GenerationLoading, useStatusLabel } from "../generation-status";

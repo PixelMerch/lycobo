@@ -1,4 +1,4 @@
-import { Alert, Button, toast } from "@heroui/react";
+import { Alert, Button } from "@heroui/react";
 import { IconPlus, IconTrash, type TablerIcon } from "@tabler/icons-react";
 import {
   lazy,
@@ -12,6 +12,7 @@ import {
 import { ReferenceImageCard } from "../../../components/reference-image/reference-image-card";
 import { UiIcon } from "../../../components/ui-icon";
 import { currentMessages, useMessages } from "../../../i18n/messages";
+import { toast } from "../../../lib/toast";
 import { useRequireLogin } from "../../auth/login-prompt";
 import { type Draft, type ModelId, type ReferenceImage, useStudioStore } from "../studio-state";
 import { readReferenceImages, referenceFileError } from "./read-reference-images";

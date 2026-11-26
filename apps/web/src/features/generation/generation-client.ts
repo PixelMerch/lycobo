@@ -1,4 +1,3 @@
-import { toast } from "@heroui/react";
 import {
   type EnterpriseIdentity,
   type ImageJob,
@@ -16,6 +15,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useRef } from "react";
+import { toast } from "../../lib/toast";
 import { useAccountOverlays } from "../account/account-overlay-store";
 import { enterpriseSessionKey } from "../auth/auth-client";
 import { refreshWithoutRealtime } from "../realtime/availability";

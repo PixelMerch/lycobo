@@ -1,9 +1,10 @@
-import { Button, Toolbar, toast } from "@heroui/react";
+import { Button, Toolbar } from "@heroui/react";
 import type { ImageAsset } from "@lycoboai/contracts";
 import { IconDownload, IconListCheck, IconX } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { useMessages } from "../../i18n/messages";
+import { toast } from "../../lib/toast";
 import { downloadAsset } from "../generation/generation-client";
 import { AssetArchiveTooLargeError, archiveStamp, createAssetArchive } from "./asset-archive";
 import { assetsMessages } from "./assets-messages";

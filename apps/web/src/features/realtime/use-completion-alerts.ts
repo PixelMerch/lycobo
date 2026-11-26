@@ -1,8 +1,8 @@
-import { toast } from "@heroui/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { currentMessages } from "../../i18n/messages";
 import { useAppNavigate } from "../../i18n/use-localized-navigation";
+import { toast } from "../../lib/toast";
 import { createCompletionAlerts } from "./completion-alerts";
 import { observeCompletedJobs } from "./completion-observer";
 import { realtimeMessages } from "./realtime-messages";
@@ -25,9 +25,7 @@ export function useCompletionAlerts(userId?: string, organizationId?: string) {
         const t = currentMessages(realtimeMessages);
         const title = results.length > 1 ? t.imagesDone(results.length) : t.imageDone;
         const id = toast.success(title, {
-          timeout: 10000,
           actionProps: {
-            className: "toast-compact-action",
             size: "sm",
             variant: "tertiary",
             children: t.viewResults,

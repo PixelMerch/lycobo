@@ -1,6 +1,6 @@
-import { toast } from "@heroui/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "../../../lib/toast";
 import { useRequireLogin } from "../../auth/login-prompt";
 import { refreshWithoutRealtime } from "../../realtime/availability";
 import { hasPromptDescription } from "./prompt-description";

@@ -1,4 +1,3 @@
-import { toast } from "@heroui/react";
 import {
   imageUnitCredits,
   storyboardCapabilitiesSchema,
@@ -8,6 +7,7 @@ import { useIsMutating, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type RefObject, useEffect, useRef } from "react";
 import { currentMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
+import { toast } from "../../../lib/toast";
 import { useEnterpriseSession } from "../../auth/auth-client";
 import {
   imageRequest,

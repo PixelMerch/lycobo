@@ -1,4 +1,3 @@
-import { toast } from "@heroui/react";
 import {
   type AccountLocale,
   type AvatarPreset,
@@ -25,6 +24,7 @@ import { normalizeApiResponse } from "../../lib/api-response";
 import { reportRequestFailure } from "../../lib/request-diagnostics";
 import { serverErrorMessage } from "../../lib/server-error";
 import { rememberSessionExpiry, resetSessionRenewal, sessionFetch } from "../../lib/session-fetch";
+import { toast } from "../../lib/toast";
 import { clearPreviewLinks } from "../generation/preview-link-cache";
 import { authMessages } from "./auth-messages";
 
