@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
 type Turnstile = {
   render: (
@@ -8,7 +8,7 @@ type Turnstile = {
       action: string;
       theme: "dark";
       size: "flexible" | "compact";
-      appearance: "interaction-only";
+      appearance: "always" | "interaction-only";
       callback: (token: string) => void;
       "error-callback": () => void;
       "timeout-callback": () => void;
@@ -59,13 +59,25 @@ export function useLoginTurnstile(
 ) {
   const container = useRef<HTMLDivElement>(null);
   const cancellation = useRef<(() => void) | null>(null);
-  useEffect(() => () => cancellation.current?.(), []);
+  const removeWidget = useRef<(() => void) | null>(null);
+  const closeChallenge = useCallback(() => {
+    const remove = removeWidget.current;
+    removeWidget.current = null;
+    remove?.();
+  }, []);
+  useEffect(
+    () => () => {
+      cancellation.current?.();
+      closeChallenge();
+    },
+    [closeChallenge],
+  );
   async function challenge() {
     if (!siteKey) throw new Error("TURNSTILE_NOT_CONFIGURED");
     const api = await loadTurnstile();
     const target = container.current;
     if (!target) throw new Error("TURNSTILE_CONTAINER_MISSING");
-    let widget: string | undefined;
+    closeChallenge();
     let timer: number | undefined;
     try {
       const size = (target.parentElement?.clientWidth ?? 0) < 300 ? "compact" : "flexible";
@@ -73,23 +85,25 @@ export function useLoginTurnstile(
         const fail = () => reject(new Error("TURNSTILE_CHALLENGE_FAILED"));
         cancellation.current = fail;
         timer = window.setTimeout(fail, 120000);
-        widget = api.render(target, {
+        const widget = api.render(target, {
           sitekey: siteKey,
           action,
           theme: "dark",
           size,
-          appearance: "interaction-only",
+          appearance: action === "password_login" ? "always" : "interaction-only",
           callback: resolve,
           "error-callback": fail,
           "timeout-callback": fail,
           "expired-callback": fail,
         });
+        removeWidget.current = () => api.remove(widget);
       });
     } finally {
       cancellation.current = null;
       window.clearTimeout(timer);
-      if (widget) api.remove(widget);
+      // 密码登录保持组件可见，直到服务端完成令牌校验。
+      if (action === "email_login") closeChallenge();
     }
   }
-  return { container, challenge };
+  return { container, challenge, closeChallenge };
 }

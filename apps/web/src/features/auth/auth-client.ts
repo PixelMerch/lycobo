@@ -52,14 +52,22 @@ async function authRequest(path: string, init: RequestInit = {}) {
 /** 区分账号锁定，以便登录表单持续显示原因。 */
 export class AccountLockedError extends Error {}
 
+/** 区分人机验证失败和密码错误，让用户在表单内重新验证。 */
+export class LoginVerificationError extends Error {}
+
 async function authError(response: Response) {
   const body: unknown = await response.json().catch(() => null);
   const envelope = apiErrorSchema.safeParse(body);
   if (envelope.success) {
     const message = serverErrorMessage(envelope.data);
-    return envelope.data.error.code === "ACCOUNT_LOCKED"
-      ? new AccountLockedError(message)
-      : new Error(message);
+    switch (envelope.data.error.code) {
+      case "ACCOUNT_LOCKED":
+        return new AccountLockedError(message);
+      case "LOGIN_CHALLENGE_FAILED":
+        return new LoginVerificationError(message);
+      default:
+        return new Error(message);
+    }
   }
   if (typeof body === "object" && body !== null && "error" in body) {
     const error = body.error;

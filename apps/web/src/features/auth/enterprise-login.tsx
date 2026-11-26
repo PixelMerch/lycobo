@@ -15,7 +15,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { currentMessages, useMessages } from "../../i18n/messages";
 import { useErrorToast } from "../../lib/error-toast";
-import { AccountLockedError, useEnterpriseLogin } from "./auth-client";
+import { AccountLockedError, LoginVerificationError, useEnterpriseLogin } from "./auth-client";
 import { authMessages } from "./auth-messages";
 import { useLoginAvailability } from "./social-login-client";
 import { useLoginTurnstile } from "./use-login-turnstile";
@@ -35,6 +35,11 @@ export function EnterpriseLogin({
       <Form className="login-fields" validationBehavior="aria" onSubmit={form.submit}>
         <EnterpriseFields form={form} />
         <div ref={form.challengeContainer} className="login-challenge" />
+        {form.verificationError && (
+          <p className="login-lock-notice" role="alert">
+            {form.verificationError}
+          </p>
+        )}
         <Button
           type="submit"
           variant="secondary"
@@ -79,7 +84,7 @@ function useEnterpriseForm(onLoginSuccess: (account: EnterpriseIdentity) => void
   const login = useEnterpriseLogin();
   const availability = useLoginAvailability();
   const siteKey = availability.data?.passwordTurnstileSiteKey;
-  const { container, challenge } = useLoginTurnstile(siteKey, "password_login");
+  const { container, challenge, closeChallenge } = useLoginTurnstile(siteKey, "password_login");
   const submitting = useRef(false);
   const [checking, setChecking] = useState(false);
   const passwordInput = useRef<HTMLInputElement>(null);
@@ -90,6 +95,7 @@ function useEnterpriseForm(onLoginSuccess: (account: EnterpriseIdentity) => void
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
   const [lockNotice, setLockNotice] = useState("");
+  const [verificationError, setVerificationError] = useState("");
   useErrorToast(error);
   const pending = checking || login.isPending;
   useEffect(() => {
@@ -113,24 +119,32 @@ function useEnterpriseForm(onLoginSuccess: (account: EnterpriseIdentity) => void
     event.preventDefault();
     if (submitting.current || !siteKey) return;
     setError("");
+    setVerificationError("");
     setSubmitted(true);
     if (!account.trim() || !password) return;
     setSubmitted(false);
     const credentials = { account: account.trim(), password };
     submitting.current = true;
     setChecking(true);
+    setVisible(false);
     try {
       const captchaToken = await challenge().catch(() => {
-        throw new Error(currentMessages(authMessages).captchaFailed);
+        throw new LoginVerificationError(currentMessages(authMessages).captchaFailed);
       });
-      setPassword("");
-      setVisible(false);
       const user = await login.mutateAsync({ ...credentials, captchaToken });
+      setPassword("");
       toast.success(currentMessages(authMessages).signedIn);
       onLoginSuccess(user);
     } catch (cause) {
-      reportFailure(cause);
+      if (cause instanceof LoginVerificationError) {
+        setLockNotice("");
+        setVerificationError(cause.message);
+      } else {
+        setPassword("");
+        reportFailure(cause);
+      }
     } finally {
+      closeChallenge();
       setChecking(false);
       submitting.current = false;
       login.reset();
@@ -155,6 +169,7 @@ function useEnterpriseForm(onLoginSuccess: (account: EnterpriseIdentity) => void
     siteKey,
     unavailable: !availability.isPending && !siteKey,
     lockNotice,
+    verificationError,
     challengeContainer: container,
   };
 }

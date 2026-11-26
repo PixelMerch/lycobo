@@ -172,13 +172,32 @@ describe("enterprise JWT login", () => {
         .mockResolvedValueOnce(
           Response.json({ success: false, "error-codes": ["timeout-or-duplicate"] }),
         )
-        .mockRejectedValueOnce(new Error("fixture timeout"));
+        .mockRejectedValue(new Error("fixture timeout"));
       const verify = () => verifyPasswordTurnstile("fixture-secret", "fixture-token", origin);
       expect(await verify()).toBe(false);
       expect(await verify()).toBe(false);
       expect(await verify()).toBe(true);
       expect(await verify()).toBe(false);
       expect(await verify()).toBe(false);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+  it("retries a transient Siteverify failure with the same verification key", async () => {
+    const fetchSiteverify = vi.fn<typeof fetch>();
+    fetchSiteverify
+      .mockResolvedValueOnce(Response.json({ success: false, "error-codes": ["internal-error"] }))
+      .mockResolvedValueOnce(
+        Response.json({ success: true, action: "password_login", hostname: "localhost" }),
+      );
+    vi.stubGlobal("fetch", fetchSiteverify);
+    try {
+      expect(await verifyPasswordTurnstile("fixture-secret", "fixture-token", origin)).toBe(true);
+      expect(fetchSiteverify).toHaveBeenCalledTimes(2);
+      const [first, second] = fetchSiteverify.mock.calls.map(([, options]) => options?.body);
+      expect(first).toBeInstanceOf(URLSearchParams);
+      expect(first).toBe(second);
+      expect(new URLSearchParams(String(first)).get("idempotency_key")).toMatch(/^[\da-f-]{36}$/);
     } finally {
       vi.unstubAllGlobals();
     }
