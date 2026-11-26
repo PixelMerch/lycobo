@@ -6,7 +6,7 @@ import type { LegalDocument } from "./legal-document";
 export const privacyMessages = defineMessages<LegalDocument>({
   "zh-CN": {
     title: "隐私政策",
-    updatedDate: "2026 年 11 月 25 日",
+    updatedDate: "2026 年 11 月 26 日",
     intro: "本政策说明 Lycobo 处理哪些个人信息、如何使用和保护这些信息，以及你如何行使自己的权利。",
     sections: [
       {
@@ -45,9 +45,10 @@ export const privacyMessages = defineMessages<LegalDocument>({
           [
             "登录服务。Google 或 Apple 完成授权后，Supabase Auth 帮助我们验证身份。使用邮箱验证码时，Supabase Auth 通过 Resend 发送邮件。Cloudflare Turnstile 用于防止自动化滥用。",
             "模型服务。为生成或编辑图片，所选服务方会处理该任务需要的提示词、设置和参考图。只需文字的规划或提示词优化流程可能只提交相关文本和参数。",
+            "内容审核。我们在生成或编辑图片前，将用于任务的提示词和请求编号发送给 Creem，由其进行内容安全审核。",
             "云服务与工作区。Cloudflare 等基础设施服务商提供网站运行、存储与安全支持。在同一工作区内，有权限的成员可以访问工作区素材、任务记录和积分明细。",
           ],
-          "如日后通过 Creem 购买积分，Creem 会在结算页面处理付款、账单资料和适用税费。Lycobo 可收到用于核对订单、发放积分和处理售后的信息，例如订单号、买家邮箱、购买档位、金额、币种及付款状态。支付卡信息由结算服务处理。",
+          "通过 Creem 购买积分时，Creem 在结算页面处理付款、账单资料和适用税费。Lycobo 可收到用于核对订单、发放积分和处理售后的信息，例如订单号、买家邮箱、购买档位、金额、币种及付款状态。支付卡信息由结算服务处理。",
           { label: "Creem 隐私声明", href: "https://www.creem.io/privacy" },
           "部分服务商可能在中国大陆境外处理信息。在法律要求时，我们会在传输前告知你境外接收方、处理情况及行使权利的方式，并取得所需的单独同意。",
           "我们不出售或出租个人信息。除上文说明的情形外，我们只会在法律要求或允许的范围内披露相关信息。",
@@ -99,7 +100,7 @@ export const privacyMessages = defineMessages<LegalDocument>({
   },
   en: {
     title: "Privacy Policy",
-    updatedDate: "November 25, 2026",
+    updatedDate: "November 26, 2026",
     intro:
       "This policy explains what personal information Lycobo handles, how we use and protect it, and how you can exercise your rights.",
     sections: [
@@ -139,9 +140,10 @@ export const privacyMessages = defineMessages<LegalDocument>({
           [
             "Sign-in services. Supabase Auth helps us verify identity after you authorize Google or Apple sign-in. For email codes, Supabase Auth sends the email through Resend. Cloudflare Turnstile helps prevent automated abuse.",
             "Model providers. When you generate or edit an image, the selected provider processes the prompts, settings, and reference images needed for that task. Text-only planning or prompt optimization may send only the relevant text and settings.",
+            "Content moderation. Before generating or editing an image, Lycobo sends the prompts for that task and a request identifier to Creem for content safety screening.",
             "Cloud services and workspaces. Cloudflare and other infrastructure providers help operate, store, and secure the Service. Authorized workspace members can access workspace assets, tasks, and credit activity.",
           ],
-          "When credit purchases through Creem become available, Creem will handle payment, billing details, and applicable taxes at checkout. Lycobo may receive order information needed to verify payment, add credits, and provide support, such as the order ID, buyer email, pack, amount, currency, and payment status. The checkout service handles payment card data.",
+          "When you buy credits through Creem, Creem handles payment, billing details, and applicable taxes at checkout. Lycobo may receive order information needed to verify payment, add credits, and provide support, such as the order ID, buyer email, pack, amount, currency, and payment status. The checkout service handles payment card data.",
           { label: "Creem Privacy Notice", href: "https://www.creem.io/privacy" },
           "Some providers may process information outside mainland China. Where required by law, we will tell you about the recipient, processing, and how to exercise your rights before the transfer, and obtain any separate consent required.",
           "We do not sell or rent personal information. Outside the situations described above, we disclose it only as required or permitted by law.",
