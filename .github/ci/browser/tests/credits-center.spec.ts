@@ -105,7 +105,7 @@ test("checkout return keeps the original workspace and its draft in memory", asy
     .getByLabel("添加参考图片", { exact: true })
     .setInputFiles(".github/ci/browser/fixtures/studio/bedroom.webp");
   await expect(page.locator(".reference-tile")).toHaveCount(1);
-  await page.getByRole("button", { name: "3:4", exact: true }).click();
+  await page.getByRole("radio", { name: "3:4", exact: true }).click();
   await expect(page.locator(".ratio-current")).toHaveText("3:4");
   await page.getByRole("button", { name: "特惠充值", exact: true }).click();
   const recharge = page.getByRole("dialog", { name: "充值积分", exact: true });
