@@ -23,6 +23,7 @@ describe("Landing composition", () => {
       "LandingDemoSection",
       "LandingReviewSection",
       "LandingClosingSection",
+      "LandingPricingSection",
       "LandingFaqSection",
       "SiteFooter",
     ]);

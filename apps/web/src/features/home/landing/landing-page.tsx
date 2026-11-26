@@ -11,6 +11,8 @@ import { scrollToLandingFaq } from "./landing-faq-navigation";
 import { LandingFaqSection } from "./landing-faq-section";
 import { landingHeroMessages } from "./landing-hero-messages";
 import { LandingHeroSection } from "./landing-hero-section";
+import { scrollToLandingPricing } from "./landing-pricing-navigation";
+import { LandingPricingSection } from "./landing-pricing-section";
 import { LandingReviewSection } from "./landing-review-section";
 import "../../../components/page-scrollbar.css";
 import { useLandingFooterReveal } from "./use-landing-footer-reveal";
@@ -34,6 +36,7 @@ export function LandingPage() {
 
   useLayoutEffect(() => {
     if (hash === "#faq") scrollToLandingFaq();
+    if (hash === "#pricing") scrollToLandingPricing();
   }, [hash]);
 
   return (
@@ -49,6 +52,7 @@ export function LandingPage() {
         <LandingDemoSection />
         <LandingReviewSection />
         <LandingClosingSection />
+        <LandingPricingSection />
         <LandingFaqSection />
       </div>
       <div className="lp-footer-reveal" ref={footerRef}>

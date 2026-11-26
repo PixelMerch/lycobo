@@ -7,6 +7,7 @@ import { useMessages } from "../../../i18n/messages";
 import { creationGuidePath } from "../../guide/creation-guide-path";
 import { legalPaths } from "../../legal/legal-document";
 import { landingFaqMessages } from "./landing-faq-messages";
+import { landingPricingPath } from "./landing-pricing-navigation";
 import { LandingSectionHeading } from "./landing-section-heading";
 import "./landing-faq-section.css";
 
@@ -24,9 +25,14 @@ export function LandingFaqSection() {
       id: "recharge",
       q: faq.faqRechargeQuestion,
       a: faq.faqRechargeAnswer,
+      link: { to: landingPricingPath, label: faq.pricingLink },
+    },
+    {
+      id: "failure",
+      q: faq.faqFailureQuestion,
+      a: faq.faqFailureAnswer,
       link: { to: legalPaths.refunds, label: faq.refundLink },
     },
-    { id: "failure", q: faq.faqFailureQuestion, a: faq.faqFailureAnswer },
     {
       id: "privacy",
       q: faq.faqPrivacyQuestion,

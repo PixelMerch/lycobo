@@ -24,7 +24,8 @@ test.describe("English browser", () => {
       "Product Images",
       "Textile Variations",
       "Inspiration",
-      "Free canvas",
+      "Pricing",
+      "FAQ",
     ]);
 
     const language = page.getByRole("button", { name: "Language: English", exact: true });
@@ -40,11 +41,11 @@ test.describe("English browser", () => {
     await menu.getByRole("menuitemradio", { name: "简体中文" }).click();
     await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
     await expect(page).toHaveTitle("Lycobo · 电商创作工作台");
-    await expect(items).toHaveText(["商品图片", "家纺裂变", "灵感库", "自由画布"]);
+    await expect(items).toHaveText(["商品图片", "家纺裂变", "灵感库", "价格", "FAQ"]);
 
     // 选择记在本机，刷新后不再跟随浏览器语言。
     await page.reload();
-    await expect(items).toHaveText(["商品图片", "家纺裂变", "灵感库", "自由画布"]);
+    await expect(items).toHaveText(["商品图片", "家纺裂变", "灵感库", "价格", "FAQ"]);
     await expect(page.getByRole("button", { name: "语言：简体中文", exact: true })).toHaveText(
       "中文",
     );
@@ -63,7 +64,8 @@ test.describe("English workspace", () => {
       "Product Images",
       "Textile Variations",
       "Inspiration",
-      "Free canvas",
+      "Pricing",
+      "FAQ",
       "Assets",
     ]);
     await expect(page.getByRole("textbox", { name: "Prompt" })).toBeVisible();

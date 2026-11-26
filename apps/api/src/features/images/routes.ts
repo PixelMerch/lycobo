@@ -1,4 +1,5 @@
 import { BillingError } from "@lycoboai/billing";
+import { defaultCreditOfferEnd } from "@lycoboai/contracts";
 import { ImageRepositoryError, VariationError, WalletError } from "@lycoboai/db";
 import { type Context, Hono } from "hono";
 import { enterprisePrincipal } from "../auth/principal";
@@ -69,6 +70,9 @@ export function imageRoutes(deps: ImageApiDependencies) {
   });
   // 展示用元数据公开，任务和能力接口仍需鉴权。
   app.get("/image-model-logos", async (c) => c.json(await deps.repository.models.logos()));
+  app.get("/credit-pricing", (c) =>
+    c.json({ offerEnd: deps.checkout?.offerEnd ?? defaultCreditOfferEnd }),
+  );
   app.use("*", async (c, next) => {
     const principal = await resolvePrincipal(c);
     if (!principal) return fail(c, "UNAUTHORIZED", "请先验证身份", 401);
