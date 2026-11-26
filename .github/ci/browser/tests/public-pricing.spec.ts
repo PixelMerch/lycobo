@@ -92,7 +92,7 @@ test("public pricing sends signed-in buyers directly to the selected checkout", 
   await page.route(checkoutUrl, (route) => route.fulfill({ body: "Checkout fixture" }));
   await page.clock.setFixedTime(new Date("2026-11-26T00:00:00Z"));
   await page.goto("/en#pricing");
-  await page.getByRole("button", { name: "Top up 1,360 credits", exact: true }).click();
+  await page.getByRole("button", { name: "Top up 1,480 credits", exact: true }).click();
   await expect(page).toHaveURL(checkoutUrl);
   expect(checkouts).toEqual(["offer:catalog"]);
 });

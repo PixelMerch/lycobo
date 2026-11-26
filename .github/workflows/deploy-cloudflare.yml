@@ -65,6 +65,7 @@ jobs:
       - name: Deploy site and image Worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          RELEASE_BILLING_PRODUCTS: ${{ secrets.BILLING_PRODUCTS }}
           RELEASE_VERSION: ${{ inputs.version }}
           WRANGLER_SEND_METRICS: "false"
         run: |
@@ -74,7 +75,15 @@ jobs:
             exit 1
           fi
           message="$RELEASE_VERSION $(git rev-parse HEAD)"
-          pnpm exec wrangler deploy --config wrangler.jsonc --message "$message"
+          if [[ -z "$RELEASE_BILLING_PRODUCTS" ]]; then
+            echo "::error::Configure BILLING_PRODUCTS in the cloudflare-production environment."
+            exit 1
+          fi
+          # 绑定和代码一起部署，避免站内积分与当前 Creem 商品短暂不一致。
+          secrets_file="$(mktemp "$RUNNER_TEMP/lycobo-billing.XXXXXXXX.json")"
+          trap 'rm -f "$secrets_file"' EXIT
+          jq -nce 'env.RELEASE_BILLING_PRODUCTS as $mapping | ($mapping | try fromjson catch null) as $products | if ($products | type) == "object" then {BILLING_PRODUCTS: $mapping} else error("Invalid BILLING_PRODUCTS mapping") end' > "$secrets_file"
+          pnpm exec wrangler deploy --config wrangler.jsonc --message "$message" --secrets-file "$secrets_file"
           pnpm exec wrangler deploy --config wrangler.images.jsonc --message "$message"
           pnpm cf:check:config
       - name: Verify production health
