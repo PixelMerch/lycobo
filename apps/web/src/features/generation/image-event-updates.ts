@@ -1,18 +1,19 @@
-import { type imageEventSchema, imageJobSchema } from "@lycoboai/contracts";
+import {
+  type ImageJob,
+  type imageEventSchema,
+  imageTasksResponseSchema,
+} from "@lycoboai/contracts";
 import type { QueryClient } from "@tanstack/react-query";
 import { imageRequest } from "./generation-client";
 import { cachedJob, jobsWaitingForReference, replaceJob } from "./task-sync";
 
-const fetchJob = (client: QueryClient, id: string) =>
-  client.fetchQuery({
-    queryKey: ["image-task", id],
-    staleTime: 0,
-    queryFn: async ({ signal }) =>
-      imageJobSchema.parse(await (await imageRequest(`image-tasks/${id}`, { signal })).json()),
-  });
+// 批量接口最多接收 50 个任务 ID。
+const statusBatchSize = 50;
+
 /** 将任务推送合并为详情读取，钱包只由独立账本事件校准。 */
 export function batchImageUpdates(client: QueryClient, isStopped: () => boolean) {
   let batchTimer: ReturnType<typeof setTimeout> | undefined;
+  let request: AbortController | undefined;
   let flushing = false;
   let calibration = 0;
   let assetsChanged = false;
@@ -25,15 +26,10 @@ export function batchImageUpdates(client: QueryClient, isStopped: () => boolean)
     void client.invalidateQueries({ queryKey: ["image-task"] });
     void client.invalidateQueries({ queryKey: ["image-assets"] });
   };
-  async function refreshJob(id: string, snapshot: number) {
-    const previous = cachedJob(client, id);
-    const job = await fetchJob(client, id);
-    if (isStopped()) return;
-    if (snapshot !== calibration) {
-      taskIds.add(id);
-      return;
-    }
-    if (taskIds.has(id)) return;
+  function applyJob(job: ImageJob) {
+    if (taskIds.has(job.id)) return { history: false, assets: false };
+    const previous = cachedJob(client, job.id);
+    client.setQueryData(["image-task", job.id], job);
     return {
       history: !replaceJob(client, job),
       assets: job.items.some(
@@ -43,8 +39,22 @@ export function batchImageUpdates(client: QueryClient, isStopped: () => boolean)
       ),
     };
   }
+  async function refreshJobs(ids: string[], snapshot: number, signal: AbortSignal) {
+    const response = await imageRequest(`image-tasks/status?ids=${ids.join(",")}`, { signal });
+    const { data } = imageTasksResponseSchema.parse(await response.json());
+    if (isStopped()) return;
+    if (snapshot !== calibration) {
+      for (const id of ids) taskIds.add(id);
+      return;
+    }
+    const updates = data.map(applyJob);
+    return {
+      history: data.length !== ids.length || updates.some((result) => result.history),
+      assets: updates.some((result) => result.assets),
+    };
+  }
   function invalidateBatch(
-    results: PromiseSettledResult<Awaited<ReturnType<typeof refreshJob>>>[],
+    results: PromiseSettledResult<Awaited<ReturnType<typeof refreshJobs>>>[],
     updateAssets: boolean,
   ) {
     let reloadHistory = false;
@@ -69,7 +79,15 @@ export function batchImageUpdates(client: QueryClient, isStopped: () => boolean)
     taskIds.clear();
     const updateAssets = assetsChanged;
     assetsChanged = false;
-    const results = await Promise.allSettled(ids.map((id) => refreshJob(id, snapshot)));
+    request = new AbortController();
+    const signal = request.signal;
+    const batches = Array.from({ length: Math.ceil(ids.length / statusBatchSize) }, (_, index) =>
+      ids.slice(index * statusBatchSize, (index + 1) * statusBatchSize),
+    );
+    const results = await Promise.allSettled(
+      batches.map((batch) => refreshJobs(batch, snapshot, signal)),
+    );
+    request = undefined;
     if (!isStopped()) invalidateBatch(results, updateAssets);
     flushing = false;
     if (!isStopped() && (taskIds.size || assetsChanged))
@@ -90,6 +108,7 @@ export function batchImageUpdates(client: QueryClient, isStopped: () => boolean)
     },
     cancel() {
       clearTimeout(batchTimer);
+      request?.abort();
     },
   };
 }

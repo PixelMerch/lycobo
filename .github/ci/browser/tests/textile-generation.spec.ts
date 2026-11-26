@@ -92,6 +92,11 @@ test("textile angles submit one durable ten-image job and isolate history across
       });
       return route.fulfill({ status: 202, json: apiFixture({ id, replayed: false }, 202) });
     }
+    const ids = url.searchParams.get("ids")?.split(",");
+    if (url.pathname.endsWith("/status") && ids)
+      return route.fulfill({
+        json: apiFixture({ data: jobs.filter((job) => ids.includes(job.id)) }),
+      });
     const id = url.pathname.split("/").at(-1);
     const job = jobs.find((entry) => entry.id === id);
     return route.fulfill({

@@ -58,10 +58,13 @@ test("multiple repair regions retain original coordinates, submit one image and 
   });
   let completed = false;
   let details = 0;
-  await page.route(`**/api/v1/image-tasks/${jobId}`, (route) => {
-    details++;
-    return route.fulfill({
-      json: apiFixture({
+  await page.route(
+    (url) =>
+      url.pathname === `/api/v1/image-tasks/${jobId}` ||
+      (url.pathname === "/api/v1/image-tasks/status" && url.searchParams.get("ids") === jobId),
+    (route) => {
+      details++;
+      const job = {
         id: jobId,
         public_id: "WREPAIR01",
         organization_id: crypto.randomUUID(),
@@ -87,9 +90,11 @@ test("multiple repair regions retain original coordinates, submit one image and 
             worker_id: "fixture",
           },
         ],
-      }),
-    });
-  });
+      };
+      const status = new URL(route.request().url()).pathname.endsWith("/status");
+      return route.fulfill({ json: apiFixture(status ? { data: [job] } : job) });
+    },
+  );
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/commerce/create");
   await page.getByRole("button", { name: "打开素材库", exact: true }).click();
