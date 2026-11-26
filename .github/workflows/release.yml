@@ -78,5 +78,6 @@ jobs:
     uses: ./.github/workflows/deploy-cloudflare.yml
     secrets:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      BILLING_PRODUCTS: ${{ secrets.BILLING_PRODUCTS }}
     with:
       version: ${{ inputs.version }}
