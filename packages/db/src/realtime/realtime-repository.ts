@@ -1,5 +1,9 @@
 import type { ImageScope } from "@lycoboai/contracts";
-import { notificationListSchema, realtimeEventSchema, releaseSchema } from "@lycoboai/contracts";
+import {
+  notificationListSchema,
+  realtimeOutboxMessageSchema,
+  releaseSchema,
+} from "@lycoboai/contracts";
 import postgres from "postgres";
 import { z } from "zod";
 
@@ -7,7 +11,7 @@ const outboxEventSchema = z.object({
   id: z.uuid(),
   channel: z.string(),
   userId: z.uuid().nullable(),
-  event: realtimeEventSchema,
+  event: realtimeOutboxMessageSchema,
 });
 
 /** 调用级实时仓储：数据库保留投递意图，DO 只承担传输与短期回放。 */

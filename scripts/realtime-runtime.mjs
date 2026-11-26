@@ -31,12 +31,12 @@ export async function verifyRealtimeRuntime(url) {
   assert.equal(await rejected({ ...headers, Origin: "https://evil.example" }), 403);
   assert.equal(await rejected({ Origin: url, Upgrade: "websocket" }), 401);
   const fresh = crypto.randomUUID();
-  const open = async (cursor = "0") => {
+  const open = async (cursor = "0", cookie = headers.Cookie) => {
     // Node 内置 WebSocket 不提供 Cookie 选项，使用已安装的 ws 测试客户端。
 
     const socket = new WebSocket(
       `${url.replace("http", "ws")}/api/v1/realtime/connect?cursor=${cursor}`,
-      { headers },
+      { headers: { ...headers, Cookie: cookie } },
     );
     const messages = [];
     socket.on("message", (data) => messages.push(data.toString()));
@@ -115,7 +115,38 @@ export async function verifyRealtimeRuntime(url) {
   } finally {
     first.socket.close();
   }
+  await verifySessionRevocation({ open, publish, rejected, waitFor, headers });
   console.info(
     "Local workerd verified WebSocket upgrade, automatic heartbeat, isolation, stable cursors, replay and revoked-session closure",
   );
+}
+
+async function verifySessionRevocation({ open, publish, rejected, waitFor, headers }) {
+  const previous = await open();
+  const replacement = await open("0", "lycobo_enterprise_session=new-fixture");
+  try {
+    const revocation = {
+      id: crypto.randomUUID(),
+      userId: "11111111-1111-4111-8111-111111111111",
+      event: {
+        id: crypto.randomUUID(),
+        kind: "session-revoked",
+        resourceId: "33333333-3333-4333-8333-333333333333",
+      },
+    };
+    await publish(revocation);
+    await waitFor(() => previous.messages.includes('{"type":"session-revoked"}'));
+    await publish(revocation);
+    assert.equal(await rejected(headers), 401);
+    replacement.socket.send("ping");
+    await waitFor(() => replacement.messages.includes("pong"));
+    assert.ok(
+      !replacement.messages.some(
+        (text) => text.includes("session-revoked") || text.includes(revocation.event.resourceId),
+      ),
+    );
+  } finally {
+    previous.socket.close();
+    replacement.socket.close();
+  }
 }

@@ -1,6 +1,10 @@
-import { type RealtimeEvent, realtimeFrameSchema } from "@lycoboai/contracts";
+import {
+  type RealtimeEvent,
+  realtimeFrameSchema,
+  sessionReplacedCloseCode,
+} from "@lycoboai/contracts";
 import type { QueryClient } from "@tanstack/react-query";
-import { imageRequest } from "../generation/generation-client";
+import { recheckEnterpriseSession } from "../auth/auth-client";
 import { batchImageUpdates } from "../generation/image-event-updates";
 import { setRealtimeReady } from "./availability";
 import { applyResourceEvent, batchResourceUpdates } from "./resource-updates";
@@ -12,6 +16,11 @@ function openSocket(privateChannel: boolean, cursor: string) {
   return new WebSocket(url);
 }
 
+function readFrame(data: unknown) {
+  if (typeof data !== "string") throw new Error("INVALID_REALTIME_FRAME");
+  return realtimeFrameSchema.parse(JSON.parse(data));
+}
+
 function watchRealtimeResume(
   readState: () => {
     socket: WebSocket | undefined;
@@ -20,17 +29,20 @@ function watchRealtimeResume(
     stopped: boolean;
   },
   reconnect: () => void,
+  recheck?: () => void,
 ) {
   const resume = () => {
     const { socket, lastPong, renewAt, stopped } = readState();
     if (document.visibilityState === "hidden" || stopped) return;
-    // 切换标签页不打断仍有心跳的连接；冻结后的过期凭证仍须重新握手。
+    // 回到前台核验登录状态，保持健康连接及原有游标。
     if (
       socket?.readyState === WebSocket.OPEN &&
       Date.now() - lastPong < 60000 &&
       Date.now() < renewAt
-    )
+    ) {
+      recheck?.();
       return;
+    }
     reconnect();
   };
   window.addEventListener("online", resume);
@@ -50,6 +62,7 @@ export function connectRealtime(client: QueryClient, privateChannel: boolean) {
   let connectedAt: number | undefined;
   let epoch = 0;
   let reconnect: ReturnType<typeof setTimeout> | undefined;
+  let reconnectNeedsSessionCheck = true;
   let heartbeat: ReturnType<typeof setInterval> | undefined;
   let expiry: ReturnType<typeof setTimeout> | undefined;
   let renewAt = 0;
@@ -62,7 +75,7 @@ export function connectRealtime(client: QueryClient, privateChannel: boolean) {
     if ((event.kind === "task" || event.kind === "asset") && event.resourceId)
       updates.enqueue({ id: "0", kind: event.kind, resourceId: event.resourceId });
   };
-  const restart = () => {
+  const restart = (replaced = false) => {
     setRealtimeReady(client, false);
     epoch++;
     if (connectedAt !== undefined && Date.now() - connectedAt >= 60000) failures = 0;
@@ -77,11 +90,12 @@ export function connectRealtime(client: QueryClient, privateChannel: boolean) {
       socket = undefined;
     }
     if (stopped || reconnect) return;
-    const delay =
-      Math.min(30000, 1000 * 2 ** Math.min(failures++, 5)) * (0.8 + Math.random() * 0.4);
+    const delay = replaced
+      ? 0
+      : Math.min(30000, 1000 * 2 ** Math.min(failures++, 5)) * (0.8 + Math.random() * 0.4);
     reconnect = setTimeout(() => {
       reconnect = undefined;
-      void connect(true).catch(restart);
+      void connect(replaced ? "session-revoked" : "reconnect").catch(() => restart());
     }, delay);
   };
   const receive = (data: unknown) => {
@@ -90,9 +104,10 @@ export function connectRealtime(client: QueryClient, privateChannel: boolean) {
       return;
     }
     try {
-      if (typeof data !== "string") return restart();
-      const frame = realtimeFrameSchema.parse(JSON.parse(data));
+      const frame = readFrame(data);
+      if (frame.type === "session-revoked") return restart(privateChannel);
       if (frame.type === "ready") {
+        reconnectNeedsSessionCheck = true;
         setRealtimeReady(client, privateChannel);
         if (frame.resync && privateChannel) {
           updates.calibrate();
@@ -113,22 +128,16 @@ export function connectRealtime(client: QueryClient, privateChannel: boolean) {
       restart();
     }
   };
-  const renewIdentity = async (generation: number) => {
-    try {
-      await imageRequest("image-session", { method: "POST" });
-      return true;
-    } catch {
-      if (stopped || generation !== epoch) return false;
-      invalidate("enterprise-session");
-      invalidate("image-session");
-      restart();
-      return false;
-    }
-  };
-  const connect = async (renew = false) => {
+  const connect = async (reason?: "reconnect" | "session-revoked") => {
     if (stopped) return;
     const generation = ++epoch;
-    if (renew && privateChannel && !(await renewIdentity(generation))) return;
+    // 已确认被替换时只读取一次当前身份，避免尝试续期已撤销的 Cookie。
+    if (reason && privateChannel && (reconnectNeedsSessionCheck || reason === "session-revoked")) {
+      const account = await recheckEnterpriseSession(client, reason !== "session-revoked");
+      if (stopped || generation !== epoch || !account) return;
+      // 同一次断线可能握手失败多次，复用首轮身份核验结果。
+      reconnectNeedsSessionCheck = false;
+    }
     if (stopped || generation !== epoch) return;
     const active = openSocket(privateChannel, cursor);
     socket = active;
@@ -136,8 +145,8 @@ export function connectRealtime(client: QueryClient, privateChannel: boolean) {
     active.onmessage = (message) => {
       if (socket === active) receive(message.data);
     };
-    active.onclose = () => {
-      if (socket === active) restart();
+    active.onclose = (event) => {
+      if (socket === active) restart(privateChannel && event.code === sessionReplacedCloseCode);
     };
     active.onerror = () => {
       if (socket === active) restart();
@@ -154,8 +163,14 @@ export function connectRealtime(client: QueryClient, privateChannel: boolean) {
       reconnect = undefined;
       restart();
     },
+    privateChannel
+      ? () => {
+          // 临时网络错误保留连接，下一次重连或返回前台再核验。
+          void recheckEnterpriseSession(client).catch(() => undefined);
+        }
+      : undefined,
   );
-  void connect().catch(restart);
+  void connect().catch(() => restart());
   return () => {
     stopped = true;
     clearTimeout(reconnect);

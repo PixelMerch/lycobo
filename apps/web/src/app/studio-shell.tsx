@@ -58,7 +58,7 @@ export function StudioShell() {
   const workspace = isDashboardPath(pathname);
   const isLanding = pathname === commercePath;
   const publicNavigation = publicPaths.has(pathname);
-  const session = useEnterpriseSession(true);
+  const session = useEnterpriseSession();
   const signedIn = !!session.data;
   const routeNeedsLogin = !publicNavigation && !signedIn;
   if (routeNeedsLogin && !session.isPending)

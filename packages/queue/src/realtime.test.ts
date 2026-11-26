@@ -1,6 +1,29 @@
 import { expect, it, vi } from "vitest";
 import { dispatchRealtime } from "./realtime";
 
+it("delivers an exact session revocation without reading the workspace session list", async () => {
+  const row = {
+    id: crypto.randomUUID(),
+    channel: crypto.randomUUID(),
+    userId: crypto.randomUUID(),
+    event: {
+      id: crypto.randomUUID(),
+      kind: "session-revoked" as const,
+      resourceId: crypto.randomUUID(),
+    },
+  };
+  const publish = vi.fn(async () => {});
+  const repository = {
+    pending: vi.fn(async () => [row]),
+    sessions: vi.fn(async () => []),
+    delivered: vi.fn(async () => {}),
+  };
+  await dispatchRealtime(repository, { getByName: () => ({ publish }) });
+  expect(publish).toHaveBeenCalledExactlyOnceWith(row.id, row.event, row.userId, []);
+  expect(repository.sessions).not.toHaveBeenCalled();
+  expect(repository.delivered).toHaveBeenCalledExactlyOnceWith([row.id]);
+});
+
 it("keeps failed publication pending and retries the same identity before acknowledging", async () => {
   const event = { id: crypto.randomUUID(), kind: "wallet" as const };
   const row = { id: crypto.randomUUID(), channel: crypto.randomUUID(), userId: null, event };

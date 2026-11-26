@@ -30,8 +30,8 @@ import { clearPreviewLinks } from "../generation/preview-link-cache";
 import { authMessages } from "./auth-messages";
 
 export const enterpriseSessionKey = ["enterprise-session"];
-async function authRequest(path: string, init: RequestInit = {}) {
-  const useSession = path === "session" || path === "locale";
+async function authRequest(path: string, init: RequestInit = {}, allowRenewal = true) {
+  const useSession = allowRenewal && (path === "session" || path === "locale");
   const request = useSession ? sessionFetch : fetch;
   let response: Response;
   try {
@@ -82,21 +82,27 @@ async function authError(response: Response) {
   }
   return new Error(currentMessages(authMessages).serviceUnavailable);
 }
-/** 读取当前登录状态，应用壳可定时发现会话被另一设备替换。 */
-export function useEnterpriseSession(watchActiveSession = false) {
-  return useQuery<EnterpriseIdentity | null>({
+function sessionQuery(allowRenewal = true) {
+  return {
     queryKey: enterpriseSessionKey,
     retry: false,
-    staleTime: 30000,
-    // 旧设备即使没有收到实时事件，也会在前台发现会话已被替换。访客无需定时检查。
-    refetchInterval: (query) => (watchActiveSession && query.state.data ? 30000 : false),
-    queryFn: async ({ signal }) => {
-      const response = await authRequest("session", { signal });
+    queryFn: async ({ signal }: { signal: AbortSignal }) => {
+      const response = await authRequest("session", { signal }, allowRenewal);
       if (response.status === 401 || response.status === 503) return null;
       if (!response.ok) throw new Error(currentMessages(authMessages).sessionUnavailable);
       return enterpriseIdentitySchema.parse(await response.json());
     },
-  });
+  };
+}
+
+/** 读取当前登录状态，所有页面订阅同一份会话。 */
+export function useEnterpriseSession() {
+  return useQuery({ ...sessionQuery(), staleTime: 30000 });
+}
+
+/** 主动核验并更新登录状态，和已有会话查询共用正在进行的请求。 */
+export function recheckEnterpriseSession(client: QueryClient, allowRenewal = true) {
+  return client.fetchQuery({ ...sessionQuery(allowRenewal), staleTime: 0 });
 }
 /** 登录后同步账号偏好和会话，清理旧身份的业务查询。 */
 export function useEnterpriseLogin() {

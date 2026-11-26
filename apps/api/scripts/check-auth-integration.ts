@@ -130,7 +130,7 @@ try {
     assert.match(result.user.uid ?? "", /^[0-9]{10}$/);
     assert.equal(result.user.uid, first.uid);
     assert.notEqual(first.uid, second.uid);
-    await verifySocialAuth(app, origin, first.userId, realtime.sessions);
+    await verifySocialAuth(app, origin, first.userId, realtime);
     const initialHeaders = { Authorization: `Bearer ${result.accessToken}` };
     const session = enterpriseIdentitySchema.parse(
       unwrapApiData(

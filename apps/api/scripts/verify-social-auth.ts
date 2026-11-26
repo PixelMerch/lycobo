@@ -55,7 +55,7 @@ export async function verifySocialAuth(
   app: App,
   origin: string,
   enterpriseUserId: string,
-  activeSessions: RealtimeRepository["sessions"],
+  realtime: Pick<RealtimeRepository, "sessions" | "pending">,
 ) {
   const externalId = crypto.randomUUID();
   const google = await start(app, origin, "google");
@@ -89,7 +89,7 @@ export async function verifySocialAuth(
   try {
     const first = await complete(app, google.flow);
     assert.equal(first.user.nickname, "Google Fixture");
-    const previous = await activeSessions(first.user.organizationId);
+    const previous = await realtime.sessions(first.user.organizationId);
     assert.equal(previous.length, 1);
     const rename = await app.request("/api/v1/auth/nickname", {
       method: "PUT",
@@ -109,9 +109,18 @@ export async function verifySocialAuth(
     assert.equal(first.user.uid, second.user.uid);
     assert.equal(first.user.organizationId, second.user.organizationId);
     assert.notEqual(first.user.userId, enterpriseUserId);
-    const latest = await activeSessions(first.user.organizationId);
+    const latest = await realtime.sessions(first.user.organizationId);
     assert.equal(latest.length, 1);
     assert.notDeepEqual(latest, previous);
+    assert.ok(
+      (await realtime.pending()).some(
+        (record) =>
+          record.channel === first.user.organizationId &&
+          record.userId === first.user.userId &&
+          record.event.kind === "session-revoked" &&
+          record.event.resourceId === previous[0],
+      ),
+    );
     const refresh = (cookie: string) =>
       app.request("/api/v1/auth/refresh", {
         method: "POST",

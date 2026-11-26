@@ -1,11 +1,11 @@
-import type { RealtimeEvent } from "@lycoboai/contracts";
+import type { RealtimeOutboxMessage } from "@lycoboai/contracts";
 import type { RealtimeRepository } from "@lycoboai/db";
 
 export type RealtimePublisher = {
   getByName(channel: string): {
     publish(
       id: string,
-      event: RealtimeEvent,
+      event: RealtimeOutboxMessage,
       userId: string | null,
       sessions: string[],
     ): Promise<void>;
@@ -23,11 +23,12 @@ export async function dispatchRealtime(
   try {
     for (const row of pending) {
       let active = sessions.get(row.channel);
-      if (!active) {
+      // 退出通知只关闭已撤销的会话，不查询也不改动组织内其他连接。
+      if (!active && row.event.kind !== "session-revoked") {
         active = row.channel === "public" ? [] : await repository.sessions(row.channel);
         sessions.set(row.channel, active);
       }
-      await hubs.getByName(row.channel).publish(row.id, row.event, row.userId, active);
+      await hubs.getByName(row.channel).publish(row.id, row.event, row.userId, active ?? []);
       published.push(row.id);
     }
   } finally {

@@ -1,22 +1,26 @@
+import { sessionReplacedCloseCode } from "@lycoboai/contracts";
 import { QueryClient } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { imageRequest } from "../generation/generation-client";
 import { batchImageUpdates } from "../generation/image-event-updates";
 import { connectRealtime } from "./connection";
 
-vi.mock("../generation/generation-client", () => ({
-  imageRequest: vi.fn(async () => new Response()),
-}));
 vi.mock("../generation/image-event-updates", () => ({
   batchImageUpdates: vi.fn(() => ({ calibrate: vi.fn(), enqueue: vi.fn(), cancel: vi.fn() })),
 }));
+const identity = {
+  userId: crypto.randomUUID(),
+  organizationId: crypto.randomUUID(),
+  role: "member",
+  account: "fixture",
+};
+const sessionRequest = vi.fn<typeof fetch>();
 
 class FakeSocket {
   static OPEN = 1;
   static instances: FakeSocket[] = [];
   readyState = 1;
   onmessage: ((event: { data: string }) => void) | null = null;
-  onclose: (() => void) | null = null;
+  onclose: ((event: { code: number }) => void) | null = null;
   onerror: (() => void) | null = null;
   send = vi.fn((message: string) => {
     if (message === "ping") this.onmessage?.({ data: "pong" });
@@ -48,6 +52,8 @@ beforeEach(() => {
   vi.stubGlobal("location", { href: "https://fixture.example/", protocol: "https:" });
   vi.stubGlobal("window", new EventTarget());
   vi.stubGlobal("document", Object.assign(new EventTarget(), { visibilityState: "visible" }));
+  sessionRequest.mockReset().mockImplementation(async () => Response.json(identity));
+  vi.stubGlobal("fetch", sessionRequest);
 });
 afterEach(() => {
   vi.useRealTimers();
@@ -80,23 +86,34 @@ it("keeps business APIs idle and applies task, wallet and inbox events once", as
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ["wallet"] });
   expect(invalidate).toHaveBeenCalledWith({ queryKey: ["notifications"] });
   await vi.advanceTimersByTimeAsync(120000);
-  expect(imageRequest).not.toHaveBeenCalled();
+  expect(sessionRequest).not.toHaveBeenCalled();
   expect(current().send).toHaveBeenCalledWith("ping");
   stop();
 });
 it("reconnects with the last cursor and cancels timers on sign out", async () => {
   const stop = connectRealtime(new QueryClient(), true);
   current().receive(ready("17", false));
-  current().onclose?.();
+  current().onclose?.({ code: 1006 });
   await vi.advanceTimersByTimeAsync(1500);
   expect(current().url.searchParams.get("cursor")).toBe("17");
-  expect(imageRequest).toHaveBeenCalledTimes(1);
+  expect(sessionRequest).toHaveBeenCalledTimes(1);
   stop();
   const count = FakeSocket.instances.length;
   await vi.advanceTimersByTimeAsync(120000);
   expect(FakeSocket.instances).toHaveLength(count);
 });
-it("keeps a healthy connection when returning to the foreground or receiving online events", async () => {
+it("does not repeat session reads when reconnect handshakes keep failing", async () => {
+  const stop = connectRealtime(new QueryClient(), true);
+  current().receive(ready());
+  current().onclose?.({ code: 1006 });
+  await vi.advanceTimersByTimeAsync(1500);
+  current().onclose?.({ code: 1006 });
+  await vi.advanceTimersByTimeAsync(3000);
+  expect(FakeSocket.instances).toHaveLength(3);
+  expect(sessionRequest).toHaveBeenCalledTimes(1);
+  stop();
+});
+it("coalesces foreground and online checks while keeping a healthy connection", async () => {
   const client = new QueryClient();
   const stop = connectRealtime(client, true);
   const socket = current();
@@ -109,7 +126,10 @@ it("keeps a healthy connection when returning to the foreground or receiving onl
   await vi.advanceTimersByTimeAsync(1500);
   expect(socket.close).not.toHaveBeenCalled();
   expect(FakeSocket.instances).toHaveLength(1);
-  expect(imageRequest).not.toHaveBeenCalled();
+  expect(sessionRequest).toHaveBeenCalledExactlyOnceWith(
+    "/api/v1/auth/session",
+    expect.objectContaining({ credentials: "same-origin" }),
+  );
   expect(invalidate).not.toHaveBeenCalled();
   stop();
 });
@@ -126,9 +146,31 @@ it.each(["heartbeat", "expiry"])("reconnects after suspension when %s is stale",
   await vi.advanceTimersByTimeAsync(1500);
   expect(FakeSocket.instances).toHaveLength(2);
   expect(current().url.searchParams.get("cursor")).toBe("17");
-  expect(imageRequest).toHaveBeenCalledTimes(1);
+  expect(sessionRequest).toHaveBeenCalledTimes(1);
   stop();
 });
+
+it.each(["signal", "close"])(
+  "rechecks replacement once after the %s without token renewal",
+  async (mode) => {
+    const client = new QueryClient();
+    client.setQueryData(["enterprise-session"], identity);
+    sessionRequest.mockImplementationOnce(async () => new Response(null, { status: 401 }));
+    const stop = connectRealtime(client, true);
+    current().receive(ready());
+    if (mode === "signal") current().receive({ type: "session-revoked" });
+    else current().onclose?.({ code: sessionReplacedCloseCode });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(client.getQueryData(["enterprise-session"])).toBeNull();
+    await vi.advanceTimersByTimeAsync(120000);
+    expect(FakeSocket.instances).toHaveLength(1);
+    expect(sessionRequest).toHaveBeenCalledExactlyOnceWith(
+      "/api/v1/auth/session",
+      expect.objectContaining({ credentials: "same-origin" }),
+    );
+    stop();
+  },
+);
 it("updates the release cache without reloading or changing the draft route", () => {
   const client = new QueryClient();
   const stop = connectRealtime(client, false);

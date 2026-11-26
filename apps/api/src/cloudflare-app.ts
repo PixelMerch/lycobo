@@ -192,7 +192,10 @@ async function deliverRealtime(
   realtime: ReturnType<typeof openRealtimeRepository>,
   env: CloudflareEnv,
 ) {
-  if (["GET", "HEAD", "OPTIONS"].includes(request.method)) return;
+  // OAuth 回跳虽是 GET，但成功时会签发会话并写入旧会话的退出通知。
+  const isOAuthCallback =
+    request.method === "GET" && new URL(request.url).pathname === "/api/v1/auth/oauth/callback";
+  if (!isOAuthCallback && ["GET", "HEAD", "OPTIONS"].includes(request.method)) return;
   try {
     await dispatchRealtime(realtime, env.REALTIME);
   } catch {
