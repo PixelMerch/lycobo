@@ -143,6 +143,30 @@
   background: #171717;
   color: var(--foreground);
 }
+@media (hover: hover) and (pointer: fine) {
+  .credit-pack-surface {
+    position: relative;
+  }
+  /* 首页和充值弹框共用悬停反馈，描边与浅色覆盖层不改变卡片尺寸。 */
+  .credit-pack-surface::after {
+    position: absolute;
+    inset: 0;
+    border: 1px solid #ffffff38;
+    border-radius: inherit;
+    background: #ffffff08;
+    opacity: 0;
+    pointer-events: none;
+    content: "";
+  }
+  .credit-pack:hover .credit-pack-surface::after {
+    opacity: 1;
+  }
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .credit-pack-surface::after {
+    transition: opacity 150ms ease;
+  }
+}
 .credit-pack[data-featured="recommended"] {
   --credit-pack-highlight: #c6b3ec;
 }

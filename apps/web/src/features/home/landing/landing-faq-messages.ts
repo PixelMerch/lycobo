@@ -15,7 +15,8 @@ export const landingFaqMessages = defineMessages({
     faqCreditsQuestion: "一次生成要用多少积分？",
     faqCreditsAnswer: `每张图片消耗 ${imageUnitCredits} 积分，批量按张数计算。提示词优化单独显示费用。提交前可查看所需积分，扣费记录见「积分明细」。`,
     faqRechargeQuestion: "在哪里查看充值积分包？",
-    faqRechargeAnswer: "生成时积分不足会打开充值弹框。也可点击顶栏「特惠充值」查看积分包和价格。",
+    faqRechargeAnswer: "积分包价格可直接查看。登录后，点击顶栏「特惠充值」购买积分。",
+    pricingLink: "查看积分包价格",
     refundLink: "查看退款政策",
     faqFailureQuestion: "生成失败后，积分会退回吗？",
     faqFailureAnswer: "确认失败的图片会退回对应积分至原扣款账户。退款记录见「积分明细」。",
@@ -38,8 +39,8 @@ export const landingFaqMessages = defineMessages({
     faqCreditsQuestion: "How many credits does a generation cost?",
     faqCreditsAnswer: `Each image costs ${imageUnitCredits} credits, including in batches. Prompt optimization shows its own cost. Check the total before submitting and the charge in Credit history.`,
     faqRechargeQuestion: "Where can I see the credit packs?",
-    faqRechargeAnswer:
-      "If you run out of credits when generating, the credit packs open. You can also select Top up in the header.",
+    faqRechargeAnswer: "Browse credit pack prices here. To buy credits, sign in and select Top up.",
+    pricingLink: "View credit pack prices",
     refundLink: "Read the Refund Policy",
     faqFailureQuestion: "Do I get my credits back if generation fails?",
     faqFailureAnswer:

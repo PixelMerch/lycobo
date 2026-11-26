@@ -70,11 +70,11 @@ export function useRechargeOrders() {
 }
 
 /** 按登录身份加载实际可购买的档位，商品编号留在服务端。 */
-export function useCheckoutOptions() {
-  const session = useImageSession();
+export function useCheckoutOptions(enabled = true) {
+  const session = useImageSession(enabled);
   return useQuery({
     queryKey: ["checkout-options", session.data?.organizationId, session.data?.userId],
-    enabled: session.isSuccess,
+    enabled: enabled && session.isSuccess,
     retry: false,
     queryFn: async ({ signal }) =>
       checkoutOptionsSchema.parse(await (await imageRequest("wallet/checkout", { signal })).json()),

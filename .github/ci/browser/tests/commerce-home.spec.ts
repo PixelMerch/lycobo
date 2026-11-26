@@ -785,6 +785,7 @@ test("home and legal pages share the public footer and link to FAQ", async ({ pa
     "自由画布",
     "素材库",
     "灵感库",
+    "价格",
     "常见问题",
     "用户协议",
     "隐私政策",

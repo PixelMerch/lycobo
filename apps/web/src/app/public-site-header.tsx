@@ -6,6 +6,7 @@ import { UiIcon } from "../components/ui-icon";
 import { AccountMenu } from "../features/account/menu/account-menu";
 import type { useEnterpriseSession } from "../features/auth/auth-client";
 import { scrollToLandingFaq } from "../features/home/landing/landing-faq-navigation";
+import { scrollToLandingPricing } from "../features/home/landing/landing-pricing-navigation";
 import { useMessages } from "../i18n/messages";
 import { dashboardPath } from "../lib/dashboard-paths";
 import { PublicSiteNavigation } from "./public-site-navigation";
@@ -14,7 +15,7 @@ import { SiteHeaderControls } from "./site-header-controls";
 import { usePublicHeaderBrand } from "./use-public-header-brand";
 import "./public-site-header.css";
 
-/** 公共页面共用导航与账户入口，首页额外同步滚动品牌并定位 FAQ。 */
+/** 公共页面共用导航与账户入口，首页额外同步滚动品牌和区块焦点。 */
 export function PublicSiteHeader({
   account,
   isLanding,
@@ -26,22 +27,29 @@ export function PublicSiteHeader({
 }) {
   const t = useMessages(shellMessages);
   const headerRef = useRef<HTMLElement>(null);
-  const mobileFaqRequested = useRef(false);
+  const mobileSectionRequested = useRef<"faq" | "pricing" | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const { brandRef, canvasRef } = usePublicHeaderBrand(headerRef, isLanding);
 
   const closeMenu = () => setMenuOpen(false);
   const openFaq = isLanding ? () => scrollToLandingFaq(true) : undefined;
   const queueMobileFaq = () => {
-    mobileFaqRequested.current = true;
+    mobileSectionRequested.current = "faq";
+  };
+  const queueMobilePricing = () => {
+    mobileSectionRequested.current = "pricing";
   };
   const mobileBackdropRef = useCallback((backdrop: HTMLDivElement | null) => {
     if (!backdrop) return;
     return () => {
-      if (!mobileFaqRequested.current) return;
-      mobileFaqRequested.current = false;
-      // 等菜单退出并解除焦点限制后，再把阅读焦点移到 FAQ。
-      window.requestAnimationFrame(() => scrollToLandingFaq(true));
+      const section = mobileSectionRequested.current;
+      if (!section) return;
+      mobileSectionRequested.current = null;
+      // 等菜单退出并解除焦点限制后，再将阅读焦点移到目标区块。
+      window.requestAnimationFrame(() => {
+        if (section === "pricing") scrollToLandingPricing();
+        else scrollToLandingFaq(true);
+      });
     };
   }, []);
   return (
@@ -97,6 +105,7 @@ export function PublicSiteHeader({
                 <PublicSiteNavigation
                   onNavigate={closeMenu}
                   onFaq={isLanding ? queueMobileFaq : undefined}
+                  onPricing={isLanding ? queueMobilePricing : undefined}
                 />
               </Drawer.Body>
               {account && (
@@ -108,7 +117,10 @@ export function PublicSiteHeader({
           </Drawer.Content>
         </Drawer.Backdrop>
       </Drawer>
-      <PublicSiteNavigation onFaq={openFaq} />
+      <PublicSiteNavigation
+        onFaq={openFaq}
+        onPricing={isLanding ? scrollToLandingPricing : undefined}
+      />
       <div className="public-site-actions">
         <SiteHeaderControls account={account} publicMenus />
         {showStartCreating && (

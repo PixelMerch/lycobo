@@ -169,11 +169,9 @@ test("logout closes the shared stream and removes prior identity data", async ({
   await expect(page.locator("html")).toHaveAttribute("data-ws-active", "1");
   await page.locator(".account-trigger").click();
   await page.getByRole("button", { name: "退出登录", exact: true }).click();
-  // 工作区需要登录：退出后转到独立登录页，私有推送随之关闭。
-  await expect(page).toHaveURL(/\/login\?returnTo=/);
+  // 退出后直接回到公开首页，私有推送随之关闭。
+  await expect(page).toHaveURL(/\/zh-CN\/?$/);
   await expect(page.locator("html")).toHaveAttribute("data-ws-active", "0");
-  // 关闭登录页回到公开首页（不刷新页面），游客改用只含发布消息的公开推送。
-  await page.getByRole("button", { name: "关闭登录", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("data-ws-url", /realtime\/public/);
   await expect(page.locator(".account-trigger")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "登录领积分", exact: true })).toBeVisible();

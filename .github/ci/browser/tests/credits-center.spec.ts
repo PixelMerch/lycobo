@@ -48,6 +48,16 @@ for (const width of [1440, 320]) {
     await expect(entry).toContainText("约 52 张图片");
     await expect(entry).toContainText("赠 2 积分");
     await expect(entry.getByRole("button", { name: "购买 102 积分" })).toBeDisabled();
+    if (width === 1440) {
+      await entry.hover();
+      await expect
+        .poll(() =>
+          entry
+            .locator(".credit-pack-surface")
+            .evaluate((element) => getComputedStyle(element, "::after").opacity),
+        )
+        .toBe("1");
+    }
     await expect(recharge.getByText("在线支付暂未开放。")).toHaveCount(0);
     expect(ledgerReads).toBe(0);
     await page.keyboard.press("Escape");

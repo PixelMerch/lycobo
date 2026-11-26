@@ -1,11 +1,16 @@
 import { BillingError } from "@lycoboai/billing";
-import { imageModelsResponseSchema, unwrapApiData } from "@lycoboai/contracts";
+import {
+  defaultCreditOfferEnd,
+  imageModelsResponseSchema,
+  unwrapApiData,
+} from "@lycoboai/contracts";
 import type { ImageRepository } from "@lycoboai/db";
 import { supportedResolutions, validateModelInput } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage";
 import { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { expect, it, vi } from "vitest";
 import { createApp } from "../../../app";
+import type { CheckoutService } from "../../billing/service";
 import type { ExternalWalletService } from "../../billing/wallet-service";
 import { createCreemModerator } from "../../moderation/creem-moderation";
 import type { GenerationModerator } from "../../moderation/service";
@@ -20,6 +25,7 @@ function fixture(
     wake?: () => Promise<void>;
     wakeBilling?: (id: string) => Promise<void>;
     billing?: ExternalWalletService;
+    checkout?: CheckoutService;
     wallet?: ImageRepository["wallet"];
     walletHistory?: ImageRepository["walletHistory"];
     moderate?: GenerationModerator | undefined;
@@ -138,6 +144,7 @@ function fixture(
     repository,
     moderate: extra.moderate,
     billing: extra.billing,
+    checkout: extra.checkout,
     wakeBilling: extra.wakeBilling,
     store,
     signAsset: extra.signAsset,
@@ -713,6 +720,19 @@ it("preserves the local balance if the purchased wallet cannot be read", async (
   expect(await response.json()).toMatchObject({
     data: { balance: 18, unitCredits: 2, purchasedBalance: null },
   });
+});
+
+it("exposes only the offer schedule to visitors and keeps checkout authenticated", async () => {
+  const offerEnd = "2026-12-01T12:00:00Z";
+  const { app } = fixture(false, false, {
+    checkout: { offerEnd, options: unexpected, checkout: unexpected },
+  });
+  const response = await app.request("/api/v1/credit-pricing");
+  expect(response.status).toBe(200);
+  expect(unwrapApiData(await response.json())).toEqual({ offerEnd });
+  expect((await app.request("/api/v1/wallet/checkout")).status).toBe(401);
+  const fallback = await fixture().app.request("/api/v1/credit-pricing");
+  expect(unwrapApiData(await fallback.json())).toEqual({ offerEnd: defaultCreditOfferEnd });
 });
 
 it("validates unified credit history cursors before reading the authenticated account", async () => {

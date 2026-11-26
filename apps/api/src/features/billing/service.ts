@@ -56,6 +56,7 @@ export function checkoutService(
     return repository.saveBillingCustomer(scope, provider.id, customer);
   }
   return {
+    offerEnd,
     async options(scope: ImageScope) {
       const eligible = await repository.billingEmail(scope);
       return { packs: eligible ? available().map((pack) => pack.key) : [], offerEnd };

@@ -2,6 +2,7 @@ import { Button, Disclosure, Dropdown } from "@heroui/react";
 import { IconChevronDown } from "@tabler/icons-react";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
+import { landingPricingPath } from "../features/home/landing/landing-pricing-navigation";
 import { inspirationLibraryPath } from "../features/inspiration/inspiration-path";
 import {
   type WorkspaceToolCategory,
@@ -15,13 +16,15 @@ import { dashboardToolPaths } from "../lib/dashboard-paths";
 import { useHoverMenu } from "../lib/use-hover-menu";
 import { shellMessages } from "./shell-messages";
 
-/** 公共顶栏显示工具目录；首页可额外提供桌面与手机共用的 FAQ 入口。 */
+/** 公共顶栏显示工具目录、价格及首页的 FAQ 入口。 */
 export function PublicSiteNavigation({
   onNavigate,
   onFaq,
+  onPricing,
 }: {
   onNavigate?: () => void;
   onFaq?: (() => void) | undefined;
+  onPricing?: (() => void) | undefined;
 }) {
   const t = useMessages(shellMessages);
   const linkEvents = onNavigate ? { onClick: onNavigate } : {};
@@ -39,6 +42,16 @@ export function PublicSiteNavigation({
       )}
       <RouteLink nav end to={inspirationLibraryPath} className="nav-row" {...linkEvents}>
         {t.inspiration}
+      </RouteLink>
+      <RouteLink
+        to={landingPricingPath}
+        className="nav-row"
+        onClick={() => {
+          onPricing?.();
+          onNavigate?.();
+        }}
+      >
+        {t.pricing}
       </RouteLink>
       {onFaq && (
         <Button

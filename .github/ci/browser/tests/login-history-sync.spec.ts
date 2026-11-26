@@ -88,10 +88,9 @@ test("login returns to the target and logout keeps the draft without a document 
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await page.locator(".account-trigger").click();
   await page.getByRole("button", { name: "退出登录", exact: true }).click();
-  await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveCount(0);
   await expect(page.locator(".generation-job")).toHaveCount(0);
   await expect(page.locator(".composer-panel")).toHaveCount(0);
-  await dialog.getByRole("button", { name: "关闭登录", exact: true }).click();
   await expect(page).toHaveURL(/\/(?:zh-CN|en)\/?$/);
   await expect(page.getByRole("textbox", { name: "创作需求" })).toHaveValue("登录后的创作草稿");
   expect(imageRequestsAfterLogout).toBe(0);
@@ -121,8 +120,11 @@ for (const layout of ["desktop", "mobile"] as const) {
       }),
     );
     if (layout === "mobile") await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/");
-    await page.getByRole("button", { name: "登录领积分", exact: true }).click();
+    await page.goto("/zh-CN");
+    await page
+      .locator(".public-site-header")
+      .getByRole("link", { name: "开始创作", exact: true })
+      .click();
     const dialog = page.locator(".login-page");
     await dialog.getByRole("button", { name: "企业账号登录", exact: true }).click();
     await dialog.getByLabel("企业账号", { exact: true }).fill("login-fixture");

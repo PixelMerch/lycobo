@@ -6,6 +6,7 @@ import {
   dashboardToolPaths,
   freeCanvasPath,
 } from "../../lib/dashboard-paths";
+import { landingPricingPath } from "../home/landing/landing-pricing-navigation";
 import { inspirationLibraryPath } from "../inspiration/inspiration-path";
 import { legalPaths } from "../legal/legal-document";
 import { workspaceToolMessages } from "../workspace/workspace-tool-messages";
@@ -38,6 +39,7 @@ export function siteFooterGroups(locale: Locale) {
       title: t.resources,
       links: [
         { path: inspirationLibraryPath, label: shell.inspiration },
+        { path: landingPricingPath, label: shell.pricing },
         { path: siteFooterFaqPath, label: t.faq },
       ],
     },

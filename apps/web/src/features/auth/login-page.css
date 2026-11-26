@@ -1,10 +1,13 @@
 /* 居中分屏登录卡片：纯黑画布居中展示左图右表单双栏卡片，无全屏铺满与动态着色器背景。 */
-.login-page {
+:is(.login-page, .pricing-login-dialog) {
   --accent: #fdfdfd;
   --accent-foreground: #0b0b0b;
   --accent-glow: 0 0 24px rgb(255 255 255 / 14%);
   --app-primary-gradient: #fdfdfd;
   --focus: #fdfdfd;
+}
+
+.login-page {
   display: grid;
   place-items: center;
   min-height: 100dvh;
