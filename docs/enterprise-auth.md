@@ -52,6 +52,8 @@ API 使用 Turnstile Siteverify 校验令牌成功状态、`password_login` 操�
 
 点击企业登录时在表单内显示 Turnstile；Cloudflare 要求人工交互时可在原位置完成。验证失败可直接重试，密码仅保留在当前表单内。Siteverify 瞬时故障最多使用同一幂等键重试一次，失败日志仅记录固定分类 `PASSWORD_TURNSTILE_REJECTED`，不保存上游响应。
 
+Siteverify 在 Workers 中使用 `redirect: "manual"` 并拒绝 3xx，确保请求只到固定 Cloudflare 域名。`pnpm test:cloudflare` 用 workerd 的 Request 构造器和隔离响应验证请求选项、正常验证及重定向拒绝。
+
 前端使用 TanStack Query 管理登录身份；登录／退出时取消旧请求，更新企业身份，并重置其他服务端查询：清除旧数据和错误状态、保留已挂载页面的查询订阅、自动重新获取工作台会话及其历史／素材，避免身份切换复用旧数据。无需刷新或跳转页面，保留用户的客户端创作草稿。Header 显示真实账号及“退出登录”；企业表单提交失败显示真实接口错误，不模拟成功。
 
 ## 验收
