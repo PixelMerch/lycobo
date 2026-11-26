@@ -28,13 +28,11 @@ const entry = (id: number, overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-/** The account center is a dialog over the current page; menu rows open it on their tab. */
-async function openCenter(page: Page, account: string, row: string) {
-  if ((page.viewportSize()?.width ?? 1440) < 768)
-    await page.getByRole("button", { name: "打开导航", exact: true }).click();
+/** 从工作区头像进入账户设置，保持当前工作区地址。 */
+async function openCenter(page: Page, account: string) {
   await page.getByRole("button", { name: `账户菜单：${account}`, exact: true }).click();
-  await page.getByRole("menuitem", { name: row, exact: true }).click();
-  const center = page.getByRole("dialog", { name: "积分与账单", exact: true });
+  await page.getByRole("button", { name: "设置", exact: true }).click();
+  const center = page.getByRole("dialog", { name: "账户设置", exact: true });
   await expect(center).toBeVisible();
   // Measure only after the opening zoom has settled.
   await expect(page.locator(".modal__container").filter({ has: center })).not.toHaveAttribute(
@@ -65,27 +63,28 @@ async function expectInsideViewport(page: Page, center: Locator) {
     .toBe(true);
 }
 
-test("personal center opens billing by default and preserves drafts and focus", async ({
+test("personal center opens billing from settings and preserves drafts and focus", async ({
   page,
 }) => {
   await signIn(page, "billing-fixture");
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/commerce/create");
+  await page.goto("/zh-CN/dashboard/commerce/create");
   const draft = page.getByLabel(/^(提示词|制作要求)$/, { exact: true });
   await draft.fill("保留正在准备的商品图");
   const trigger = page.getByRole("button", { name: "账户菜单：billing-fixture", exact: true });
-  const center = await openCenter(page, "billing-fixture", "积分与账单");
-  const tabs = center.getByRole("tablist", { name: "积分与账单", exact: true });
-  await expect(tabs.getByRole("tab")).toHaveText(["积分明细", "充值订单"]);
-  await expect(tabs.getByRole("tab", { name: "积分明细", exact: true })).toHaveAttribute(
-    "aria-selected",
+  const center = await openCenter(page, "billing-fixture");
+  await expect(center.locator(".settings-identity-text")).toContainText("billing-fixture");
+  await expect(center.locator(".settings-identity-text")).toContainText("UID 0123456789");
+  await expect(center.getByRole("button", { name: "复制 UID", exact: true })).toBeVisible();
+  await center.getByRole("tab", { name: "积分与账单", exact: true }).click();
+  const views = center.getByRole("radiogroup", { name: "积分用量", exact: true });
+  await expect(views.getByRole("radio")).toHaveText(["积分明细", "充值订单"]);
+  await expect(views.getByRole("radio", { name: "积分明细", exact: true })).toHaveAttribute(
+    "aria-checked",
     "true",
   );
   await expect(center.getByRole("region", { name: "积分明细", exact: true })).toBeVisible();
-  await expect(center.locator(".account-profile-main")).toContainText("billing-fixture");
-  await expect(center.locator(".account-profile-meta")).toContainText("UID 0123456789");
-  await expect(center.getByRole("button", { name: "复制 UID", exact: true })).toBeVisible();
-  await tabs.getByRole("tab", { name: "充值订单", exact: true }).click();
+  await views.getByRole("radio", { name: "充值订单", exact: true }).click();
   await expect(center.getByText("暂无充值订单", { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await page.keyboard.press("Escape");
@@ -110,9 +109,9 @@ test("ledger filters loaded pages without losing older records or exposing payme
     }),
   );
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/commerce/create");
-  // 账户菜单的“积分明细”打开积分明细弹窗；完整收支表在“积分与账单”的积分明细页签。
-  const center = await openCenter(page, "ledger-fixture", "积分与账单");
+  await page.goto("/zh-CN/dashboard/commerce/create");
+  const center = await openCenter(page, "ledger-fixture");
+  await center.getByRole("tab", { name: "积分与账单", exact: true }).click();
   const toolbar = center.locator(".account-ledger .account-toolbar");
   await expect(toolbar).toContainText("已加载 20 条");
   // Only the tab panel scrolls; reaching its end loads older records.
@@ -129,7 +128,7 @@ test("ledger filters loaded pages without losing older records or exposing payme
   await expect(rows.first()).toContainText("+20");
   await expect(center.getByRole("button", { name: /加载更多|购买|支付/ })).toHaveCount(0);
   await page.screenshot({ path: "/tmp/lycobo-account-ledger-desktop.png" });
-  await center.getByRole("tab", { name: "充值订单", exact: true }).click();
+  await center.getByRole("radio", { name: "充值订单", exact: true }).click();
   await expect(center.getByText("暂无充值订单", { exact: true })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await expectInsideViewport(page, center);
@@ -140,23 +139,24 @@ for (const width of [1440, 390]) {
   test(`switching tabs keeps the dialog and its tab row steady at ${width}px`, async ({ page }) => {
     await signIn(page, "tabs-fixture");
     await page.setViewportSize({ width, height: width < 768 ? 700 : 900 });
-    await page.goto("/commerce/create");
-    const center = await openCenter(page, "tabs-fixture", "积分与账单");
-    const tabs = center.getByRole("tablist", { name: "积分与账单", exact: true });
-    await expect(tabs.getByRole("tab", { name: "积分明细", exact: true })).toHaveAttribute(
-      "aria-selected",
+    await page.goto("/zh-CN/dashboard/commerce/create");
+    const center = await openCenter(page, "tabs-fixture");
+    await center.getByRole("tab", { name: "积分与账单", exact: true }).click();
+    const views = center.getByRole("radiogroup", { name: "积分用量", exact: true });
+    await expect(views.getByRole("radio", { name: "积分明细", exact: true })).toHaveAttribute(
+      "aria-checked",
       "true",
     );
-    const [frame, row] = [await center.boundingBox(), await tabs.boundingBox()];
+    const [frame, row] = [await center.boundingBox(), await views.boundingBox()];
     if (!frame || !row) throw new Error("Missing account center bounds");
     for (const name of ["充值订单", "积分明细"]) {
-      await tabs.getByRole("tab", { name, exact: true }).click();
-      await expect(tabs.getByRole("tab", { name, exact: true })).toHaveAttribute(
-        "aria-selected",
+      await views.getByRole("radio", { name, exact: true }).click();
+      await expect(views.getByRole("radio", { name, exact: true })).toHaveAttribute(
+        "aria-checked",
         "true",
       );
       await expect(page).toHaveURL(/\/commerce\/create$/);
-      const [nextFrame, nextRow] = [await center.boundingBox(), await tabs.boundingBox()];
+      const [nextFrame, nextRow] = [await center.boundingBox(), await views.boundingBox()];
       expect(nextFrame?.height).toBeCloseTo(frame.height, 0);
       expect(nextRow?.y).toBeCloseTo(row.y, 0);
       await expectInsideViewport(page, center);

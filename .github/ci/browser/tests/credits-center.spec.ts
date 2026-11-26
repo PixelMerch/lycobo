@@ -97,7 +97,7 @@ test("credits menu opens on hover without taking focus and works from the keyboa
   await page.keyboard.press("Enter");
   const usage = page.getByRole("dialog", { name: "积分明细", exact: true });
   await expect(usage).toBeVisible();
-  await expect(usage.getByText("暂无消耗记录", { exact: true })).toBeVisible();
+  await expect(usage.getByText("最近半年暂无消耗记录", { exact: true })).toBeVisible();
   await expect(page).toHaveURL(/\/commerce\/create$/);
   await page.keyboard.press("Escape");
   await expect(usage).toHaveCount(0);
@@ -195,8 +195,8 @@ test("credit usage scrolls by category at a fixed height with expandable details
       }),
     });
   });
-  await page.goto("/commerce/create");
-  const credits = page.locator(".topbar").getByRole("button", { name: "积分 200" });
+  await page.goto("/zh-CN/dashboard/commerce/create");
+  const credits = page.locator(".workspace-site-header").getByRole("button", { name: "积分 200" });
   await credits.click();
   await page.getByRole("menuitem", { name: "积分明细", exact: true }).click();
   const usage = page.getByRole("dialog", { name: "积分明细", exact: true });
@@ -255,8 +255,8 @@ test("credit usage keeps loaded rows when loading more fails and retries the cur
       json: apiFixture({ data: [ledgerEntry(880, "consume", -2)], nextCursor: null }),
     });
   });
-  await page.goto("/commerce/create");
-  await page.locator(".topbar .header-credits").click();
+  await page.goto("/zh-CN/dashboard/commerce/create");
+  await page.locator(".workspace-site-header .header-credits").click();
   await page.getByRole("menuitem", { name: "积分明细", exact: true }).click();
   const usage = page.getByRole("dialog", { name: "积分明细", exact: true });
   const rows = usage.locator(".credit-usage-row");
