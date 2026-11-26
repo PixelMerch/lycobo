@@ -2,13 +2,14 @@ import {
   checkoutOptionsSchema,
   creditCheckoutSchema,
   rechargeOrdersSchema,
-  type WalletSource,
   walletBalanceSchema,
-  walletEntriesSchema,
+  walletHistorySchema,
 } from "@lycoboai/contracts";
 import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { imageRequest, useImageSession } from "../generation/generation-client";
+
+/** 查询工作区和当前用户的两个积分余额。 */
 export function useWallet() {
   const session = useImageSession();
   return useQuery({
@@ -23,12 +24,8 @@ export function useWallet() {
 /** 弹窗使用服务端的近半年消耗或获得视图。 */
 export type WalletEntryView = "spent" | "earned";
 
-/** 使用流水游标读取积分收支，按视图和批量大小独立缓存。 */
-export function useWalletEntries(
-  pageSize = 20,
-  view?: WalletEntryView,
-  source: WalletSource = "local",
-) {
+/** 读取合并后的积分收支，按视图和批量大小独立缓存。 */
+export function useWalletEntries(pageSize = 20, view?: WalletEntryView) {
   const session = useImageSession();
   return useInfiniteQuery({
     queryKey: [
@@ -37,7 +34,6 @@ export function useWalletEntries(
       session.data?.userId,
       pageSize,
       view,
-      source,
     ],
     enabled: session.isSuccess,
     retry: false,
@@ -46,12 +42,11 @@ export function useWalletEntries(
     queryFn: async ({ signal, pageParam }) => {
       const params = new URLSearchParams({ limit: String(pageSize) });
       if (view) params.set("view", view);
-      if (source === "purchased") params.set("source", source);
       if (pageParam) params.set("before", pageParam);
-      const response = await imageRequest(`wallet/entries?${params}`, { signal });
-      return walletEntriesSchema.parse(await response.json());
+      const response = await imageRequest(`wallet/history?${params}`, { signal });
+      return walletHistorySchema.parse(await response.json());
     },
-    getNextPageParam: (page) => (page.data.length === pageSize ? page.data.at(-1)?.id : undefined),
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
   });
 }
 export function useRechargeOrders() {

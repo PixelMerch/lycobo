@@ -1,5 +1,4 @@
 import { Button, Disclosure } from "@heroui/react";
-import type { WalletSource } from "@lycoboai/contracts";
 import { IconChevronRight } from "@tabler/icons-react";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
@@ -9,7 +8,6 @@ import { useMessages } from "../../../i18n/messages";
 import { useEnterpriseSession } from "../../auth/auth-client";
 import {
   entryDetail,
-  formatCredits,
   memberLabel,
   usageAmount,
   usageTime,
@@ -20,8 +18,8 @@ import { useWalletEntries, type WalletEntryView } from "../wallet-client";
 import { creditsMessages } from "./credits-messages";
 
 /** 在弹窗内部连续滚动收支，续读失败时保留已加载记录并支持重试。 */
-export function CreditUsageList({ view, source }: { view: WalletEntryView; source: WalletSource }) {
-  const entries = useWalletEntries(20, view, source);
+export function CreditUsageList({ view }: { view: WalletEntryView }) {
+  const entries = useWalletEntries(20, view);
   const session = useEnterpriseSession();
   const t = useMessages(creditsMessages);
   const rows = entries.data?.pages.flatMap((page) => page.data) ?? [];
@@ -59,17 +57,11 @@ export function CreditUsageList({ view, source }: { view: WalletEntryView; sourc
   );
 }
 
-/** 展开后的说明行：任务或充值订单、操作成员和变动后结余，都来自真实收支记录。 */
+/** 展开后显示任务或充值订单和操作成员。 */
 function usageDetails(entry: WalletEntry, currentUid: string | undefined, locale: Locale) {
   const labels = creditsMessages[locale].detailLabels;
   const detail = entryDetail(entry, locale);
-  const lines = [
-    { label: labels.member, value: memberLabel(entry.user_uid, currentUid, locale) },
-    {
-      label: labels.balanceAfter,
-      value: entry.balance_after === null ? "—" : formatCredits(entry.balance_after),
-    },
-  ];
+  const lines = [{ label: labels.member, value: memberLabel(entry.user_uid, currentUid, locale) }];
   if (detail !== "—" && detail !== usageTitle(entry, locale))
     lines.unshift({ label: labels.detail, value: detail });
   return lines;

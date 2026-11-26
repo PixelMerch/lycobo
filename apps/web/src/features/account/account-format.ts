@@ -1,8 +1,19 @@
-import type { EnterpriseIdentity, walletEntriesSchema } from "@lycoboai/contracts";
+import type {
+  EnterpriseIdentity,
+  walletBalanceSchema,
+  walletHistorySchema,
+} from "@lycoboai/contracts";
 import type { Locale } from "../../i18n/locale";
 import { accountFormatMessages } from "./account-format-messages";
 
-export type WalletEntry = ReturnType<typeof walletEntriesSchema.parse>["data"][number];
+export type WalletEntry = ReturnType<typeof walletHistorySchema.parse>["data"][number];
+type WalletBalance = ReturnType<typeof walletBalanceSchema.parse>;
+
+/** 展示购买和站内积分的合计，任一有余额的账本读取失败时保持未知。 */
+export function totalWalletCredits(wallet: WalletBalance | undefined) {
+  if (!wallet || wallet.purchasedBalance === null) return undefined;
+  return wallet.balance + (wallet.purchasedBalance ?? 0);
+}
 
 /** 账户界面优先显示昵称，未填写时沿用登录账号。 */
 export function accountDisplayName(account: EnterpriseIdentity) {

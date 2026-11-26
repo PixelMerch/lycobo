@@ -3,10 +3,9 @@ import { imageUnitCredits } from "@lycoboai/contracts";
 import { type ReactNode, useState } from "react";
 import { CreditCoin } from "../../../components/credit-coin";
 import { useMessages } from "../../../i18n/messages";
-import { formatCredits, imagesFor } from "../account-format";
+import { formatCredits, imagesFor, totalWalletCredits } from "../account-format";
 import { useAccountOverlays } from "../account-overlay-store";
 import { CreditLedger } from "../credits/credit-ledger";
-import { creditsMessages } from "../credits/credits-messages";
 import { RechargeOrders } from "../credits/recharge-orders";
 import { useWallet } from "../wallet-client";
 import { accountSettingsMessages } from "./account-settings-messages";
@@ -46,15 +45,21 @@ function PlanRow({
 /** 展示积分余额、充值入口、积分明细和充值订单。 */
 export function AccountPlanUsage() {
   const t = useMessages(accountSettingsMessages);
-  const { walletSources } = useMessages(creditsMessages);
   const wallet = useWallet();
   const open = useAccountOverlays((state) => state.open);
   const [view, setView] = useState<UsageView>("ledger");
   const unit = wallet.data?.unitCredits ?? imageUnitCredits;
-  const balance = wallet.data?.balance;
-  const purchased = wallet.data?.purchasedBalance;
+  const balance = totalWalletCredits(wallet.data);
+  // 单张图片由同一钱包全额支付，两个钱包不足一张的余数不能相加。
   const imagesHint =
-    balance === undefined ? "" : t.imagesLeft(formatCredits(imagesFor(balance, unit)));
+    balance === undefined || !wallet.data
+      ? ""
+      : t.imagesLeft(
+          formatCredits(
+            imagesFor(wallet.data.balance, unit) +
+              imagesFor(wallet.data.purchasedBalance ?? 0, unit),
+          ),
+        );
   const rechargeAction = (
     <Button
       variant="secondary"
@@ -67,7 +72,7 @@ export function AccountPlanUsage() {
   return (
     <div className="plan-usage">
       <PlanRow
-        label={purchased === undefined ? t.balance : walletSources.local}
+        label={t.balance}
         value={
           <>
             <CreditCoin size="default" />
@@ -75,20 +80,8 @@ export function AccountPlanUsage() {
           </>
         }
         hint={`${t.perImage(unit)}${imagesHint}`}
-        action={purchased === undefined ? rechargeAction : null}
+        action={rechargeAction}
       />
-      {purchased !== undefined && (
-        <PlanRow
-          label={walletSources.purchased}
-          value={
-            <>
-              <CreditCoin size="default" />
-              {purchased === null ? "—" : formatCredits(purchased)}
-            </>
-          }
-          action={rechargeAction}
-        />
-      )}
       <section className="plan-usage-history" aria-label={t.usage}>
         <div className="plan-usage-history-head">
           <h3>{t.usage}</h3>

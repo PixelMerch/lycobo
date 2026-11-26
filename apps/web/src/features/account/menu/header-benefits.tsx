@@ -3,7 +3,7 @@ import { IconCoins, IconFileInvoice, IconSparkle } from "@tabler/icons-react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { useHoverMenu } from "../../../lib/use-hover-menu";
-import { formatCredits } from "../account-format";
+import { formatCredits, totalWalletCredits } from "../account-format";
 import { useAccountOverlays } from "../account-overlay-store";
 import { creditsMessages } from "../credits/credits-messages";
 import { useWallet } from "../wallet-client";
@@ -22,10 +22,10 @@ export function HeaderBenefits({
   const menu = useHoverMenu();
   const openOverlay = useAccountOverlays((state) => state.open);
   const t = useMessages(accountMenuMessages);
-  const { purchaseEntry, lowPrice, recharge, walletSources } = useMessages(creditsMessages);
+  const { purchaseEntry, lowPrice, recharge } = useMessages(creditsMessages);
   // 读取失败或尚未读到时显示“—”，不把未知余额当成 0。
-  const balance = wallet.data ? formatCredits(wallet.data.balance) : "—";
-  const purchased = wallet.data?.purchasedBalance;
+  const total = totalWalletCredits(wallet.data);
+  const balance = total === undefined ? "—" : formatCredits(total);
   function openFromMenu(key: string | number) {
     menu.close();
     // 菜单收起后积分胶囊仍在，弹窗关闭时焦点回到这里。
@@ -64,15 +64,9 @@ export function HeaderBenefits({
             <Dropdown.Section>
               <Header>
                 <div className="credits-menu-balance">
-                  <span>{purchased === undefined ? t.balance : walletSources.local}</span>
+                  <span>{t.balance}</span>
                   <strong>{balance}</strong>
                 </div>
-                {purchased !== undefined && (
-                  <div className="credits-menu-balance">
-                    <span>{walletSources.purchased}</span>
-                    <strong>{purchased === null ? "—" : formatCredits(purchased)}</strong>
-                  </div>
-                )}
               </Header>
               <Dropdown.Item id="recharge" textValue={recharge} className="credits-menu-action">
                 <UiIcon icon={IconCoins} size="navigation" />

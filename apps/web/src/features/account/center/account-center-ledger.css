@@ -98,19 +98,16 @@
 .account-table .table__body > .table__row:last-child .table__cell {
   border-bottom: 0;
 }
-.account-table
-  :is(.account-col-amount, .account-col-after, .account-col-credits, .account-col-price),
-.account-table
-  :is(.account-cell-amount, .account-cell-after, .account-cell-credits, .account-cell-price) {
+.account-table :is(.account-col-amount, .account-col-credits, .account-col-price),
+.account-table :is(.account-cell-amount, .account-cell-credits, .account-cell-price) {
   text-align: right;
 }
 .account-table.table-root
   .table__row
-  :is(.account-cell-time, .account-cell-after, .account-cell-member, .account-cell-paid) {
+  :is(.account-cell-time, .account-cell-member, .account-cell-paid) {
   color: var(--muted);
 }
-.account-table
-  :is(.account-cell-time, .account-cell-after, .account-cell-paid, .account-cell-order),
+.account-table :is(.account-cell-time, .account-cell-paid, .account-cell-order),
 .account-table :is(.account-cell-amount, .account-cell-credits, .account-cell-price) {
   font-variant-numeric: tabular-nums;
 }
@@ -139,9 +136,6 @@
   width: 28px;
   height: 28px;
   border-radius: 8px;
-}
-.account-after-label {
-  display: none;
 }
 .account-table .account-cell-order {
   letter-spacing: 0.04em;

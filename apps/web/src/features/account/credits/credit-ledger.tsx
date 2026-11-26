@@ -7,7 +7,6 @@ import {
   ToggleButton,
   ToggleButtonGroup,
 } from "@heroui/react";
-import type { WalletSource } from "@lycoboai/contracts";
 import { useState } from "react";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { useLocale } from "../../../i18n/locale-store";
@@ -23,9 +22,9 @@ import {
   memberLabel,
   recordTime,
   signedCredits,
+  totalWalletCredits,
 } from "../account-format";
 import { useWallet, useWalletEntries } from "../wallet-client";
-import { CreditWalletSwitch } from "./credit-wallet-switch";
 import { creditsMessages } from "./credits-messages";
 
 const kinds = ["all", "consume", "refund", "recharge"] as const;
@@ -36,11 +35,8 @@ export function CreditLedger() {
   const locale = useLocale();
   const session = useEnterpriseSession();
   const wallet = useWallet();
-  const [selectedSource, setSource] = useState<WalletSource>("local");
-  const purchased = wallet.data?.purchasedBalance;
-  const source = purchased === undefined ? "local" : selectedSource;
-  const balance = source === "purchased" ? purchased : wallet.data?.balance;
-  const entries = useWalletEntries(20, undefined, source);
+  const balance = totalWalletCredits(wallet.data);
+  const entries = useWalletEntries();
   const [kind, setKind] = useState("all");
   const [member, setMember] = useState("all");
   useErrorToast((wallet.error ?? entries.error)?.message);
@@ -58,15 +54,6 @@ export function CreditLedger() {
   return (
     <section className="account-ledger" aria-label={t.creditHistory}>
       <div className="account-toolbar">
-        {purchased !== undefined && (
-          <CreditWalletSwitch
-            value={source}
-            onChange={(next) => {
-              setSource(next);
-              setMember("all");
-            }}
-          />
-        )}
         <ToggleButtonGroup
           aria-label={t.entryKind}
           size="sm"
@@ -133,7 +120,6 @@ export function CreditLedger() {
                 <Table.Column className="account-col-detail">{t.columns.detail}</Table.Column>
                 <Table.Column className="account-col-member">{t.columns.member}</Table.Column>
                 <Table.Column className="account-col-amount">{t.columns.change}</Table.Column>
-                <Table.Column className="account-col-after">{t.columns.balance}</Table.Column>
               </Table.Header>
               <Table.Body
                 items={visible}
@@ -170,10 +156,6 @@ export function CreditLedger() {
                         className={`account-cell-amount${entry.amount > 0 ? " is-positive" : ""}`}
                       >
                         {signedCredits(entry.amount)}
-                      </Table.Cell>
-                      <Table.Cell className="account-cell-after">
-                        <span className="account-after-label">{t.balanceLabel}</span>
-                        {entry.balance_after === null ? "—" : formatCredits(entry.balance_after)}
                       </Table.Cell>
                     </Table.Row>
                   );

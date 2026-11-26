@@ -7,6 +7,7 @@ import {
   recordTime,
   roleLabel,
   signedCredits,
+  totalWalletCredits,
   usageAmount,
   usageTime,
   usageTitle,
@@ -18,13 +19,22 @@ const entry = (overrides: Partial<WalletEntry> = {}): WalletEntry => ({
   user_uid: "0057849613",
   kind: "consume",
   amount: -4,
-  balance_after: 636,
   job_id: null,
   task_id: null,
   item_id: null,
   recharge_id: null,
   created_at: "2026-11-02T07:52:00.000Z",
   ...overrides,
+});
+
+it("shows a single total without treating an unread purchased balance as zero", () => {
+  expect(totalWalletCredits({ balance: 391, purchasedBalance: 104, unitCredits: 2 })).toBe(495);
+  expect(totalWalletCredits({ balance: 391, purchasedBalance: 0, unitCredits: 2 })).toBe(391);
+  expect(totalWalletCredits({ balance: 391, unitCredits: 2 })).toBe(391);
+  expect(
+    totalWalletCredits({ balance: 391, purchasedBalance: null, unitCredits: 2 }),
+  ).toBeUndefined();
+  expect(totalWalletCredits(undefined)).toBeUndefined();
 });
 
 it("counts only whole images the balance covers", () => {

@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { BillingError, type BillingProvider, settleGenerationCredits } from "@lycoboai/billing";
-import { type ImageScope, imageGenerationInputSchema } from "@lycoboai/contracts";
+import {
+  type ImageScope,
+  imageGenerationInputSchema,
+  walletHistorySchema,
+} from "@lycoboai/contracts";
 import type { ImageRepository } from "@lycoboai/db";
 import type postgres from "postgres";
 
@@ -49,6 +53,33 @@ async function verifySplitOrder(
     "billing-other-fixture",
     0,
   );
+  const page = walletHistorySchema.parse(await repository.walletHistory(scope, 1, "earned"));
+  const [entry] = page.data;
+  assert.ok(entry && page.nextCursor);
+  assert.equal(entry.recharge_id, order.id);
+  assert.equal(entry.amount, 104);
+  assert.match(entry.created_at, /\.\d{6}Z$/);
+  const [time, ledger, id] = page.nextCursor.split("/");
+  assert.ok(time && ledger && id);
+  const older = walletHistorySchema.parse(
+    await repository.walletHistory(scope, 10, "earned", [time, ledger, id]),
+  );
+  assert.deepEqual(
+    older.data.map((item) => [item.kind, item.amount]),
+    [["opening", 10]],
+  );
+  await sql`insert into organization_members (organization_id,user_id,role)
+    values (${scope.organizationId},${other.userId},'member')`;
+  const colleague = await repository.walletHistory(
+    { ...scope, userId: other.userId },
+    10,
+    "earned",
+  );
+  assert.deepEqual(
+    colleague.data.filter((item) => item.recharge_id === order.id).map((item) => item.amount),
+    [2],
+  );
+  assert.deepEqual((await repository.walletHistory(other, 10)).data, []);
   const [otherWallet] =
     await sql`select id from organization_wallets where organization_id=${other.organizationId}`;
   assert.ok(otherWallet);
@@ -134,6 +165,11 @@ export async function verifyBilling(repository: ImageRepository, sql: postgres.S
       ["consume", -2],
       ["recharge", 102],
     ],
+  );
+  const spent = await repository.walletHistory(scope, 10, "spent");
+  assert.deepEqual(
+    spent.data.map((entry) => [entry.kind, entry.amount, entry.job_id]),
+    [["consume", -2, task.id]],
   );
 
   const failed = await repository.get(scope, task.id);
