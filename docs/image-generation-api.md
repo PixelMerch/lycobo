@@ -41,7 +41,7 @@ REST 和 MCP 的 `generate_image` 接收单张图片请求。`generate_image_set
 
 所有已标记 MCP 来源的任务归入「套图计划」，素材仍支持「MCP 生成」筛选。MCP 提交回执和 `get_image` 提供任务 UUID `id`、可展示的短编号 `publicId`（例如 `WS8TZGMH5`）、任务实际采用的 `aspectRatio` 和网页任务地址 `historyUrl`。逐图方案由 Agent 提供，服务端按请求编号保存，复用套图生成流程。
 
-中英文 Skill 只负责提交任务和汇报回执。使用连接器当前的 `aspectRatio` 参数，缺少字段时暂停提交并提示刷新工具列表。收到任务 ID 即确认受理，回复任务短编号并附上回执中的网页生成记录 `historyUrl`，本轮到此结束。网页生成记录提供进度、图片和下载入口。
+中英文 Skill 默认只负责提交任务和汇报回执。使用连接器当前的 `aspectRatio` 参数，缺少字段时暂停提交并提示刷新工具列表。收到任务 ID 即确认受理，回复任务短编号并附上回执中的网页生成记录 `historyUrl`，本轮到此结束。网页生成记录提供进度、图片和下载入口。
 
 `get_image` 和 `preview_image` 的 `taskId` 支持短编号或任务 UUID，均按组织和用户限定归属。`preview_image` 的可选 `imageIndex` 从 1 开始，按已有输出顺序，默认 1。验证归属后只读取一张已有的 WebP 缩略图，最大 256 KiB，返回 MCP `image` 内容。MCP `get_image` 返回每张图片的 `imageIndex`、缩略图 `previewUrl`、原图下载 `url` 和 `expiresAt`。链接用独立用途签名，有效期 15 分钟，可在 Agent 中直接打开且无需站内请求来源。失效时可按原任务再次查询。媒体桶保持私有，Agent 预览链接只读取已有缩略图。整套 ZIP 可通过 `historyUrl` 在网页下载。两个 MCP 工具复用现有账号通用限流。 直接集成 MCP 时可使用回执的 `checkAtSeconds`（提交后第 40、60、90 秒）和 `retryAfterSeconds`（任务仍在排队或执行中时为 20 秒）。REST 查询等待提示为 10 秒。
 
@@ -59,7 +59,13 @@ curl --fail-with-body https://lycobo.com/api/v1/enterprise/image-api/generations
 
 连接成功后，豆包从 Lycobo MCP 服务读取工具列表。MCP 鉴权失败返回 HTTP 401，响应直接包含 `code`、`message`、`requestId` 和 `error`。`error` 说明是缺少 `Authorization`、格式不正确，还是生图 Key 未通过验证。后者统一提示检查 Key 是否无效、过期或已撤销。
 
-维护技能时，同步更新 `apps/web/public/integrations/` 下的中文 `lycobo-image/SKILL.md`、英文 `en/lycobo-image/SKILL.md` 和对应压缩包。两个压缩包都包含对应语言的 `lycobo-image/SKILL.md` 和共用的 `lycobo-image/scripts/reference_files.py`。脚本源文件放在中文技能目录，打包英文版时使用同一份文件。技能标识保持 `lycobo-image`。
+维护技能时，同步更新 `apps/web/public/integrations/` 下的中文 `lycobo-image/SKILL.md`、英文 `en/lycobo-image/SKILL.md` 和对应压缩包。两个压缩包都包含对应语言的 `lycobo-image/SKILL.md` 和共用的 `lycobo-image/scripts/reference_files.py`、`lycobo-image/scripts/download_task.py`。脚本源文件放在中文技能目录，打包英文版时使用同一份文件。技能标识保持 `lycobo-image`。
+
+#### 任务完成后自动下载
+
+- 用户明确要求且指定本机目录时，豆包在收到受理回执后为每个任务调用一次 `prepare_task_download`。工具验证工作区和任务作者，返回只授权该任务的两小时下载凭证。本机脚本经标准输入接收凭证，长期生图 Key 留在连接器里。
+- `GET /api/v1/enterprise/image-api/task-downloads/:taskId` 使用 `Authorization: Bearer <downloadToken>`。排队或执行中返回 HTTP 202 和 `Retry-After`，期间只读取任务状态和所有权。达到终态后一次返回 `data.files`，每项包含 `assetId`、`index` 和短期签名的原图 `url`。部分成功时返回已完成的原图。签名限制用途，普通提交和已有任务查询沿用原协议。
+- 本机脚本为各任务分别等待，完成后最多三路并行下载原图，写入用户指定目录中的 `Lycobo-任务编号`。下载成功才写正式文件，已保存文件在重试时跳过。电脑须保持开机并支持独立进程。用户选择的目录不发送给服务端。
 
 #### 定时任务的本地参考图
 

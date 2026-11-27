@@ -1021,6 +1021,7 @@ it("limits automation credentials to enterprise image calls and serves MCP witho
           name: "generate_image_set",
           inputSchema: { properties: { aspectRatio: { enum: expect.arrayContaining(["16:9"]) } } },
         },
+        { name: "prepare_task_download" },
         { name: "get_image" },
         { name: "preview_image" },
       ],
@@ -1211,6 +1212,103 @@ it("deduplicates MCP references and accepts only scoped, short-lived WebP upload
     result: { content: expect.any(Array) },
   });
   expect(create.mock.calls[0]?.[1]).toMatchObject({ referenceAssetIds: [newId] });
+});
+
+it("returns an authorized batch of originals only after the individual task reaches a terminal state", async () => {
+  const identity = {
+    userId: crypto.randomUUID(),
+    organizationId: crypto.randomUUID(),
+    role: "member" as const,
+  };
+  const taskId = crypto.randomUUID();
+  const publicId = "WS8TZGMH5";
+  const assetIds = [crypto.randomUUID(), crypto.randomUUID()];
+  const result = vi
+    .fn<ImageRepository["automation"]["result"]>()
+    .mockImplementation(async (scope, id) =>
+      scope.userId === identity.userId && (id === taskId || id === publicId)
+        ? { id: taskId, publicId, status: "running", asset_ids: assetIds, aspectRatio: "1:1" }
+        : null,
+    );
+  const assetLocations = vi.fn<ImageRepository["assetLocations"]>(async (_scope, ids) =>
+    ids
+      .toReversed()
+      .map((id) => ({ id, objectKey: `0057849613/${identity.organizationId}/${id}.png` })),
+  );
+  const { app } = fixture(false, false, {
+    automation: {
+      authenticate: async (token) =>
+        token === "owner" ? identity : { ...identity, userId: crypto.randomUUID() },
+      status: unexpected,
+      keyCiphertext: unexpected,
+      rotate: unexpected,
+      revoke: unexpected,
+      result,
+    },
+    assetLocations,
+    signAsset: assetDeliverySigner(
+      "https://media.example.com",
+      "fixture-media-signing-key-only-0001",
+    ),
+  });
+  const prepare = (token: string) =>
+    app.request("/api/v1/enterprise/image-api/mcp", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: { name: "prepare_task_download", arguments: { taskId: publicId } },
+      }),
+    });
+  expect(await (await prepare("other")).json()).toMatchObject({ result: { isError: true } });
+  const prepared = z
+    .object({ result: z.object({ content: z.tuple([z.object({ text: z.string() })]) }) })
+    .parse(await (await prepare("owner")).json());
+  const ticket = z
+    .object({ taskId: z.uuid(), downloadUrl: z.url(), downloadToken: z.string() })
+    .parse(JSON.parse(prepared.result.content[0].text));
+  expect(ticket.taskId).toBe(taskId);
+  const manifest = (url = ticket.downloadUrl, token = ticket.downloadToken) =>
+    app.request(url, { headers: { Authorization: `Bearer ${token}` } });
+  expect((await manifest(ticket.downloadUrl.replace(taskId, crypto.randomUUID()))).status).toBe(
+    401,
+  );
+  expect((await manifest(ticket.downloadUrl, "invalid")).status).toBe(401);
+  const running = await manifest();
+  expect(running.status).toBe(202);
+  expect(running.headers.get("Retry-After")).toBe("30");
+  expect(unwrapApiData(await running.json())).toEqual({ status: "running", retryAfterSeconds: 30 });
+  expect(assetLocations).not.toHaveBeenCalled();
+  expect(result).toHaveBeenLastCalledWith(
+    expect.objectContaining({ userId: identity.userId, organizationId: identity.organizationId }),
+    taskId,
+    true,
+  );
+
+  result.mockResolvedValueOnce({
+    id: taskId,
+    publicId,
+    status: "partially_failed",
+    asset_ids: assetIds,
+    aspectRatio: "1:1",
+  });
+  const complete = await manifest();
+  expect(complete.status).toBe(200);
+  expect(unwrapApiData(await complete.json())).toMatchObject({
+    status: "partially_failed",
+    files: assetIds.map((assetId, index) => ({
+      assetId,
+      index: index + 1,
+      url: expect.stringContaining(`/${assetId}.png?expires=`),
+    })),
+  });
+  expect(assetLocations).toHaveBeenCalledOnce();
 });
 
 it("returns owned media in task order and reads a thumbnail only when requested", async () => {

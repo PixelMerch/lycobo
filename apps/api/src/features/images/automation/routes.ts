@@ -15,6 +15,7 @@ import { checkImageRequestLimit } from "../rate-limit";
 import { type Env, fail, type ImageApiDependencies, id } from "../route-context";
 import { submitImageTask } from "../tasks/task-routes";
 import { inferAutomationAspectRatio } from "./aspect-ratio";
+import { prepareAutomationTaskDownload } from "./downloads";
 import { mcpImageRetryAfterSeconds, serveImageAutomationMcp } from "./mcp";
 import { prepareAutomationReferences } from "./references";
 
@@ -242,6 +243,7 @@ export function registerImageAutomation(app: Hono<Env>, deps: ImageApiDependenci
       submitSet: (input, key) =>
         limitAutomationSubmission(c, deps, () => submitAutomationSet(c, deps, input, key)),
       prepareReferences: (fingerprints) => prepareAutomationReferences(c, deps, fingerprints),
+      prepareDownload: (taskId) => prepareAutomationTaskDownload(c, deps, taskId),
       result: (taskId) => automationResult(c, deps, taskId, "agent"),
       preview: (taskId, imageIndex) => automationPreview(c, deps, taskId, imageIndex),
     });

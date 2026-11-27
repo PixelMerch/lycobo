@@ -181,6 +181,11 @@ export async function verifyImageAutomation(
   const task = { id, publicId, aspectRatio: "1:1", status: "queued", asset_ids: [] };
   assert.deepEqual(await keys.result(scope, id), task);
   assert.deepEqual(await keys.result(scope, publicId), task);
+  assert.deepEqual(await keys.result(scope, id, true), task);
+  // 任务下载凭证存活期间，停用该企业成员也会停止签发新的原图地址。
+  await sql`update enterprise_accounts set disabled_at=now() where user_id=${scope.userId}`;
+  assert.equal(await keys.result(scope, id, true), null);
+  await sql`update enterprise_accounts set disabled_at=null where user_id=${scope.userId}`;
   await sql`insert into organization_members (organization_id,user_id,role)
     values (${scope.organizationId},${other.userId},'member')`;
   await verifyAutomationReferenceDeduplication(repository, sql, scope, other);

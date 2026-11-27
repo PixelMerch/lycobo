@@ -1,7 +1,7 @@
 ---
 
 name: lycobo-image
-description: Submit single-image, image-set, and scheduled generation tasks through Lycobo. Prepare optional reference images from an authorized local folder and return task numbers after acceptance.
+description: Submit single-image, image-set, and scheduled generation tasks through Lycobo. Prepare optional reference images from an authorized local folder and return task numbers after acceptance. Download originals only when requested.
 ---
 
 # Lycobo Image Generation
@@ -57,7 +57,15 @@ The connector keeps the long-lived key. Give short-lived upload tickets only to 
 
 Read the JSON from the tool’s text item in `content`. A task `id` confirms that Lycobo accepted the submission. Save `id`, `publicId`, and `historyUrl`. Reply briefly with “Submitted · Task WS8TZGMH5,” using the actual task number and linking it to `historyUrl`. For multiple sets, give the accepted count and list each set’s name and task number. Explain any submissions that were not accepted separately. If Lycobo reports a different aspect ratio from the request, include the actual ratio.
 
-End the run once the submissions are handled. Skip the receipt’s generation check times and intervals, status checks, waiting, previews, downloads, and image display.
+End the run after handling submissions by default. Start a local download for a task only when the user explicitly asks for automatic downloads.
+
+## Optional automatic downloads
+
+When users explicitly request automatic downloads, have them choose a destination folder in Doubao’s **Local computer** mode. Save it for scheduled runs. The destination can differ from the reference folder. Share the submission receipt first.
+
+1. Call `prepare_task_download` separately for each task `id`. Pass its full JSON to `python3 scripts/download_task.py <destination-folder>` on standard input, with the folder as a separate argument. Use only the destination the user chose. If the tool is missing, ask the user to refresh the Lycobo connector.
+2. The local helper starts a separate download process for each task. When it reports `started`, tell the user the images will be downloaded after generation and end the turn. Each finished task saves its originals to a separate `Lycobo-<task-number>` subfolder. If some images fail to generate, the helper saves the available originals. For a test deployment, use `--base-url` and `--media-origin` with the confirmed API and media origins.
+3. The computer must stay on and allow the background process to run. Read the folder’s `.lycobo-download.json` for failures. To resume, request a ticket for the existing task and start the helper again. It skips files already saved. Pass tickets only on standard input and omit tickets, signed URLs, and image display from chat.
 
 ## Handle failures
 
@@ -70,4 +78,4 @@ When the tool sets `isError: true`, read `code`, `message`, and `retryAfterSecon
 
 ## Schedule generation
 
-When the agent supports scheduling, use the requested cadence and time zone. Ask for missing prompts, set counts, image counts per set, or timing details. Set the aspect ratio and resolution when creating the schedule and apply them to each run. Explain that Lycobo charges credits per image under its generation rules. Generate new task UUIDs for each scheduled run and reuse them for retries of that run. Submit only the work for the current occurrence and report its receipts as described above.
+When the agent supports scheduling, use the requested cadence and time zone. Ask for missing prompts, set counts, image counts per set, or timing details. Set the aspect ratio and resolution when creating the schedule and apply them to each run. Explain that Lycobo charges credits per image under its generation rules. Generate new task UUIDs for each scheduled run and reuse them for retries of that run. Submit the work for the current occurrence and report its receipts. If the schedule includes automatic downloads, start a download for each accepted task in that run.

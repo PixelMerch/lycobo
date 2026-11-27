@@ -8,6 +8,7 @@ import { imageGenerationInputSchema, publicImageResolutions } from "./image-gene
 
 export const imageAutomationPath = "/enterprise/image-api";
 export const imageAutomationMcpPath = `${imageAutomationPath}/mcp`;
+export const imageAutomationDownloadPath = `${imageAutomationPath}/task-downloads`;
 export const imageAutomationReferenceUploadPath = `${imageAutomationPath}/reference-uploads`;
 export const imageAutomationKeyPath = `${imageAutomationPath}/key`;
 export const imageAutomationKeyCopyPath = `${imageAutomationKeyPath}/copy`;

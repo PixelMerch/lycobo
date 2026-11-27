@@ -22,6 +22,7 @@ type AutomationTools = {
   submit: (input: AutomationInput, key: string) => Promise<Response>;
   submitSet: (input: ImageAutomationSetInput, key: string) => Promise<Response>;
   prepareReferences: (fingerprints: string[]) => Promise<Response>;
+  prepareDownload: (taskId: string) => Promise<Response>;
   result: (taskId: string) => Promise<Response>;
   preview: (taskId: string, imageIndex: number) => Promise<Uint8Array | null>;
 };
@@ -108,7 +109,7 @@ async function previewResult(read: () => Promise<Uint8Array | null>) {
 /** 通过无状态 Streamable HTTP 提供参考图准备、任务提交和查询。 */
 export async function serveImageAutomationMcp(
   c: Context<Env>,
-  { submit, submitSet, prepareReferences, result, preview }: AutomationTools,
+  { submit, submitSet, prepareReferences, prepareDownload, result, preview }: AutomationTools,
 ) {
   const body = bodySchema.safeParse(await c.req.json().catch(() => null));
   if (!body.success)
@@ -116,7 +117,7 @@ export async function serveImageAutomationMcp(
       { jsonrpc: "2.0", id: null, error: { code: -32600, message: "Invalid Request" } },
       400,
     );
-  const server = new McpServer({ name: "lycobo-image", version: "1.2.0" });
+  const server = new McpServer({ name: "lycobo-image", version: "1.3.0" });
   server.registerTool(
     "prepare_reference_uploads",
     {
@@ -146,6 +147,16 @@ export async function serveImageAutomationMcp(
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
     ({ requestId, ...input }) => toolResult(() => submitSet(input, requestId), c.req.url),
+  );
+  server.registerTool(
+    "prepare_task_download",
+    {
+      description:
+        "仅在用户要求自动下载时使用。为一个已受理任务签发短期凭证，本地脚本用它在任务结束后批量下载原图。",
+      inputSchema: { taskId: taskIdentifier },
+      annotations: { readOnlyHint: true },
+    },
+    ({ taskId }) => toolResult(() => prepareDownload(taskId)),
   );
   server.registerTool(
     "get_image",
