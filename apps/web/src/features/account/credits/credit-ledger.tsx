@@ -8,6 +8,7 @@ import {
   ToggleButtonGroup,
 } from "@heroui/react";
 import { useState } from "react";
+import { DataSkeleton, ValueSkeleton } from "../../../components/data-skeleton";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
@@ -36,10 +37,11 @@ export function CreditLedger() {
   const session = useEnterpriseSession();
   const wallet = useWallet();
   const balance = totalWalletCredits(wallet.data);
-  const entries = useWalletEntries();
+  const balanceText = balance === undefined ? "—" : formatCredits(balance);
+  const { query: entries, isDataPending, error } = useWalletEntries();
   const [kind, setKind] = useState("all");
   const [member, setMember] = useState("all");
-  useErrorToast((wallet.error ?? entries.error)?.message);
+  useErrorToast((wallet.error ?? error)?.message);
   const ledger = entries.data?.pages.flatMap((page) => page.data) ?? [];
   const members = [...new Set(ledger.map((entry) => entry.user_uid ?? "system"))];
   const visible = ledger.filter(
@@ -49,8 +51,7 @@ export function CreditLedger() {
   );
   const currentUid = session.data?.uid;
   const availableMessage = ledger.length ? t.noEntriesOfKind : t.noEntries;
-  const errorMessage = entries.isError ? t.entriesUnavailable : availableMessage;
-  const entriesStatusText = entries.isPending ? t.loadingEntries : errorMessage;
+  const errorMessage = error ? t.entriesUnavailable : availableMessage;
   return (
     <section className="account-ledger" aria-label={t.creditHistory}>
       <div className="account-toolbar">
@@ -103,9 +104,9 @@ export function CreditLedger() {
         )}
         <span className="account-toolbar-meta">
           {t.availableBefore}
-          <b>{balance == null ? "—" : formatCredits(balance)}</b>
+          <b>{wallet.isDataPending ? <ValueSkeleton label={t.loadingBalance} /> : balanceText}</b>
           {t.availableAfter}
-          {t.loadedEntries(ledger.length)}
+          {!isDataPending && t.loadedEntries(ledger.length)}
         </span>
       </div>
       <div className="account-table-card">
@@ -123,11 +124,15 @@ export function CreditLedger() {
               </Table.Header>
               <Table.Body
                 items={visible}
-                renderEmptyState={() => (
-                  <p className="account-empty" role="status">
-                    {entriesStatusText}
-                  </p>
-                )}
+                renderEmptyState={() =>
+                  isDataPending ? (
+                    <DataSkeleton layout="table" label={t.loadingEntries} />
+                  ) : (
+                    <p className="account-empty" role="status">
+                      {errorMessage}
+                    </p>
+                  )
+                }
               >
                 {(entry) => {
                   const optimizationName =
@@ -171,7 +176,7 @@ export function CreditLedger() {
             isError={entries.isError}
             onLoadMore={() => entries.fetchNextPage({ cancelRefetch: false })}
           />
-          <span>{t.shownEntries(visible.length, entries.hasNextPage)}</span>
+          {!isDataPending && <span>{t.shownEntries(visible.length, entries.hasNextPage)}</span>}
           {entries.isError && (
             <Button size="sm" variant="secondary" onPress={() => void entries.refetch()}>
               {t.reloadEntries}

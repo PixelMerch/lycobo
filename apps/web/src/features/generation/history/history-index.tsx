@@ -2,6 +2,7 @@ import { Button } from "@heroui/react";
 import type { ImageJob } from "@lycoboai/contracts";
 import { IconPhotoX, IconTrash } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
+import { DataSkeleton } from "../../../components/data-skeleton";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
@@ -10,7 +11,7 @@ import { currentMessages, useMessages } from "../../../i18n/messages";
 import { useErrorToast } from "../../../lib/error-toast";
 import { toast } from "../../../lib/toast";
 import { LibraryDialog } from "../../assets/library-dialog";
-import { useDeleteHistoryTask, useImageHistory } from "../generation-client";
+import { useDeleteHistoryTask, useImageHistory, useImageSession } from "../generation-client";
 import { GenerationLoading, useStatusLabel } from "../generation-status";
 import { modelDisplayName } from "../models/model-display-name";
 import { useModelPresentation } from "../models/model-logos";
@@ -26,6 +27,7 @@ export function HistoryIndex({
 }: {
   tool?: "create" | "textile" | "variation" | "replica" | "all" | null;
 }) {
+  const session = useImageSession();
   const query = useImageHistory(tool);
   const catalog = useModelPresentation();
   const locale = useLocale();
@@ -58,7 +60,9 @@ export function HistoryIndex({
         onOpenLibrary={() => setLibraryOpen(true)}
         listRef={rail}
       >
-        {!query.isLoading && (
+        {tool !== null && (session.isPending || query.isLoading) ? (
+          <DataSkeleton layout="rail" />
+        ) : (
           <HistoryIndexEntries
             jobs={jobs}
             selectedId={selectedId}

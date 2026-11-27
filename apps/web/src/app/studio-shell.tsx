@@ -34,7 +34,11 @@ import { LanguageMenu } from "./language-menu";
 import { PageLoading } from "./page-loading";
 import { PublicSiteHeader } from "./public-site-header";
 import { shellMessages } from "./shell-messages";
-import { SiteHeaderControls, WorkspaceHeaderLink } from "./site-header-controls";
+import {
+  HeaderAccountSkeleton,
+  SiteHeaderControls,
+  WorkspaceHeaderLink,
+} from "./site-header-controls";
 import { useWindowScrolled } from "./use-window-scrolled";
 import "../styles/brand.css";
 
@@ -74,22 +78,29 @@ export function StudioShell() {
       data-workspace-site-header={workspace || undefined}
       data-public-site-header={publicNavigation || undefined}
     >
-      {workspace && session.data && (
+      {workspace && (signedIn || session.isPending) && (
         <header className="workspace-site-header">
           <RouteLink to="/" className="workspace-site-brand" aria-label={t.home}>
             <img src="/brand/lycobo-landing.svg" width={155} height={46} alt="Lycobo" />
           </RouteLink>
-          <SiteHeaderControls account={session.data} showWorkspaceLink={false} />
+          <SiteHeaderControls
+            account={session.data}
+            accountPending={session.isPending}
+            showWorkspaceLink={false}
+          />
         </header>
       )}
       {publicNavigation && (
         <PublicSiteHeader
           account={session.data}
+          accountPending={session.isPending}
           isLanding={isLanding}
           showStartCreating={!session.isPending && !signedIn}
         />
       )}
-      {!publicNavigation && !workspace && <StudioHeader account={session.data} />}
+      {!publicNavigation && !workspace && (
+        <StudioHeader account={session.data} accountPending={session.isPending} />
+      )}
       <main className="main-content">{routeNeedsLogin ? <PageLoading /> : <Outlet />}</main>
       <RealtimeEvents />
       {signedIn && <AccountOverlayHost />}
@@ -99,7 +110,13 @@ export function StudioShell() {
 }
 
 /** 常规页面沿用站内导航和账户入口。 */
-function StudioHeader({ account }: { account: ReturnType<typeof useEnterpriseSession>["data"] }) {
+function StudioHeader({
+  account,
+  accountPending,
+}: {
+  account: ReturnType<typeof useEnterpriseSession>["data"];
+  accountPending: boolean;
+}) {
   const scrolled = useWindowScrolled();
   const [menuOpen, setMenuOpen] = useState(false);
   const t = useMessages(shellMessages);
@@ -136,7 +153,7 @@ function StudioHeader({ account }: { account: ReturnType<typeof useEnterpriseSes
         <img className="lycobo-logo" alt="Lycobo" {...studioLogo} />
       </RouteLink>
       <HeaderNavigation />
-      <HeaderActions account={account} />
+      <HeaderActions account={account} accountPending={accountPending} />
     </header>
   );
 }
@@ -158,7 +175,13 @@ function HeaderNavigation() {
 }
 
 /** 常规页面的工作区、语言和账户入口。 */
-function HeaderActions({ account }: { account: ReturnType<typeof useEnterpriseSession>["data"] }) {
+function HeaderActions({
+  account,
+  accountPending,
+}: {
+  account: ReturnType<typeof useEnterpriseSession>["data"];
+  accountPending: boolean;
+}) {
   return (
     <div className="header-actions">
       <div className="header-news" data-signed-in={!!account}>
@@ -171,9 +194,8 @@ function HeaderActions({ account }: { account: ReturnType<typeof useEnterpriseSe
           <HeaderBenefits />
           <AccountMenu variant="header" />
         </>
-      ) : (
-        <HeaderLogin />
-      )}
+      ) : null}
+      {!account && (accountPending ? <HeaderAccountSkeleton /> : <HeaderLogin />)}
     </div>
   );
 }

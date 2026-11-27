@@ -1,5 +1,6 @@
 import { Button, Disclosure } from "@heroui/react";
 import { IconChevronRight } from "@tabler/icons-react";
+import { DataSkeleton } from "../../../components/data-skeleton";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
 import type { Locale } from "../../../i18n/locale";
@@ -19,7 +20,7 @@ import { creditsMessages } from "./credits-messages";
 
 /** 在弹窗内部连续滚动收支，续读失败时保留已加载记录并支持重试。 */
 export function CreditUsageList({ view }: { view: WalletEntryView }) {
-  const entries = useWalletEntries(20, view);
+  const { query: entries, isDataPending, error } = useWalletEntries(20, view);
   const session = useEnterpriseSession();
   const t = useMessages(creditsMessages);
   const rows = entries.data?.pages.flatMap((page) => page.data) ?? [];
@@ -28,9 +29,9 @@ export function CreditUsageList({ view }: { view: WalletEntryView }) {
     if (entries.isFetchNextPageError) void loadMore();
     else void entries.refetch();
   };
+  if (isDataPending) return <DataSkeleton label={t.loadingRecords} />;
   let status: string | undefined;
-  if (entries.isPending) status = t.loadingRecords;
-  else if (entries.isError) status = t.recordsUnavailable;
+  if (error) status = t.recordsUnavailable;
   else if (!rows.length) status = t.noRecords[view];
   return (
     <div className="credit-usage-list">

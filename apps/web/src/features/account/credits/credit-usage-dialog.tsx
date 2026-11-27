@@ -1,6 +1,7 @@
 import { Modal, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { IconX } from "@tabler/icons-react";
 import { useState } from "react";
+import { ValueSkeleton } from "../../../components/data-skeleton";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { formatCredits, totalWalletCredits } from "../account-format";
@@ -17,6 +18,7 @@ export function CreditUsageDialog({ onClose }: { onClose: () => void }) {
   const [view, setView] = useState<WalletEntryView>("spent");
   const wallet = useWallet();
   const balance = totalWalletCredits(wallet.data);
+  const balanceText = balance === undefined ? "—" : formatCredits(balance);
   const t = useMessages(creditsMessages);
   return (
     <Modal
@@ -56,7 +58,13 @@ export function CreditUsageDialog({ onClose }: { onClose: () => void }) {
                 </ToggleButtonGroup>
                 <span className="credit-usage-balance">
                   {t.availableBefore}
-                  <b>{balance == null ? "—" : formatCredits(balance)}</b>
+                  <b>
+                    {wallet.isDataPending ? (
+                      <ValueSkeleton label={t.loadingBalance} />
+                    ) : (
+                      balanceText
+                    )}
+                  </b>
                   {t.availableAfter}
                 </span>
               </div>

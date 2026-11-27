@@ -1,5 +1,6 @@
 import { Button, Chip, Table, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { useState } from "react";
+import { DataSkeleton } from "../../../components/data-skeleton";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
@@ -15,14 +16,13 @@ const statusColors = { paid: "success", pending: "warning", closed: "default" } 
 export function RechargeOrders() {
   const t = useMessages(creditsMessages);
   const locale = useLocale();
-  const recharges = useRechargeOrders();
+  const { query: recharges, isDataPending, error } = useRechargeOrders();
   const [status, setStatus] = useState("all");
-  useErrorToast(recharges.error?.message);
+  useErrorToast(error?.message);
   const orders = recharges.data?.pages.flatMap((page) => page.data) ?? [];
   const visible = orders.filter((order) => status === "all" || order.status === status);
   const availableMessage = orders.length ? t.noOrdersOfStatus : t.noOrders;
-  const errorMessage = recharges.isError ? t.ordersUnavailable : availableMessage;
-  const rechargesStatusText = recharges.isPending ? t.loadingOrders : errorMessage;
+  const errorMessage = error ? t.ordersUnavailable : availableMessage;
   return (
     <section className="account-orders" aria-label={t.orders}>
       <div className="account-toolbar">
@@ -44,7 +44,9 @@ export function RechargeOrders() {
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
-        <span className="account-toolbar-meta">{t.ordersMeta(orders.length)}</span>
+        {!isDataPending && (
+          <span className="account-toolbar-meta">{t.ordersMeta(orders.length)}</span>
+        )}
       </div>
       <div className="account-table-card">
         <Table variant="secondary" className="account-table account-orders-table">
@@ -67,11 +69,15 @@ export function RechargeOrders() {
               </Table.Header>
               <Table.Body
                 items={visible}
-                renderEmptyState={() => (
-                  <p className="account-empty" role="status">
-                    {rechargesStatusText}
-                  </p>
-                )}
+                renderEmptyState={() =>
+                  isDataPending ? (
+                    <DataSkeleton layout="table" label={t.loadingOrders} />
+                  ) : (
+                    <p className="account-empty" role="status">
+                      {errorMessage}
+                    </p>
+                  )
+                }
               >
                 {(order) => (
                   <Table.Row id={order.id}>
@@ -118,7 +124,7 @@ export function RechargeOrders() {
             isError={recharges.isError}
             onLoadMore={() => recharges.fetchNextPage({ cancelRefetch: false })}
           />
-          <span>{t.shownOrders(visible.length)}</span>
+          {!isDataPending && <span>{t.shownOrders(visible.length)}</span>}
           {recharges.isError && (
             <Button size="sm" variant="secondary" onPress={() => void recharges.refetch()}>
               {t.reloadOrders}

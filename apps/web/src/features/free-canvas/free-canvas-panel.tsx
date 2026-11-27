@@ -9,6 +9,7 @@ import {
 } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { CreditCoin } from "../../components/credit-coin";
+import { DataSkeleton } from "../../components/data-skeleton";
 import { UiIcon } from "../../components/ui-icon";
 import { useLocale } from "../../i18n/locale-store";
 import { currentMessages, useMessages } from "../../i18n/messages";
@@ -241,29 +242,33 @@ export function FreeCanvasComposer({
         </div>
         <div className="fc-dock-group">
           <span className="fc-label">{t.resolution}</span>
-          <ToggleButtonGroup
-            aria-label={t.resolution}
-            className="fc-resolutions"
-            disallowEmptySelection
-            isDetached
-            selectedKeys={[resolution]}
-            selectionMode="single"
-            onSelectionChange={(keys) => {
-              const [next] = keys;
-              const value = resolutions.find((item) => item === next);
-              if (value) setResolution(value);
-            }}
-          >
-            {resolutions.map((value) => (
-              <ToggleButton
-                id={value}
-                key={value}
-                isDisabled={!enabled.some((item) => item === value)}
-              >
-                {value}
-              </ToggleButton>
-            ))}
-          </ToggleButtonGroup>
+          {session.isPending || capabilities.isLoading ? (
+            <DataSkeleton layout="options" />
+          ) : (
+            <ToggleButtonGroup
+              aria-label={t.resolution}
+              className="fc-resolutions"
+              disallowEmptySelection
+              isDetached
+              selectedKeys={[resolution]}
+              selectionMode="single"
+              onSelectionChange={(keys) => {
+                const [next] = keys;
+                const value = resolutions.find((item) => item === next);
+                if (value) setResolution(value);
+              }}
+            >
+              {resolutions.map((value) => (
+                <ToggleButton
+                  id={value}
+                  key={value}
+                  isDisabled={!enabled.some((item) => item === value)}
+                >
+                  {value}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
+          )}
         </div>
         {submission.status && (
           <p aria-live="polite" className="fc-status">

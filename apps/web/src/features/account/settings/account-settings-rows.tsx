@@ -36,7 +36,7 @@ export function SettingsRow({
 }: {
   label: string;
   value?: ReactNode;
-  hint?: string;
+  hint?: ReactNode;
   action?: ReactNode;
   children?: ReactNode;
 }) {

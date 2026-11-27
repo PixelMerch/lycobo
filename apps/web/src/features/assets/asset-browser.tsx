@@ -1,4 +1,4 @@
-import { Button, EmptyState } from "@heroui/react";
+import { Button, EmptyState, Skeleton } from "@heroui/react";
 import type { AssetTool, ImageAsset } from "@lycoboai/contracts";
 import {
   IconPhoto,
@@ -9,6 +9,7 @@ import {
 } from "@tabler/icons-react";
 import { type ReactNode, useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router";
+import { componentsMessages } from "../../components/components-messages";
 import { InfiniteLoad } from "../../components/infinite-load";
 import { UiIcon } from "../../components/ui-icon";
 import { useErrorToast } from "../../lib/error-toast";
@@ -93,13 +94,19 @@ function AssetEmpty({
   );
 }
 
-function Skeleton({ compact }: { compact: boolean }) {
+function AssetGridSkeleton({ compact }: { compact: boolean }) {
+  const t = useMessages(componentsMessages);
   const blocks = compact ? [180, 132, 150, 210] : [176, 132, 264, 220, 176, 300];
   return (
-    <div className="asset-skeleton" aria-hidden="true" data-compact={compact || undefined}>
+    <div
+      className="asset-skeleton"
+      role="status"
+      aria-label={t.loadingList}
+      data-compact={compact || undefined}
+    >
       {blocks.map((width, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static placeholders never reorder.
-        <span key={index} style={compact ? { height: width } : { width }} />
+        <Skeleton key={index} aria-hidden="true" style={compact ? { height: width } : { width }} />
       ))}
     </div>
   );
@@ -289,7 +296,7 @@ function AssetResults({
         }}
       />
     );
-  if (query.isPending) return <Skeleton compact={compact} />;
+  if (query.isPending) return <AssetGridSkeleton compact={compact} />;
   if (!assets.length) {
     const empty = emptyState(filters, locale);
     return <AssetEmpty icon={empty.icon} title={empty.title} />;

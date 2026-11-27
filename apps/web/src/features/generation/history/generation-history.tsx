@@ -2,6 +2,7 @@ import { EmptyState } from "@heroui/react";
 import { type ImageJob, imageJobTool } from "@lycoboai/contracts";
 import { IconPhotoPlus } from "@tabler/icons-react";
 import { type RefObject, useEffect, useRef, useState } from "react";
+import { DataSkeleton } from "../../../components/data-skeleton";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
 import type { Locale } from "../../../i18n/locale";
@@ -124,16 +125,16 @@ function historyNotice(
         <p>{t.signInForHistory}</p>
       </EmptyState>
     );
+  if (hasJobs) return undefined;
   if (session.isError || query.isError) return null;
-  if (session.isPending || (tool !== null && query.isPending)) return null;
-  if (!hasJobs)
-    return (
-      <EmptyState className="empty-state generation-empty-state">
-        <UiIcon icon={IconPhotoPlus} size="illustration" />
-        <p>{compact ? t.noTasks : t.emptyHistory}</p>
-      </EmptyState>
-    );
-  return undefined;
+  if (session.isPending || (tool !== null && query.isPending))
+    return <DataSkeleton layout="history" />;
+  return (
+    <EmptyState className="empty-state generation-empty-state">
+      <UiIcon icon={IconPhotoPlus} size="illustration" />
+      <p>{compact ? t.noTasks : t.emptyHistory}</p>
+    </EmptyState>
+  );
 }
 
 function historyJobs(

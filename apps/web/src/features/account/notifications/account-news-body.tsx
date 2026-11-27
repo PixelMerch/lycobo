@@ -1,5 +1,6 @@
 import { Button } from "@heroui/react";
 import { IconBell } from "@tabler/icons-react";
+import { DataSkeleton } from "../../../components/data-skeleton";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
@@ -16,6 +17,7 @@ export function NotificationBody() {
   const locale = useLocale();
   useErrorToast(read.error?.message);
   const messages = notifications.data?.pages.flatMap((page) => page.data) ?? [];
+  if (notifications.isPending) return <DataSkeleton />;
   if (!messages.length)
     return (
       <div className="account-news-empty">
@@ -23,7 +25,7 @@ export function NotificationBody() {
           <UiIcon icon={IconBell} size="default" />
         </span>
         <h3>{notifications.isError ? t.messagesFailed : t.noMessages}</h3>
-        <p>{notifications.isPending ? t.signInForMessages : t.messagesEmptyHint}</p>
+        <p>{t.messagesEmptyHint}</p>
         {notifications.isError && (
           <Button size="sm" variant="tertiary" onPress={() => void notifications.refetch()}>
             {t.retry}

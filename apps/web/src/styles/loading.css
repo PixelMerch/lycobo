@@ -1,4 +1,4 @@
-/* 首屏和整页等待共用同一布局。页面样式尚未加载时使用炭黑底。 */
+/* 浏览器加载应用脚本之前使用静态启动标记。 */
 .loading-state {
   position: fixed;
   inset: 0;
@@ -7,7 +7,6 @@
   place-items: center;
   background: var(--background, #121212);
 }
-/* JavaScript 启动前与减少动态效果时共用静态占位。 */
 .loading-state-placeholder {
   position: relative;
   width: 1em;
@@ -33,15 +32,4 @@
   box-shadow:
     0.2em 0.4em currentColor,
     -0.2em -0.4em currentColor;
-}
-.loading-state-reduced {
-  display: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .loading-state-animation {
-    display: none;
-  }
-  .loading-state-reduced {
-    display: block;
-  }
 }

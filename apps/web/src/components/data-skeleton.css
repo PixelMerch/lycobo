@@ -1,0 +1,102 @@
+.data-value-skeleton {
+  display: inline-block;
+  width: 3ch;
+  max-width: 100%;
+  height: 0.75em;
+  border-radius: 4px;
+  vertical-align: baseline;
+}
+.data-media-skeleton {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: min(68%, 420px, 50dvh);
+  max-height: 72%;
+  border-radius: 12px;
+  translate: -50% -50%;
+}
+.data-skeleton {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+}
+.data-skeleton-row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) minmax(0, 24%);
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 10px 12px;
+}
+.data-skeleton-leading {
+  height: 24px;
+  border-radius: 6px;
+}
+.data-skeleton-primary,
+.data-skeleton-secondary {
+  height: 0.75em;
+}
+.data-skeleton-primary {
+  width: 72%;
+}
+.data-skeleton[data-layout="table"] .data-skeleton-row {
+  grid-template-columns: 1fr 2fr 1fr;
+}
+.data-skeleton[data-layout="table"] .data-skeleton-leading {
+  width: 65%;
+  height: 0.75em;
+}
+.data-skeleton[data-layout="history"] .data-skeleton-row {
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 16px;
+  border-radius: 12px;
+  background: var(--surface);
+}
+.data-skeleton[data-layout="history"] .data-skeleton-leading {
+  grid-row: span 2;
+  width: clamp(68px, 14vw, 108px);
+  height: auto;
+  aspect-ratio: 1;
+}
+.data-skeleton[data-layout="history"] .data-skeleton-secondary {
+  width: 45%;
+}
+.data-skeleton[data-layout="rail"] .data-skeleton-row {
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 6px;
+  min-width: 72px;
+  padding-inline: 6px;
+}
+.data-skeleton[data-layout="rail"] .data-skeleton-secondary {
+  display: none;
+}
+.data-skeleton[data-layout="options"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.data-skeleton[data-layout="options"] .data-skeleton-row {
+  display: block;
+  min-height: 0;
+  padding: 0;
+}
+.data-skeleton[data-layout="options"] .data-skeleton-leading {
+  height: 36px;
+  border-radius: 8px;
+}
+.data-skeleton[data-layout="options"] :is(.data-skeleton-primary, .data-skeleton-secondary) {
+  display: none;
+}
+@media (max-width: 1300px) {
+  .history-rail-list > .data-skeleton[data-layout="rail"] {
+    display: flex;
+    width: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .data-value-skeleton,
+  .data-value-skeleton::after,
+  .data-media-skeleton,
+  .data-media-skeleton::after,
+  .data-skeleton .skeleton,
+  .data-skeleton .skeleton::after {
+    animation: none;
+  }
+}

@@ -2,6 +2,7 @@ import { Button } from "@heroui/react";
 import type { releaseSchema } from "@lycoboai/contracts";
 import { IconSparkles, IconX } from "@tabler/icons-react";
 import type { Ref } from "react";
+import { DataSkeleton } from "../../../components/data-skeleton";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
 import { useMessages } from "../../../i18n/messages";
@@ -23,6 +24,7 @@ export function ReleaseNotice({
   const updates = useSiteRelease();
   const t = useMessages(notificationsMessages);
   const release = updates.data?.release;
+  if (updates.isPending) return <DataSkeleton />;
   if (!release)
     return (
       <div className="account-news-empty">

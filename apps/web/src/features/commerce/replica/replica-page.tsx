@@ -83,6 +83,7 @@ export function ReplicaPage() {
         />
         <ParameterGroup
           label={common.resolution}
+          loading={session.isPending || models.isLoading}
           values={publicImageResolutions}
           value={draft.resolution}
           disabledValues={publicImageResolutions.filter(

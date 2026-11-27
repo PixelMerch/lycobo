@@ -52,7 +52,7 @@
   outline-offset: 2px;
 }
 .header-credits-value {
-  min-width: 0;
+  min-width: 3ch;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

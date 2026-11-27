@@ -73,12 +73,6 @@
   min-height: 0;
   touch-action: none;
 }
-.browse-image-loading {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  translate: -50% -50%;
-}
 .browse-image-surface[data-ready="false"] :is(.browse-image-transform, .browse-image-toolbar) {
   visibility: hidden;
 }

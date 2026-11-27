@@ -1,6 +1,7 @@
 import { Button, Input, ListBox, Tabs, TextField } from "@heroui/react";
 import { motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
+import { DataSkeleton } from "../../../components/data-skeleton";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { MentionHighlight } from "../../../components/reference-prompt/mention-highlight";
 import { mentionSprings } from "../../../components/reference-prompt/mention-motion";
@@ -89,7 +90,7 @@ export function ReferenceMentionOptions({
     )
     .map((image) => image.id);
   const emptyLabel = allowHistory && query.isError ? t.loadFailed : t.noMatches;
-  const loading = allowHistory && query.isFetching;
+  const loading = allowHistory && query.isLoading;
   return (
     <div className="reference-mention-options">
       <Tabs
@@ -160,8 +161,9 @@ export function ReferenceMentionOptions({
             </ListBox>
           </div>
         ) : (
-          <p className="reference-mention-empty">{!loading && emptyLabel}</p>
+          !loading && <p className="reference-mention-empty">{emptyLabel}</p>
         )}
+        {loading && <DataSkeleton />}
         {allowHistory && query.isError && (
           <Button size="sm" variant="ghost" onPress={() => void query.refetch()}>
             {t.reload}
@@ -169,8 +171,8 @@ export function ReferenceMentionOptions({
         )}
         {allowHistory && (
           <InfiniteLoad
-            hasMore={query.hasNextPage}
-            isLoading={query.isFetching}
+            hasMore={query.hasNextPage && !query.isRefetching}
+            isLoading={query.isFetchingNextPage}
             isError={query.isError}
             onLoadMore={() => query.fetchNextPage({ cancelRefetch: false })}
           />
