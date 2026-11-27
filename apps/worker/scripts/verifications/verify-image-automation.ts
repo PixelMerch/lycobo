@@ -23,6 +23,7 @@ async function verifyAutomationSets(
     title: `Fixture set ${index + 1}`,
     requestId: crypto.randomUUID(),
     resolution: "2K",
+    aspectRatio: index === 0 ? undefined : "9:16",
     images: Array.from({ length: 10 }, (_, position) => ({
       title: `Image ${position + 1}`,
       prompt: `Fixture product image ${position + 1}`,
@@ -61,7 +62,7 @@ async function verifyAutomationSets(
   assert.equal(new Set(accepted.map(({ id }) => id)).size, 10);
   const [first] = submissions;
   assert.ok(first);
-  assert.deepEqual(await submit(first), {
+  assert.deepEqual(await submit({ ...first, aspectRatio: "1:1" }), {
     id: accepted[0]?.id,
     publicId: accepted[0]?.publicId,
     replayed: true,
@@ -73,10 +74,16 @@ async function verifyAutomationSets(
   assert.equal(history.status, 200);
   const { data: sets } = imageTasksResponseSchema.parse(unwrapApiData(await history.json()));
   assert.equal(sets.length, 10);
+  const ratios = new Map(
+    accepted.map(({ id }, index) => [id, submissions[index]?.aspectRatio ?? "1:1"]),
+  );
   assert.ok(
     sets.every(
       (job) =>
-        job.submission_source === "mcp" && job.requested_count === 10 && job.items.length === 10,
+        job.submission_source === "mcp" &&
+        job.requested_count === 10 &&
+        job.items.length === 10 &&
+        job.aspect_ratio === ratios.get(job.id),
     ),
   );
 }
