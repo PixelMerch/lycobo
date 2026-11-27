@@ -14,6 +14,7 @@ import type { z } from "zod";
 import { checkImageRequestLimit } from "../rate-limit";
 import { type Env, fail, type ImageApiDependencies, id } from "../route-context";
 import { submitImageTask } from "../tasks/task-routes";
+import { inferAutomationAspectRatio } from "./aspect-ratio";
 import { serveImageAutomationMcp } from "./mcp";
 
 const keyPath = imageAutomationKeyPath;
@@ -27,8 +28,16 @@ function submitAutomation(
   key: string,
   submissionSource?: "mcp",
 ) {
-  const task = imageTaskSubmissionSchema.parse({ ...input, model: "gpt-image-2.6" });
-  return submitImageTask(c, deps, task, key, submissionSource);
+  const inferredRatio =
+    submissionSource === "mcp" && input.aspectRatio === undefined
+      ? inferAutomationAspectRatio([input.prompt])
+      : undefined;
+  const task = imageTaskSubmissionSchema.parse({
+    ...input,
+    aspectRatio: input.aspectRatio ?? inferredRatio,
+    model: "gpt-image-2.6",
+  });
+  return submitImageTask(c, deps, task, key, submissionSource, Boolean(inferredRatio));
 }
 
 async function submitAutomationSet(
@@ -46,16 +55,21 @@ async function submitAutomationSet(
     planInput,
     key,
   );
+  // 方案复用原始参数的哈希，推断出的宽高比只用于生成任务。
+  const inferredRatio =
+    aspectRatio === undefined
+      ? inferAutomationAspectRatio([input.title, ...input.images.map((image) => image.prompt)])
+      : undefined;
   const task = imageTaskSubmissionSchema.parse({
     prompt: input.title,
     userPrompt: input.title,
     resolution: input.resolution,
-    aspectRatio,
+    aspectRatio: aspectRatio ?? inferredRatio,
     model: "gpt-image-2.6",
     count: plan.items.length,
     variation: { version: 1, planId: plan.id, items: plan.items },
   });
-  return submitImageTask(c, deps, task, key, "mcp");
+  return submitImageTask(c, deps, task, key, "mcp", Boolean(inferredRatio));
 }
 
 async function limitAutomationSubmission(
@@ -95,7 +109,7 @@ async function automationResult(
     id: task.id,
     status: task.status,
     images,
-    ...(audience === "agent" && { publicId: task.publicId }),
+    ...(audience === "agent" && { publicId: task.publicId, aspectRatio: task.aspectRatio }),
     ...(pending && { retryAfterSeconds: 10 }),
   });
 }

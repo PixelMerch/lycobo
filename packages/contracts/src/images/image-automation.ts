@@ -15,7 +15,7 @@ export const imageAutomationInputSchema = z.strictObject({
   aspectRatio: imageGenerationInputSchema.shape.aspectRatio
     .unwrap()
     .optional()
-    .describe("图片宽高比。传入用户指定或适合用途的比例，省略时使用 1:1。"),
+    .describe("图片宽高比，例如 16:9。传入用户指定或适合用途的比例。"),
 });
 
 /** 一套图共用宽高比和分辨率，每张图可指定独立提示词。 */

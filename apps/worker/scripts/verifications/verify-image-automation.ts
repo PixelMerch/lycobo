@@ -19,22 +19,26 @@ async function verifyAutomationSets(
   scope: ImageScope & { token: string },
   key: string,
 ) {
-  const submissions = Array.from({ length: 10 }, (_, index) => ({
-    title: `Fixture set ${index + 1}`,
-    requestId: crypto.randomUUID(),
-    resolution: "2K",
-    aspectRatio: index === 0 ? undefined : "9:16",
-    images: Array.from({ length: 10 }, (_, position) => ({
-      title: `Image ${position + 1}`,
-      prompt: `Fixture product image ${position + 1}`,
-    })),
-  }));
+  const submissions = Array.from({ length: 10 }, (_, index) => {
+    const explicitRatio = index === 0 ? "1:1" : "9:16";
+    return {
+      title: `Fixture set ${index + 1}`,
+      requestId: crypto.randomUUID(),
+      resolution: "2K",
+      aspectRatio: index === 1 ? undefined : explicitRatio,
+      images: Array.from({ length: 10 }, (_, position) => ({
+        title: `Image ${position + 1}`,
+        prompt: `Fixture product image ${position + 1}, aspect ratio 16:9`,
+      })),
+    };
+  });
   const reply = z.object({
     result: z.object({ content: z.tuple([z.object({ text: z.string() })]) }),
   });
   const receipt = z.object({
     id: z.uuid(),
     publicId: imageTaskPublicIdSchema,
+    aspectRatio: z.string(),
     replayed: z.boolean(),
   });
   const submit = async (input: (typeof submissions)[number]) => {
@@ -62,9 +66,11 @@ async function verifyAutomationSets(
   assert.equal(new Set(accepted.map(({ id }) => id)).size, 10);
   const [first] = submissions;
   assert.ok(first);
-  assert.deepEqual(await submit({ ...first, aspectRatio: "1:1" }), {
+  // 旧客户端省略比例时，以原任务回执为准，保留方图和已扣积分。
+  assert.deepEqual(await submit({ ...first, aspectRatio: undefined }), {
     id: accepted[0]?.id,
     publicId: accepted[0]?.publicId,
+    aspectRatio: "1:1",
     replayed: true,
   });
   assert.equal((await repository.wallet(scope)).balance, before - 100 * imageUnitCredits);
@@ -75,7 +81,11 @@ async function verifyAutomationSets(
   const { data: sets } = imageTasksResponseSchema.parse(unwrapApiData(await history.json()));
   assert.equal(sets.length, 10);
   const ratios = new Map(
-    accepted.map(({ id }, index) => [id, submissions[index]?.aspectRatio ?? "1:1"]),
+    accepted.map(({ id, aspectRatio }, index) => {
+      const expected = submissions[index]?.aspectRatio ?? "16:9";
+      assert.equal(aspectRatio, expected);
+      return [id, expected];
+    }),
   );
   assert.ok(
     sets.every(
@@ -130,7 +140,7 @@ export async function verifyImageAutomation(
     crypto.randomUUID(),
     imageUnitCredits,
   );
-  const task = { id, publicId, status: "queued", asset_ids: [] };
+  const task = { id, publicId, aspectRatio: "1:1", status: "queued", asset_ids: [] };
   assert.deepEqual(await keys.result(scope, id), task);
   assert.deepEqual(await keys.result(scope, publicId), task);
   await sql`insert into organization_members (organization_id,user_id,role)

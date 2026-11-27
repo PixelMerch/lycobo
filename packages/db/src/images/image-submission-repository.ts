@@ -25,7 +25,22 @@ export type ImageCreditAuthorization = {
 };
 
 type RetryItem = { id: string; position: number; status: string };
-type SubmittedTaskRow = { id: string; publicId: string };
+type SubmittedTaskRow = { id: string; publicId: string; aspectRatio: string };
+type ImageSubmissionHashes = { current: string; legacy?: string };
+
+function submissionHashes(
+  request: ImageTaskSubmission,
+  inferredAspectRatio: boolean,
+): ImageSubmissionHashes {
+  const hash = (input: ImageTaskSubmission) =>
+    createHash("sha256").update(JSON.stringify(input)).digest("hex");
+  return {
+    current: hash(request),
+    // 旧 MCP 对省略比例的请求保存的是方图，重放时匹配原哈希以避免再次扣费。
+    ...(inferredAspectRatio &&
+      request.aspectRatio !== "1:1" && { legacy: hash({ ...request, aspectRatio: "1:1" }) }),
+  };
+}
 
 async function verifyMember(tx: postgres.TransactionSql, scope: ImageScope) {
   const members =
@@ -194,15 +209,17 @@ async function findSubmissionReplay(
   sql: postgres.ISql,
   scope: ImageScope,
   key: string,
-  inputHash: string,
+  hashes: ImageSubmissionHashes,
 ) {
   const [replay] = await sql<
     (SubmittedTaskRow & { input_hash: string })[]
-  >`select id,public_id as "publicId",input_hash from generation_jobs
+  >`select id,public_id as "publicId",aspect_ratio as "aspectRatio",input_hash from generation_jobs
     where organization_id=${scope.organizationId} and user_id=${scope.userId} and idempotency_key=${key}`;
   if (!replay) return undefined;
-  if (replay.input_hash !== inputHash) throw new ImageRepositoryError("IDEMPOTENCY_CONFLICT");
-  return { id: replay.id, publicId: replay.publicId, replayed: true };
+  const { input_hash, ...task } = replay;
+  if (input_hash !== hashes.current && input_hash !== hashes.legacy)
+    throw new ImageRepositoryError("IDEMPOTENCY_CONFLICT");
+  return { ...task, replayed: true };
 }
 
 async function insertSubmission(
@@ -211,21 +228,20 @@ async function insertSubmission(
   input: ImageGenerationInput,
   details: { userPrompt: string; source: "mcp" | undefined },
   key: string,
-  inputHash: string,
+  hashes: ImageSubmissionHashes,
   requireManaged: boolean,
   independent: IndependentModelConfiguration | undefined,
 ) {
-  const unitCredits = imageUnitCredits;
-  const replay = await findSubmissionReplay(tx, scope, key, inputHash);
+  const replay = await findSubmissionReplay(tx, scope, key, hashes);
   if (replay) return replay;
   const snapshot = await submissionSnapshot(tx, input, requireManaged, independent);
   const inserted = await tx<
     SubmittedTaskRow[]
   >`insert into generation_jobs (organization_id,user_id,idempotency_key,input_hash,input,model,provider_model,prompt,user_prompt,submission_source,resolution,aspect_ratio,requested_count,unit_credits,provider_snapshot)
-          values (${scope.organizationId},${scope.userId},${key},${inputHash},${tx.json(input)},${input.model},${snapshot ? providerModelForResolution(snapshot, input.resolution) : imageProviderModel(input)},${input.prompt},${details.userPrompt},${details.source ?? null},${input.resolution},${input.aspectRatio},${input.count},${unitCredits},${snapshot ? tx.json(snapshot) : null})
-          on conflict (organization_id,user_id,idempotency_key) do nothing returning id,public_id as "publicId"`;
+          values (${scope.organizationId},${scope.userId},${key},${hashes.current},${tx.json(input)},${input.model},${snapshot ? providerModelForResolution(snapshot, input.resolution) : imageProviderModel(input)},${input.prompt},${details.userPrompt},${details.source ?? null},${input.resolution},${input.aspectRatio},${input.count},${imageUnitCredits},${snapshot ? tx.json(snapshot) : null})
+          on conflict (organization_id,user_id,idempotency_key) do nothing returning id,public_id as "publicId",aspect_ratio as "aspectRatio"`;
   if (!inserted[0]) {
-    const existing = await findSubmissionReplay(tx, scope, key, inputHash);
+    const existing = await findSubmissionReplay(tx, scope, key, hashes);
     if (existing) return existing;
     throw new ImageRepositoryError("IDEMPOTENCY_CONFLICT");
   }
@@ -281,28 +297,36 @@ export function imageSubmissionRepository(
   independent?: IndependentModelConfiguration,
 ) {
   const { refreshJob, refund } = settlement;
-  const hash = (value: string) => createHash("sha256").update(value).digest("hex");
   return {
-    async replayImageSubmission(scope: ImageScope, submitted: ImageTaskSubmission, key: string) {
-      return findSubmissionReplay(sql, scope, key, hash(JSON.stringify(submitted)));
+    async replayImageSubmission(
+      scope: ImageScope,
+      submitted: ImageTaskSubmission,
+      key: string,
+      inferredAspectRatio = false,
+    ) {
+      return findSubmissionReplay(
+        sql,
+        scope,
+        key,
+        submissionHashes(submitted, inferredAspectRatio),
+      );
     },
     async replayImageRetry(scope: ImageScope, jobId: string, key: string, itemId?: string) {
       return isRetryReplay(sql, scope, jobId, key, itemId);
     },
     async create(
       scope: ImageScope,
-      submitted: ImageTaskSubmission & { submissionSource?: "mcp" },
+      submitted: ImageTaskSubmission & { submissionSource?: "mcp"; inferredAspectRatio?: boolean },
       key: string,
       _legacyUnitCredits?: number,
       requireManaged = false,
       acceptedUploadIds: readonly string[] = [],
       credit?: ImageCreditAuthorization,
     ) {
-      const unitCredits = imageUnitCredits;
       // 提交来源只作素材筛选。保留首次接收时的来源，旧请求重试仍使用原幂等哈希。
-      const { submissionSource, ...request } = submitted;
+      const { submissionSource, inferredAspectRatio = false, ...request } = submitted;
       const { userPrompt, ...input } = request;
-      const inputHash = hash(JSON.stringify(request));
+      const hashes = submissionHashes(request, inferredAspectRatio);
       return sql.begin(async (tx) => {
         await verifyMember(tx, scope);
         const submission = await insertSubmission(
@@ -314,14 +338,14 @@ export function imageSubmissionRepository(
             source: submissionSource,
           },
           key,
-          inputHash,
+          hashes,
           requireManaged,
           independent,
         );
         if (submission.replayed) return submission;
         const { id } = submission;
         await verifySubmissionReferences(tx, scope, id, input, acceptedUploadIds);
-        const total = unitCredits * input.count;
+        const total = imageUnitCredits * input.count;
         const walletId = await acquireLocalWallet(tx, scope, total, credit);
         if (walletId)
           await tx`insert into generation_credit_ledger (organization_id,job_id,event_type,amount) values (${scope.organizationId},${id},'reserve',${-total})`;

@@ -27,6 +27,7 @@ function libraryOutputFixture(repository: ImageRepository, sql: postgres.Sql, ow
       assert.deepEqual(await repository.replayImageSubmission(owner, input, key), {
         id: job.id,
         publicId: job.publicId,
+        aspectRatio: job.aspectRatio,
         replayed: true,
       });
       assert.equal((await repository.create(owner, input, key)).id, job.id);
