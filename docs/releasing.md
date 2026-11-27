@@ -26,7 +26,7 @@ Dependabot 从默认分支读取 `.github/dependabot.yml`，因此该配置推�
 ## 部署顺序
 
 1. 评估 expand/contract，手动应用经审查的 `packages/db/migrations/` 追加迁移；迁移必须兼容正在运行的代码。
-2. main 的 CI 通过后，运行 Release 工作流。GitHub Release 发布成功后，先部署主站 Worker，再部署独立图片 Worker。运行与验收见 [Cloudflare 运行与部署](#cloudflare-运行与部署)。若变更依赖新消费者支持契约，按对应业务章节的兼容顺序发布。
+2. main 的 CI 通过后，运行 Release 工作流。默认先部署主站 Worker，再部署独立图片 Worker。若主站开始写入需要新版消费者处理的新契约，且跨 Worker 绑定已存在，按业务章节指定顺序启用 `consumer_first`。单独重跑 Deploy Cloudflare 时沿用原发布顺序。运行与验收见 [Cloudflare 运行与部署](#cloudflare-运行与部署)。
 3. 验证健康、真实读写和错误率。
 4. 稳定后才清理旧字段/契约。
 

@@ -7,6 +7,10 @@ on:
         description: "手动指定版本号（例如 v0.4.18）"
         required: true
         type: string
+      consumer_first:
+        description: "先部署图片消费者（主站开始写入新契约时使用）"
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -81,3 +85,4 @@ jobs:
       BILLING_PRODUCTS: ${{ secrets.BILLING_PRODUCTS }}
     with:
       version: ${{ inputs.version }}
+      consumer_first: ${{ inputs.consumer_first }}
