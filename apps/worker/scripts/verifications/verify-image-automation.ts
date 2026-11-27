@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import {
   type ImageScope,
   imageGenerationInputSchema,
@@ -181,11 +182,6 @@ export async function verifyImageAutomation(
   const task = { id, publicId, aspectRatio: "1:1", status: "queued", asset_ids: [] };
   assert.deepEqual(await keys.result(scope, id), task);
   assert.deepEqual(await keys.result(scope, publicId), task);
-  assert.deepEqual(await keys.result(scope, id, true), task);
-  // 任务下载凭证存活期间，停用该企业成员也会停止签发新的原图地址。
-  await sql`update enterprise_accounts set disabled_at=now() where user_id=${scope.userId}`;
-  assert.equal(await keys.result(scope, id, true), null);
-  await sql`update enterprise_accounts set disabled_at=null where user_id=${scope.userId}`;
   await sql`insert into organization_members (organization_id,user_id,role)
     values (${scope.organizationId},${other.userId},'member')`;
   await verifyAutomationReferenceDeduplication(repository, sql, scope, other);
@@ -193,6 +189,16 @@ export async function verifyImageAutomation(
   assert.equal(await keys.result({ ...scope, userId: other.userId }, publicId), null);
   assert.equal(await keys.result(other, id), null);
   const activeKey = (await keys.authenticate(a.key)) ? a.key : b.key;
+  const downloadDigest = createHash("sha256").update(activeKey).digest("hex");
+  assert.deepEqual(await keys.downloadTasks(scope, [id], downloadDigest), [
+    { id, publicId, status: "queued", asset_ids: [] },
+  ]);
+  assert.deepEqual(await keys.downloadTasks(scope, [publicId], downloadDigest), [
+    { id, publicId, status: "queued", asset_ids: [] },
+  ]);
+  await sql`update enterprise_accounts set disabled_at=now() where user_id=${scope.userId}`;
+  assert.deepEqual(await keys.downloadTasks(scope, [id], downloadDigest), []);
+  await sql`update enterprise_accounts set disabled_at=null where user_id=${scope.userId}`;
   assert.equal((await keys.status(scope))?.lastFour, activeKey.slice(-4));
   assert.equal((await keys.status(scope))?.copyable, true);
   const ciphertext = await keys.keyCiphertext(scope);
@@ -216,6 +222,7 @@ export async function verifyImageAutomation(
   const replacement = await keys.rotate(scope, seal);
   assert.ok(replacement && (await keys.keyCiphertext(scope)));
   assert.equal(await keys.authenticate(activeKey), null);
+  assert.deepEqual(await keys.downloadTasks(scope, [id], downloadDigest), []);
   assert.ok(await keys.revoke(scope));
   assert.equal(await keys.authenticate(replacement.key), null);
   assert.equal(await keys.keyCiphertext(scope), null);

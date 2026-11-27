@@ -15,6 +15,7 @@ export const imageAutomationKeyCopyPath = `${imageAutomationKeyPath}/copy`;
 export const imageAutomationKeyPrefix = "lcb_img_";
 
 export const automationReferenceLimits = { batch: 100, maxEdge: 1600, maxBytes: 1024 * 1024 };
+export const automationDownloadBatchLimit = 20;
 export const automationReferenceSha256 = z.string().regex(/^[a-f0-9]{64}$/);
 /** 一次查询一批原文件指纹，重复指纹由调用方合并。 */
 export const automationReferenceLookupSchema = z.strictObject({
