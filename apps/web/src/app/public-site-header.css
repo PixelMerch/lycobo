@@ -77,6 +77,10 @@
 .public-site-category {
   position: relative;
 }
+/* 菜单滚动到边界时，滚轮可以继续滚动正文。 */
+.public-site-category .topbar-menu {
+  overscroll-behavior-y: auto;
+}
 .public-site-header
   .public-site-desktop-nav
   .nav-row:is(:hover, [data-hovered="true"], [aria-expanded="true"], :focus-visible) {
