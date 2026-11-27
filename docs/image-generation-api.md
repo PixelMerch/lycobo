@@ -59,13 +59,13 @@ curl --fail-with-body https://lycobo.com/api/v1/enterprise/image-api/generations
 
 连接成功后，豆包从 Lycobo MCP 服务读取工具列表。MCP 鉴权失败返回 HTTP 401，响应直接包含 `code`、`message`、`requestId` 和 `error`。`error` 说明是缺少 `Authorization`、格式不正确，还是生图 Key 未通过验证。后者统一提示检查 Key 是否无效、过期或已撤销。
 
-维护技能时，同步更新 `apps/web/public/integrations/` 下的中文 `lycobo-image/SKILL.md`、英文 `en/lycobo-image/SKILL.md` 和对应压缩包。两个压缩包都包含对应语言的 `lycobo-image/SKILL.md` 和共用的 `lycobo-image/scripts/reference_files.py`、`lycobo-image/scripts/download_task.py`。脚本源文件放在中文技能目录，打包英文版时使用同一份文件。技能标识保持 `lycobo-image`。
+维护技能时，同步更新 `apps/web/public/integrations/` 下中英文 `lycobo-image/SKILL.md`、`references/` 和对应压缩包。两种语言共用中文目录的 `scripts/reference_files.py` 与 `scripts/download_task.py`。主说明仅保留提交和回执，参考图和下载按需读取。技能标识保持 `lycobo-image`。
 
 #### 任务完成后自动下载
 
-- 用户明确要求且指定本机目录时，豆包在收到受理回执后为每个任务调用一次 `prepare_task_download`。工具验证工作区和任务作者，返回只授权该任务的两小时下载凭证。本机脚本经标准输入接收凭证，长期生图 Key 留在连接器里。
-- `GET /api/v1/enterprise/image-api/task-downloads/:taskId` 使用 `Authorization: Bearer <downloadToken>`。排队或执行中返回 HTTP 202 和 `Retry-After`，期间只读取任务状态和所有权。达到终态后一次返回 `data.files`，每项包含 `assetId`、`index` 和短期签名的原图 `url`。部分成功时返回已完成的原图。签名限制用途，普通提交和已有任务查询沿用原协议。
-- 本机脚本为各任务分别等待，完成后最多三路并行下载原图，写入用户指定目录中的 `Lycobo-任务编号`。下载成功才写正式文件，已保存文件在重试时跳过。电脑须保持开机并支持独立进程。用户选择的目录不发送给服务端。
+- 用户明确要求并选定本机目录时，Agent 调用 `prepare_task_downloads`，一次为至多 20 个任务领取一个下载凭证。只授权任务作者。凭证可跨重启使用，最长七天。撤销或更换生图 Key、停用企业账号后，已有凭证无法签发新的原图地址。
+- 本机脚本经标准输入接收凭证，以 `Authorization: Bearer <downloadToken>` 调用 `POST /api/v1/enterprise/image-api/task-downloads`，请求体为该凭证下仍待处理的 `{taskIds}`。排队或生成中的任务只返回状态，达到终态的任务一次返回已完成原图的短期地址。根据 `retryAfterSeconds` 查询同批剩余任务，两个小时后降为五分钟一次。普通提交和无待办的本机进程不查询。
+- 下载在用户指定目录按套保存，在当前电脑用户下最多三路并行。macOS 注册当前用户登录恢复，队列存于用户私有目录，已保存文件在恢复或重试时跳过。不能登记登录恢复时，本次下载仍可启动，重新打开本机脚本可继续保存的队列。授权目录路径与长期生图 Key 不交给下载接口。
 
 #### 定时任务的本地参考图
 

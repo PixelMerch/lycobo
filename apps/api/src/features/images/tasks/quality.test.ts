@@ -25,7 +25,7 @@ function fixture(
   editsEnabled = false,
   managedModelsOnly = false,
   extra: {
-    automation?: ImageRepository["automation"];
+    automation?: Partial<ImageRepository["automation"]>;
     saveAutomationPlan?: ImageRepository["variation"]["saveAutomationPlan"];
     auth?: ImageApiDependencies["auth"];
     rateLimits?: ImageRequestRateLimits;
@@ -65,13 +65,15 @@ function fixture(
     }));
   const userId = crypto.randomUUID();
   const repository: ImageRepository = {
-    automation: extra.automation ?? {
+    automation: {
       status: unexpected,
       keyCiphertext: unexpected,
       rotate: unexpected,
       revoke: unexpected,
       authenticate: unexpected,
       result: unexpected,
+      downloadTasks: unexpected,
+      ...extra.automation,
     },
     waitingReferenceUploads: unexpected,
     close: unexpected,
@@ -1021,7 +1023,7 @@ it("limits automation credentials to enterprise image calls and serves MCP witho
           name: "generate_image_set",
           inputSchema: { properties: { aspectRatio: { enum: expect.arrayContaining(["16:9"]) } } },
         },
-        { name: "prepare_task_download" },
+        { name: "prepare_task_downloads" },
         { name: "get_image" },
         { name: "preview_image" },
       ],
@@ -1214,21 +1216,30 @@ it("deduplicates MCP references and accepts only scoped, short-lived WebP upload
   expect(create.mock.calls[0]?.[1]).toMatchObject({ referenceAssetIds: [newId] });
 });
 
-it("returns an authorized batch of originals only after the individual task reaches a terminal state", async () => {
+it("queries task downloads in one batch and delivers completed tasks independently", async () => {
   const identity = {
     userId: crypto.randomUUID(),
     organizationId: crypto.randomUUID(),
     role: "member" as const,
   };
-  const taskId = crypto.randomUUID();
-  const publicId = "WS8TZGMH5";
+  const taskIds = [crypto.randomUUID(), crypto.randomUUID()];
+  const pending = {
+    id: taskIds[0] ?? "",
+    publicId: "WS8TZGMH5",
+    status: "running" as const,
+    asset_ids: [],
+  };
+  const queued = {
+    id: taskIds[1] ?? "",
+    publicId: "WHIZLZ7D3",
+    status: "queued" as const,
+    asset_ids: [],
+  };
   const assetIds = [crypto.randomUUID(), crypto.randomUUID()];
-  const result = vi
-    .fn<ImageRepository["automation"]["result"]>()
-    .mockImplementation(async (scope, id) =>
-      scope.userId === identity.userId && (id === taskId || id === publicId)
-        ? { id: taskId, publicId, status: "running", asset_ids: assetIds, aspectRatio: "1:1" }
-        : null,
+  const downloadTasks = vi
+    .fn<ImageRepository["automation"]["downloadTasks"]>()
+    .mockImplementation(async (scope) =>
+      scope.userId === identity.userId ? [pending, queued] : [],
     );
   const assetLocations = vi.fn<ImageRepository["assetLocations"]>(async (_scope, ids) =>
     ids
@@ -1239,11 +1250,7 @@ it("returns an authorized batch of originals only after the individual task reac
     automation: {
       authenticate: async (token) =>
         token === "owner" ? identity : { ...identity, userId: crypto.randomUUID() },
-      status: unexpected,
-      keyCiphertext: unexpected,
-      rotate: unexpected,
-      revoke: unexpected,
-      result,
+      downloadTasks,
     },
     assetLocations,
     signAsset: assetDeliverySigner(
@@ -1263,7 +1270,7 @@ it("returns an authorized batch of originals only after the individual task reac
         jsonrpc: "2.0",
         id: 1,
         method: "tools/call",
-        params: { name: "prepare_task_download", arguments: { taskId: publicId } },
+        params: { name: "prepare_task_downloads", arguments: { taskIds } },
       }),
     });
   expect(await (await prepare("other")).json()).toMatchObject({ result: { isError: true } });
@@ -1271,44 +1278,61 @@ it("returns an authorized batch of originals only after the individual task reac
     .object({ result: z.object({ content: z.tuple([z.object({ text: z.string() })]) }) })
     .parse(await (await prepare("owner")).json());
   const ticket = z
-    .object({ taskId: z.uuid(), downloadUrl: z.url(), downloadToken: z.string() })
+    .object({
+      tasks: z.array(z.object({ id: z.uuid() })),
+      downloadUrl: z.url(),
+      downloadToken: z.string(),
+    })
     .parse(JSON.parse(prepared.result.content[0].text));
-  expect(ticket.taskId).toBe(taskId);
-  const manifest = (url = ticket.downloadUrl, token = ticket.downloadToken) =>
-    app.request(url, { headers: { Authorization: `Bearer ${token}` } });
-  expect((await manifest(ticket.downloadUrl.replace(taskId, crypto.randomUUID()))).status).toBe(
-    401,
-  );
-  expect((await manifest(ticket.downloadUrl, "invalid")).status).toBe(401);
+  expect(ticket.tasks.map(({ id }) => id)).toEqual(taskIds);
+  const manifest = (ids = taskIds, token = ticket.downloadToken) =>
+    app.request(ticket.downloadUrl, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ taskIds: ids }),
+    });
+  expect((await manifest([crypto.randomUUID()])).status).toBe(403);
+  expect((await manifest(taskIds, "invalid")).status).toBe(401);
   const running = await manifest();
-  expect(running.status).toBe(202);
-  expect(running.headers.get("Retry-After")).toBe("30");
-  expect(unwrapApiData(await running.json())).toEqual({ status: "running", retryAfterSeconds: 30 });
+  expect(unwrapApiData(await running.json())).toEqual({
+    tasks: [
+      { taskId: pending.id, status: "running" },
+      { taskId: queued.id, status: "queued" },
+    ],
+    retryAfterSeconds: 30,
+  });
   expect(assetLocations).not.toHaveBeenCalled();
-  expect(result).toHaveBeenLastCalledWith(
+  expect(downloadTasks).toHaveBeenLastCalledWith(
     expect.objectContaining({ userId: identity.userId, organizationId: identity.organizationId }),
-    taskId,
-    true,
+    taskIds,
+    expect.stringMatching(/^[a-f0-9]{64}$/),
   );
 
-  result.mockResolvedValueOnce({
-    id: taskId,
-    publicId,
-    status: "partially_failed",
-    asset_ids: assetIds,
-    aspectRatio: "1:1",
-  });
+  downloadTasks.mockResolvedValueOnce([
+    pending,
+    { ...queued, status: "partially_failed", asset_ids: assetIds },
+  ]);
   const complete = await manifest();
   expect(complete.status).toBe(200);
   expect(unwrapApiData(await complete.json())).toMatchObject({
-    status: "partially_failed",
-    files: assetIds.map((assetId, index) => ({
-      assetId,
-      index: index + 1,
-      url: expect.stringContaining(`/${assetId}.png?expires=`),
-    })),
+    tasks: [
+      { taskId: pending.id, status: "running" },
+      {
+        taskId: queued.id,
+        status: "partially_failed",
+        files: assetIds.map((assetId, index) => ({
+          assetId,
+          index: index + 1,
+          url: expect.stringContaining(`/${assetId}.png?expires=`),
+        })),
+      },
+    ],
   });
   expect(assetLocations).toHaveBeenCalledOnce();
+  downloadTasks.mockResolvedValueOnce([]);
+  expect(unwrapApiData(await (await manifest([pending.id])).json())).toMatchObject({
+    tasks: [{ taskId: pending.id, status: "unavailable" }],
+  });
 });
 
 it("returns owned media in task order and reads a thumbnail only when requested", async () => {

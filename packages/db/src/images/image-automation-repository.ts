@@ -24,6 +24,8 @@ const ownTask = z.object({
   asset_ids: z.array(z.uuid()),
 });
 
+const downloadableTask = ownTask.omit({ aspectRatio: true });
+
 function automationHash(token: string) {
   // 用独立前缀隔开自动化与旧服务 Key 的存储查询及权限。
   return namespace + createHash("sha256").update(token).digest("hex");
@@ -107,7 +109,25 @@ export function imageAutomationRepository(sql: postgres.Sql) {
           and ${enterpriseMember(sql)}`;
       return principal.safeParse(row).data ?? null;
     },
-    async result(scope: ImageScope, taskId: string, requireActiveEnterprise = false) {
+    /** 一次读取同一生图 Key 下的任务，撤销或更换 Key 后旧下载凭证失效。 */
+    async downloadTasks(scope: ImageScope, taskIds: string[], keyDigest: string) {
+      const uuids = taskIds.filter((value) => z.uuid().safeParse(value).success);
+      const numbers = taskIds.filter((value) => !uuids.includes(value));
+      const rows = await sql`select j.id,j.public_id as "publicId",j.status,
+        case when j.status in ('queued','running') then '[]'::json
+          else to_json(array(select i.output_asset_id from generation_job_items i where i.job_id=j.id
+            and i.superseded_at is null and i.output_asset_id is not null order by i.position))
+        end as asset_ids
+        from generation_jobs j where j.organization_id=${scope.organizationId}
+          and j.user_id=${scope.userId} and j.archived_at is null and not (j.input ? 'video')
+          and (j.id = any(${uuids}::uuid[]) or j.public_id = any(${numbers}::text[]))
+          and exists(select 1 from generation_api_keys k join organization_members m
+            on m.organization_id=k.organization_id and m.user_id=k.user_id
+            where ${ownedKey(sql, scope)} and k.token_hash=${namespace + keyDigest}
+              and k.revoked_at is null and k.expires_at>now() and ${enterpriseMember(sql)})`;
+      return rows.map((row) => downloadableTask.parse(row));
+    },
+    async result(scope: ImageScope, taskId: string) {
       // 自动化 Key 只能读取自己的结果，状态查询不代替队列恢复作业。
       const match = z.uuid().safeParse(taskId).success
         ? sql`j.id=${taskId}`
@@ -117,14 +137,7 @@ export function imageAutomationRepository(sql: postgres.Sql) {
         to_json(array(select i.output_asset_id from generation_job_items i where i.job_id=j.id
           and i.superseded_at is null and i.output_asset_id is not null order by i.position)) as asset_ids
         from generation_jobs j where ${match} and j.organization_id=${scope.organizationId}
-          and j.user_id=${scope.userId} and j.archived_at is null and not (j.input ? 'video')
-          ${
-            requireActiveEnterprise
-              ? sql`and exists(
-            select 1 from organization_members m where m.organization_id=j.organization_id
-              and m.user_id=j.user_id and ${enterpriseMember(sql)})`
-              : sql``
-          }`;
+          and j.user_id=${scope.userId} and j.archived_at is null and not (j.input ? 'video')`;
       return row ? ownTask.parse(row) : null;
     },
   };
