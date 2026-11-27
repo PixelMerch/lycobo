@@ -4,6 +4,7 @@ import {
   type ImageAutomationSetInput,
   imageAutomationInputSchema,
   imageAutomationSetInputSchema,
+  imageJobSchema,
   variationPlanLimit,
 } from "@lycoboai/contracts";
 import { ImageRepositoryError, VariationError } from "@lycoboai/db";
@@ -25,6 +26,7 @@ type AutomationTools = {
 const bodySchema = z.object({ method: z.string() }).passthrough();
 const failureSchema = z.object({ error: z.object({ code: z.string(), message: z.string() }) });
 const submittedSchema = z.looseObject({ id });
+const taskIdentifier = z.union([id, imageJobSchema.shape.public_id.unwrap()]);
 
 function toolError(code: string, message?: string, retryAfter?: string | null) {
   return {
@@ -107,7 +109,8 @@ export async function serveImageAutomationMcp(
   server.registerTool(
     "generate_image",
     {
-      description: "生成一张图片，归入套图计划并返回任务 ID。重试复用原 requestId。",
+      description:
+        "生成一张图片，归入套图计划。向用户展示返回的任务编号 publicId。重试复用原 requestId。",
       inputSchema: imageAutomationInputSchema.extend({ requestId: id }),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
@@ -117,7 +120,7 @@ export async function serveImageAutomationMcp(
     "generate_image_set",
     {
       description:
-        "提交一套 1–20 张图片，返回一个套图任务。多套分别调用，每套使用独立 requestId，重试复用各自的 ID。",
+        "提交一套 1–20 张图片，向用户展示返回的任务编号 publicId。每套使用独立 requestId，重试复用原值。",
       inputSchema: imageAutomationSetInputSchema.extend({ requestId: id }),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
@@ -126,8 +129,8 @@ export async function serveImageAutomationMcp(
   server.registerTool(
     "get_image",
     {
-      description: "读取当前账号的图片任务状态。完成后提供有有效期的下载链接。",
-      inputSchema: { taskId: id },
+      description: "按任务编号或任务 UUID 查询状态，获取已生成图片的限时预览和原图下载链接。",
+      inputSchema: { taskId: taskIdentifier },
       annotations: { readOnlyHint: true },
     },
     ({ taskId }) => toolResult(() => result(taskId), c.req.url),
@@ -135,9 +138,10 @@ export async function serveImageAutomationMcp(
   server.registerTool(
     "preview_image",
     {
-      description: "返回任务中一张已生成图片的预览。imageIndex 按已生成图片顺序从 1 开始，默认 1。",
+      description:
+        "按任务编号或任务 UUID 预览一张图片。imageIndex 按已生成图片顺序从 1 开始，默认 1。",
       inputSchema: {
-        taskId: id,
+        taskId: taskIdentifier,
         imageIndex: z.number().int().min(1).max(variationPlanLimit).default(1),
       },
       annotations: { readOnlyHint: true },

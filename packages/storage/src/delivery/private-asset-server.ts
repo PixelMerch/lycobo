@@ -5,6 +5,7 @@ import {
   assetKeyPattern,
   assetPlaybackLifetime,
   assetSigningKey,
+  isAgentAssetVariant,
   verifyAsset,
 } from "./asset-delivery";
 
@@ -19,7 +20,7 @@ export interface PrivateAssetOptions {
   queueVariant?: (key: string) => Promise<void>;
   createVideoThumbnail?: (key: string) => Promise<void>;
   signDownload?: (key: string, expiresIn: number) => Promise<string>;
-  /** Inline platform link: original videos exceed what a function response may carry. */
+  /** 通过平台直链播放超出函数响应大小的原视频。 */
   signPlayback?: (key: string, expiresIn: number) => Promise<string>;
   cache?: {
     match(request: Request): Promise<Response | undefined>;
@@ -47,13 +48,23 @@ function requestAsset(url: URL) {
 }
 
 function isAssetVariant(value: string): value is AssetVariant {
-  return ["preview", "thumbnail", "download", "provider"].includes(value);
+  return (
+    isAgentAssetVariant(value) || ["preview", "thumbnail", "download", "provider"].includes(value)
+  );
+}
+
+function isDownload(variant: AssetVariant) {
+  return variant === "download" || variant === "agent-download";
+}
+
+function displayKind(variant: AssetVariant) {
+  return variant === "thumbnail" || variant === "agent-preview" ? "thumbnail" : "preview";
 }
 
 function hasTrustedOrigin(request: Request, variant: AssetVariant, allowed: string[]) {
   const origin = request.headers.get("Origin");
   const referer = request.headers.get("Referer");
-  // Browser requests also require a trusted origin or referrer.
+  // 站内浏览器请求需要匹配可信来源。
   if (variant !== "provider" && !origin && !referer) return false;
   for (const value of [origin, referer]) {
     if (!value) continue;
@@ -91,7 +102,7 @@ type AuthorizedAsset = {
   allowed: string[];
 };
 
-/** Check scoped capability and browser origin before any object or cache access. */
+/** 先校验访问用途、签名和必要的来源，再访问对象或缓存。 */
 export async function servePrivateAsset(request: Request, options: PrivateAssetOptions) {
   if (!["GET", "HEAD"].includes(request.method)) return fail(405);
   if (!options.signingSecret || !options.allowedOrigins) return fail(503);
@@ -104,9 +115,13 @@ export async function servePrivateAsset(request: Request, options: PrivateAssetO
     (pathVariant && variant !== pathVariant)
   )
     return fail(403);
-  if (variant === "download" && request.headers.get("Sec-Fetch-Dest") === "image") return fail(403);
+  if (isDownload(variant) && request.headers.get("Sec-Fetch-Dest") === "image") return fail(403);
   const allowed = options.allowedOrigins.split(",").map((value) => value.trim());
-  if (!hasTrustedOrigin(request, variant, allowed)) return fail(403);
+  // Agent 图片从已鉴权的任务签发，只按图片对象、用途和短有效期的签名授权。
+  const eligible = isAgentAssetVariant(variant)
+    ? key.endsWith(".png")
+    : hasTrustedOrigin(request, variant, allowed);
+  if (!eligible) return fail(403);
   if (
     !(await verifyAsset(
       key,
@@ -253,16 +268,13 @@ async function readImageObject(
   const { bucket } = options;
   if (request.method === "HEAD") return bucket.head(objectKey);
   const object = await bucket.get(objectKey);
-  if (object || variant === "download") return object;
+  if (object || isDownload(variant) || variant === "agent-preview") return object;
   if (options.queueVariant) return null;
   if (!options.createVariant) return object;
   // 通过预览授权后才补建缺失的展示图。
   const original = await bucket.get(key);
   if (!original) return null;
-  const resized = await options.createVariant(
-    original.body,
-    variant === "thumbnail" ? "thumbnail" : "preview",
-  );
+  const resized = await options.createVariant(original.body, displayKind(variant));
   await bucket.put(objectKey, resized, { httpMetadata: { contentType: "image/webp" } });
   return bucket.get(objectKey);
 }
@@ -319,7 +331,7 @@ function cacheImageResponse(
 ) {
   const body = "body" in object ? object.body : null;
   const headers = new Headers({
-    "Content-Type": variant === "download" ? "image/png" : "image/webp",
+    "Content-Type": isDownload(variant) ? "image/png" : "image/webp",
     "Content-Length": String(object.size),
     "Cache-Control": "public, max-age=86400",
   });
@@ -342,8 +354,8 @@ async function serveImage(
 ) {
   const { key, variant, expires, allowed } = asset;
   // 每次读缓存前验证签名，同一对象的不同签名共用缓存。
-  const displayVariant = variant === "thumbnail" ? "thumbnail" : "preview";
-  const objectKey = variant === "download" ? key : displayObjectKey(key, displayVariant);
+  const download = isDownload(variant);
+  const objectKey = download ? key : displayObjectKey(key, displayKind(variant));
   const cacheUrl = new URL(`/_objects/${objectKey}`, requestOrigin);
   const cacheKey = new Request(cacheUrl);
   let response = await options.cache?.match(cacheKey);
@@ -351,7 +363,7 @@ async function serveImage(
   if (!response) {
     const object = await readImageObject(request, options, key, objectKey, variant);
     if (!object) {
-      if (options.queueVariant && variant !== "download")
+      if (options.queueVariant && !download && variant !== "agent-preview")
         return serveMissingVariant(request, options, asset);
       return fail(404);
     }
@@ -360,7 +372,7 @@ async function serveImage(
   const headers = new Headers(response.headers);
   headers.set(
     "Cache-Control",
-    variant === "download"
+    download || isAgentAssetVariant(variant)
       ? "private, no-store"
       : `private, max-age=${Math.max(0, expires - Math.floor(Date.now() / 1000))}, immutable`,
   );
@@ -369,7 +381,7 @@ async function serveImage(
   headers.set("X-Asset-Cache", hit ? "HIT" : "MISS");
   headers.set(
     "Content-Disposition",
-    `${variant === "download" ? "attachment" : "inline"}; filename="${objectKey.split("/").at(-1)}"`,
+    `${download ? "attachment" : "inline"}; filename="${objectKey.split("/").at(-1)}"`,
   );
   setOrigin(headers, request, allowed);
   headers.set("Vary", "Origin, Referer, Sec-Fetch-Dest");

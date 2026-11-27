@@ -18,7 +18,7 @@ description: 使用 Lycobo 生成单张图片或多套图片、查询任务、�
 2. 生成一张独立图片时，调用 `generate_image`，传入 `prompt`、`resolution` 和 `requestId`。`prompt` 为 1–5,000 字符。
 3. 每套调用一次 `generate_image_set`，传入 `title`、`resolution`、`requestId` 和 `images`。套名与每张图的标题都是 1–40 字符，套名至少包含一个字母或数字（含汉字），单图提示词为 5–4,000 字符。每套 1–20 张方图。用户要求 10 套、每套 10 张时，直接提交 10 个独立任务，无需为总张数额外确认。单套超出 20 张时，说明上限并让用户决定如何拆分。
 4. 每个新任务使用不同的 UUID 作为 `requestId`。提交前保留该 UUID 和原参数。网络超时、响应丢失等导致结果未知时，使用同一 UUID 和同一组参数有限重试。已经取得任务 `id` 后，用 `get_image` 查询该任务。出现请求冲突时先核对已有回执与原参数。
-5. 保存任务回执里的 `id` 和 `historyUrl`。`id` 表示任务已接收，`replayed: true` 表示复用了原任务。多套提交时逐套记录，按套名汇报已接收、明确失败和待确认的任务。
+5. 保存回执里的 `id`、`publicId` 和 `historyUrl`。回复用户时显示实际 `publicId`，例如「任务编号 `WS8TZGMH5`」。`id` 是内部任务 UUID，`replayed: true` 表示复用了原任务。多套提交时，每套对应自己的套名、短编号和状态。
 
 下面是一套两张图的 `generate_image_set` 参数示例。每次实际提交都生成新的 UUID，同一任务重试除外。
 
@@ -36,15 +36,15 @@ description: 使用 Lycobo 生成单张图片或多套图片、查询任务、�
 
 ## 查询与交付
 
-提交成功后先把 `historyUrl` 交给用户，可在 Lycobo「套图计划」看进度、预览图片和批量下载。用户要求获取状态或结果时，调用 `get_image` 并传入回执中的 UUID `taskId`。如果工具把 JSON 放在 `content` 的文本项里，读取该项中的实际结果。
+用户要在对话里收图时，提交后接着调用 `get_image` 查询，可以在 `taskId` 里传入短编号 `publicId` 或任务 UUID `id`。已有任务直接查询。工具把 JSON 放在 `content` 的文本项里时，从该项读取状态、短编号和链接。
 
-- `queued` 或 `running` 时，按 `retryAfterSeconds` 等待。一次执行中，同一任务最多查询三次。还在运行时返回当前状态和任务链接，供用户稍后继续查看。
-- `succeeded` 时，报告已完成。`partially_failed` 时，报告部分完成，并让用户在套图计划查看已生成的图片。只根据工具实际返回的结果报告可用图片。
+- `queued` 或 `running` 时，按 `retryAfterSeconds` 等待。一次执行中，同一任务最多查询三次。还在运行时，返回任务编号和当前状态，供用户稍后继续查询。
+- `succeeded` 时，显示任务编号、已完成的图片及各张原图的下载入口。`partially_failed` 时，说明部分失败，继续交付实际返回的图片。
 - `failed` 或 `needs_reconciliation` 时，报告失败或待核对。重新提交可能再次消耗积分，先由用户确认。
 
-用户要求在对话里看图时，调用 `preview_image`。传入 `taskId`，以及可选的 `imageIndex`，它表示已生成图片中的序号，从 1 开始，默认预览第一张。每次调用返回一张缩略图。客户端支持时，直接显示返回的 MCP 图片。客户端无法渲染、缩略图暂不可用或用户要看整套时，提供 `historyUrl`。例如「预览这套的第二张」对应 `preview_image` 的 `imageIndex: 2`。
+对话里展示图片时优先调用 `preview_image`，传入任务编号和 `imageIndex`（从 1 开始，默认第一张）。若客户端无法渲染返回的 MCP 图片，提供 `get_image` 的 `images[].previewUrl`，让用户点开缩略图。用户要求看多张时，可按 `imageIndex` 列出每张的预览链接。
 
-`images[].url` 是带 `expiresAt` 的限时下载链接。媒体服务会验证请求来源。对话内预览使用 `preview_image`，原图下载和批量下载使用 `historyUrl`。任务页可提供新的下载链接。
+把 `images[].url` 作为对话里可点击的「下载第 N 张原图」链接，直接下载文件。预览和下载地址均以 `expiresAt` 为到期时间，默认 15 分钟。过期后按原任务编号再查 `get_image` 以刷新链接。用户需要整套 ZIP 或网页记录时，提供 `historyUrl`。
 
 ## 处理失败
 

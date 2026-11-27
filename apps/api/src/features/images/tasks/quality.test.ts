@@ -9,6 +9,7 @@ import { sealProviderKey, supportedResolutions, validateModelInput } from "@lyco
 import type { ImageStore } from "@lycoboai/storage";
 import { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { expect, it, vi } from "vitest";
+import { z } from "zod";
 import { createApp } from "../../../app";
 import type { CheckoutService } from "../../billing/service";
 import type { ExternalWalletService } from "../../billing/wallet-service";
@@ -52,7 +53,7 @@ function fixture(
 ) {
   const create = vi
     .fn<ImageRepository["create"]>()
-    .mockResolvedValue({ id: crypto.randomUUID(), replayed: false });
+    .mockResolvedValue({ id: crypto.randomUUID(), publicId: "WS8TZGMH5", replayed: false });
   const userId = crypto.randomUUID();
   const repository: ImageRepository = {
     automation: extra.automation ?? {
@@ -351,7 +352,7 @@ it("wakes background processing once per newly enqueued task, never for a replay
   const { create, submit } = fixture(false, false, { wake });
   expect((await submit()).status).toBe(202);
   expect(wake).toHaveBeenCalledOnce();
-  create.mockResolvedValueOnce({ id: crypto.randomUUID(), replayed: true });
+  create.mockResolvedValueOnce({ id: crypto.randomUUID(), publicId: "WS8TZGMH5", replayed: true });
   expect((await submit()).status).toBe(200);
   expect(wake).toHaveBeenCalledOnce();
 });
@@ -926,7 +927,12 @@ it("limits automation credentials to enterprise image calls and serves MCP witho
       status: async () => ({ expiresAt: expiry, lastFour: "AAAA", copyable: true }),
       keyCiphertext,
       revoke: async () => true,
-      result: async () => ({ status: "queued", asset_ids: [] }),
+      result: async (_scope, id) => ({
+        id,
+        publicId: "WS8TZGMH5",
+        status: "queued",
+        asset_ids: [],
+      }),
     },
   });
   const path = "/api/v1/enterprise/image-api";
@@ -1003,16 +1009,18 @@ it("limits automation credentials to enterprise image calls and serves MCP witho
   expect(create.mock.calls[1]?.[1]).toMatchObject({ ...input, count: 1, submissionSource: "mcp" });
 });
 
-it("returns only the requested owned thumbnail as MCP image content", async () => {
+it("returns owned media in task order and reads a thumbnail only when requested", async () => {
   const identity = {
     userId: crypto.randomUUID(),
     organizationId: crypto.randomUUID(),
     role: "member" as const,
   };
   const taskId = crypto.randomUUID();
+  const publicId = "WS8TZGMH5";
   const assetIds = [crypto.randomUUID(), crypto.randomUUID()];
+  const objectKey = (id: string) => `0057849613/${identity.organizationId}/${id}.png`;
   const assetLocations = vi.fn<ImageRepository["assetLocations"]>(async (_scope, ids) =>
-    ids.map((id) => ({ id, objectKey: `fixture/${id}.png` })),
+    ids.toReversed().map((id) => ({ id, objectKey: objectKey(id) })),
   );
   const readDisplayThumbnail = vi.fn<NonNullable<ImageStore["readDisplayThumbnail"]>>(async () =>
     Uint8Array.of(1, 2, 3),
@@ -1026,12 +1034,16 @@ it("returns only the requested owned thumbnail as MCP image content", async () =
       rotate: unexpected,
       revoke: unexpected,
       result: async (scope, id) =>
-        scope.userId === identity.userId && id === taskId
-          ? { status: "succeeded", asset_ids: assetIds }
+        scope.userId === identity.userId && (id === taskId || id === publicId)
+          ? { id: taskId, publicId, status: "succeeded", asset_ids: assetIds }
           : null,
     },
     assetLocations,
     readDisplayThumbnail,
+    signAsset: assetDeliverySigner(
+      "https://media.example.test",
+      "fixture-media-signing-key-only-0001",
+    ),
   });
   const call = async (name: string, args: object, token = "owner") => {
     const response = await app.request("/api/v1/enterprise/image-api/mcp", {
@@ -1051,7 +1063,7 @@ it("returns only the requested owned thumbnail as MCP image content", async () =
     expect(response.headers.get("Cache-Control")).toContain("no-store");
     return response.json();
   };
-  await call("get_image", { taskId });
+  expect(await call("get_image", { taskId }, "other")).toMatchObject({ result: { isError: true } });
   expect(await call("preview_image", { taskId }, "other")).toMatchObject({
     result: { isError: true },
   });
@@ -1060,11 +1072,27 @@ it("returns only the requested owned thumbnail as MCP image content", async () =
   });
   expect(assetLocations).not.toHaveBeenCalled();
   expect(readDisplayThumbnail).not.toHaveBeenCalled();
-  expect(await call("preview_image", { taskId, imageIndex: 2 })).toMatchObject({
+  const receipt = z
+    .object({ result: z.object({ content: z.tuple([z.object({ text: z.string() })]) }) })
+    .parse(await call("get_image", { taskId: publicId }));
+  expect(JSON.parse(receipt.result.content[0].text)).toMatchObject({
+    id: taskId,
+    publicId,
+    status: "succeeded",
+    images: assetIds.map((id, index) => ({
+      imageIndex: index + 1,
+      previewUrl: expect.stringMatching(new RegExp(`${id}\\.png\\?.*variant=agent-preview`)),
+      url: expect.stringMatching(new RegExp(`${id}\\.png\\?.*variant=agent-download`)),
+    })),
+  });
+  expect(readDisplayThumbnail).not.toHaveBeenCalled();
+  expect(assetLocations).toHaveBeenCalledExactlyOnceWith(identity, assetIds);
+  assetLocations.mockClear();
+  expect(await call("preview_image", { taskId: publicId, imageIndex: 2 })).toMatchObject({
     result: { content: [{ type: "image", mimeType: "image/webp", data: "AQID" }] },
   });
   expect(assetLocations).toHaveBeenCalledExactlyOnceWith(identity, [assetIds[1]]);
-  expect(readDisplayThumbnail).toHaveBeenCalledExactlyOnceWith(`fixture/${assetIds[1]}.png`);
+  expect(readDisplayThumbnail).toHaveBeenCalledExactlyOnceWith(objectKey(assetIds[1] ?? ""));
   readDisplayThumbnail.mockResolvedValueOnce(new Uint8Array(256 * 1024 + 1));
   expect(await call("preview_image", { taskId })).toMatchObject({ result: { isError: true } });
 });
