@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {
   type ImageScope,
   imageGenerationInputSchema,
+  imageTaskPublicIdSchema,
   imageTasksResponseSchema,
   imageUnitCredits,
   unwrapApiData,
@@ -30,7 +31,11 @@ async function verifyAutomationSets(
   const reply = z.object({
     result: z.object({ content: z.tuple([z.object({ text: z.string() })]) }),
   });
-  const receipt = z.object({ id: z.uuid(), replayed: z.boolean() });
+  const receipt = z.object({
+    id: z.uuid(),
+    publicId: imageTaskPublicIdSchema,
+    replayed: z.boolean(),
+  });
   const submit = async (input: (typeof submissions)[number]) => {
     const response = await app.request("/api/v1/enterprise/image-api/mcp", {
       method: "POST",
@@ -56,7 +61,11 @@ async function verifyAutomationSets(
   assert.equal(new Set(accepted.map(({ id }) => id)).size, 10);
   const [first] = submissions;
   assert.ok(first);
-  assert.deepEqual(await submit(first), { id: accepted[0]?.id, replayed: true });
+  assert.deepEqual(await submit(first), {
+    id: accepted[0]?.id,
+    publicId: accepted[0]?.publicId,
+    replayed: true,
+  });
   assert.equal((await repository.wallet(scope)).balance, before - 100 * imageUnitCredits);
   const history = await app.request("/api/v1/image-tasks?tool=variation", {
     headers: { Authorization: `Bearer ${scope.token}` },
@@ -108,11 +117,19 @@ export async function verifyImageAutomation(
     model: "gpt-image-2",
     prompt: "automation fixture",
   });
-  const { id } = await repository.create(scope, input, crypto.randomUUID(), imageUnitCredits);
-  assert.deepEqual(await keys.result(scope, id), { status: "queued", asset_ids: [] });
+  const { id, publicId } = await repository.create(
+    scope,
+    input,
+    crypto.randomUUID(),
+    imageUnitCredits,
+  );
+  const task = { id, publicId, status: "queued", asset_ids: [] };
+  assert.deepEqual(await keys.result(scope, id), task);
+  assert.deepEqual(await keys.result(scope, publicId), task);
   await sql`insert into organization_members (organization_id,user_id,role)
     values (${scope.organizationId},${other.userId},'member')`;
   assert.equal(await keys.result({ ...scope, userId: other.userId }, id), null);
+  assert.equal(await keys.result({ ...scope, userId: other.userId }, publicId), null);
   assert.equal(await keys.result(other, id), null);
   const activeKey = (await keys.authenticate(a.key)) ? a.key : b.key;
   assert.equal((await keys.status(scope))?.lastFour, activeKey.slice(-4));

@@ -25,6 +25,7 @@ export type ImageCreditAuthorization = {
 };
 
 type RetryItem = { id: string; position: number; status: string };
+type SubmittedTaskRow = { id: string; publicId: string };
 
 async function verifyMember(tx: postgres.TransactionSql, scope: ImageScope) {
   const members =
@@ -195,11 +196,13 @@ async function findSubmissionReplay(
   key: string,
   inputHash: string,
 ) {
-  const [replay] =
-    await sql`select id,input_hash from generation_jobs where organization_id=${scope.organizationId} and user_id=${scope.userId} and idempotency_key=${key}`;
+  const [replay] = await sql<
+    (SubmittedTaskRow & { input_hash: string })[]
+  >`select id,public_id as "publicId",input_hash from generation_jobs
+    where organization_id=${scope.organizationId} and user_id=${scope.userId} and idempotency_key=${key}`;
   if (!replay) return undefined;
   if (replay.input_hash !== inputHash) throw new ImageRepositoryError("IDEMPOTENCY_CONFLICT");
-  return { id: String(replay.id), replayed: true };
+  return { id: replay.id, publicId: replay.publicId, replayed: true };
 }
 
 async function insertSubmission(
@@ -216,18 +219,17 @@ async function insertSubmission(
   const replay = await findSubmissionReplay(tx, scope, key, inputHash);
   if (replay) return replay;
   const snapshot = await submissionSnapshot(tx, input, requireManaged, independent);
-  const inserted =
-    await tx`insert into generation_jobs (organization_id,user_id,idempotency_key,input_hash,input,model,provider_model,prompt,user_prompt,submission_source,resolution,aspect_ratio,requested_count,unit_credits,provider_snapshot)
+  const inserted = await tx<
+    SubmittedTaskRow[]
+  >`insert into generation_jobs (organization_id,user_id,idempotency_key,input_hash,input,model,provider_model,prompt,user_prompt,submission_source,resolution,aspect_ratio,requested_count,unit_credits,provider_snapshot)
           values (${scope.organizationId},${scope.userId},${key},${inputHash},${tx.json(input)},${input.model},${snapshot ? providerModelForResolution(snapshot, input.resolution) : imageProviderModel(input)},${input.prompt},${details.userPrompt},${details.source ?? null},${input.resolution},${input.aspectRatio},${input.count},${unitCredits},${snapshot ? tx.json(snapshot) : null})
-          on conflict (organization_id,user_id,idempotency_key) do nothing returning id`;
+          on conflict (organization_id,user_id,idempotency_key) do nothing returning id,public_id as "publicId"`;
   if (!inserted[0]) {
-    const [existing] =
-      await tx`select id,input_hash from generation_jobs where organization_id=${scope.organizationId} and user_id=${scope.userId} and idempotency_key=${key}`;
-    if (!existing || existing.input_hash !== inputHash)
-      throw new ImageRepositoryError("IDEMPOTENCY_CONFLICT");
-    return { id: String(existing.id), replayed: true };
+    const existing = await findSubmissionReplay(tx, scope, key, inputHash);
+    if (existing) return existing;
+    throw new ImageRepositoryError("IDEMPOTENCY_CONFLICT");
   }
-  return { id: String(inserted[0].id), replayed: false };
+  return { ...inserted[0], replayed: false };
 }
 
 type RetryJob = { input: unknown; provider_snapshot: unknown };
@@ -329,7 +331,7 @@ export function imageSubmissionRepository(
         if (input.referenceAssetIds.length)
           await tx`update media_assets set expires_at=null where organization_id=${scope.organizationId} and id in ${tx(input.referenceAssetIds)}`;
         await recordImageEvent(tx, scope.organizationId, "task", id);
-        return { id, replayed: false };
+        return submission;
       });
     },
     ...imageProviderRecovery(sql, settlement.refreshJob),

@@ -169,6 +169,13 @@ async function supportedRetryInput(deps: ImageApiDependencies, input: unknown) {
   return undefined;
 }
 
+function imageSubmissionReceipt(
+  result: { id: string; publicId: string; replayed: boolean },
+  source?: "mcp",
+) {
+  return source === "mcp" ? result : { id: result.id, replayed: result.replayed };
+}
+
 /** 通过统一审核、钱包和持久队列接收网页或自动化生图请求。 */
 export async function submitImageTask(
   c: Context<Env>,
@@ -184,7 +191,7 @@ export async function submitImageTask(
   const submitted = { ...normalized, userPrompt };
   if (deps.billing) {
     const replay = await deps.repository.replayImageSubmission(scope, submitted, key);
-    if (replay) return c.json(replay);
+    if (replay) return c.json(imageSubmissionReceipt(replay, submissionSource));
   }
   const positions = Array.from({ length: normalized.count }, (_, index) => index);
   const [supported, acceptedUploads, credit] = await Promise.all([
@@ -203,7 +210,7 @@ export async function submitImageTask(
     acceptedUploads,
     ...(credit ? [credit] : []),
   );
-  return taskSubmissionResponse(c, deps, result, credit);
+  return taskSubmissionResponse(c, deps, imageSubmissionReceipt(result, submissionSource), credit);
 }
 
 /** 校验任务与服务端上传意图，再原子接收付费生成。 */

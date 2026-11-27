@@ -17,6 +17,8 @@ const principal = z.object({
   uid: z.string(),
 });
 const ownTask = z.object({
+  id: z.uuid(),
+  publicId: imageJobSchema.shape.public_id.unwrap(),
   status: imageJobSchema.shape.status,
   asset_ids: z.array(z.uuid()),
 });
@@ -106,10 +108,13 @@ export function imageAutomationRepository(sql: postgres.Sql) {
     },
     async result(scope: ImageScope, taskId: string) {
       // 自动化 Key 只能读取自己的结果，状态查询不代替队列恢复作业。
-      const [row] = await sql`select j.status,
+      const match = z.uuid().safeParse(taskId).success
+        ? sql`j.id=${taskId}`
+        : sql`j.public_id=${taskId}`;
+      const [row] = await sql`select j.id,j.public_id as "publicId",j.status,
         to_json(array(select i.output_asset_id from generation_job_items i where i.job_id=j.id
           and i.superseded_at is null and i.output_asset_id is not null order by i.position)) as asset_ids
-        from generation_jobs j where j.id=${taskId} and j.organization_id=${scope.organizationId}
+        from generation_jobs j where ${match} and j.organization_id=${scope.organizationId}
           and j.user_id=${scope.userId} and j.archived_at is null and not (j.input ? 'video')`;
       return row ? ownTask.parse(row) : null;
     },

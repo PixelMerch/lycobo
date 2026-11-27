@@ -39,9 +39,9 @@
 
 分辨率支持 `1.5K`、`2K`、`4K`。REST 和 MCP 的 `generate_image` 接收单张方图请求。`generate_image_set` 接收一套 1–20 张方图，参数为 `title`、`resolution`、`images`（每项包含 `title` 和 `prompt`）及 UUID `requestId`。多套分别提交，10 套每套 10 张会创建 10 条任务。API 和 MCP 与网页共用逐图审核与扣费、持久任务和图片队列。重试同一套或同一张时复用原幂等键。
 
-所有已标记 MCP 来源的任务归入「套图计划」，素材仍支持「MCP 生成」筛选。MCP 提交回执与 `get_image` 的 `historyUrl` 指向套图记录，可在网页查看进度并下载整套。逐图方案由 Agent 提供，服务端按请求编号保存，复用套图生成流程。
+所有已标记 MCP 来源的任务归入「套图计划」，素材仍支持「MCP 生成」筛选。MCP 提交回执和 `get_image` 提供任务 UUID `id`、可展示的短编号 `publicId`（例如 `WS8TZGMH5`）和网页任务地址 `historyUrl`。逐图方案由 Agent 提供，服务端按请求编号保存，复用套图生成流程。
 
-`preview_image` 接收任务 UUID `taskId` 和可选 `imageIndex`（从 1 开始，按已有输出顺序，默认 1）。验证任务归属后只读取一张已有的 WebP 缩略图，最大 256 KiB，返回 MCP `image` 内容。预览使用现有账号通用限流。Agent 需要支持渲染 MCP 图片内容；缩略图缺失或客户端无法展示时，从 `historyUrl` 进入主站。`get_image` 只返回状态和链接，原图下载地址使用既有签名和来源校验。
+`get_image` 和 `preview_image` 的 `taskId` 支持短编号或任务 UUID，均按组织和用户限定归属。`preview_image` 的可选 `imageIndex` 从 1 开始，按已有输出顺序，默认 1。验证归属后只读取一张已有的 WebP 缩略图，最大 256 KiB，返回 MCP `image` 内容。MCP `get_image` 返回每张图片的 `imageIndex`、缩略图 `previewUrl`、原图下载 `url` 和 `expiresAt`。链接用独立用途签名，有效期 15 分钟，可在 Agent 中直接打开且无需站内请求来源。失效时可按原任务再次查询。媒体桶保持私有，Agent 预览链接只读取已有缩略图。整套 ZIP 可通过 `historyUrl` 在网页下载。两个 MCP 工具复用现有账号通用限流。
 
 ```sh
 curl --fail-with-body https://lycobo.com/api/v1/enterprise/image-api/generations \

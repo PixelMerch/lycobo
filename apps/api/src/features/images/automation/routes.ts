@@ -62,34 +62,58 @@ async function limitAutomationSubmission(
   return limited ?? run();
 }
 
-async function automationResult(c: Context<Env>, deps: ImageApiDependencies, taskId: string) {
+async function automationResult(
+  c: Context<Env>,
+  deps: ImageApiDependencies,
+  taskId: string,
+  audience?: "agent",
+) {
   const scope = c.get("principal");
   const { repository, signAsset } = deps;
   const task = await repository.automation.result(scope, taskId);
   if (!task) return fail(c, "NOT_FOUND", "任务不存在", 404);
   const pending = task.status === "queued" || task.status === "running";
   if (pending) c.header("Retry-After", "10");
-  const assets =
+  const images =
     signAsset && task.asset_ids.length
-      ? await repository.assetLocations(scope, task.asset_ids)
+      ? await resultImages(
+          await repository.assetLocations(scope, task.asset_ids),
+          task.asset_ids,
+          signAsset,
+          audience,
+        )
       : [];
-  const images = signAsset
-    ? await Promise.all(
-        assets.map(async ({ objectKey }) => {
-          const signed = await signAsset(objectKey);
-          return {
-            url: signed.download_url,
-            expiresAt: new Date(signed.expires_at * 1000).toISOString(),
-          };
-        }),
-      )
-    : [];
   return c.json({
-    id: taskId,
+    id: task.id,
     status: task.status,
     images,
+    ...(audience === "agent" && { publicId: task.publicId }),
     ...(pending && { retryAfterSeconds: 10 }),
   });
+}
+
+async function resultImages(
+  assets: Awaited<ReturnType<ImageApiDependencies["repository"]["assetLocations"]>>,
+  ids: readonly string[],
+  signAsset: NonNullable<ImageApiDependencies["signAsset"]>,
+  audience?: "agent",
+) {
+  const objectKeys = new Map(assets.map(({ id, objectKey }) => [id, objectKey]));
+  // 素材查询不保证返回顺序，预览序号和下载顺序统一使用任务输出顺序。
+  const images = ids.flatMap((id, index) => {
+    const objectKey = objectKeys.get(id);
+    return objectKey ? [{ objectKey, imageIndex: index + 1 }] : [];
+  });
+  return Promise.all(
+    images.map(async ({ objectKey, imageIndex }) => {
+      const signed = await signAsset(objectKey, audience);
+      return {
+        url: signed.download_url,
+        expiresAt: new Date(signed.expires_at * 1000).toISOString(),
+        ...(audience === "agent" && { imageIndex, previewUrl: signed.thumbnail_url }),
+      };
+    }),
+  );
 }
 
 async function automationPreview(
@@ -166,7 +190,7 @@ export function registerImageAutomation(app: Hono<Env>, deps: ImageApiDependenci
         limitAutomationSubmission(c, deps, () => submitAutomation(c, deps, input, key, "mcp")),
       submitSet: (input, key) =>
         limitAutomationSubmission(c, deps, () => submitAutomationSet(c, deps, input, key)),
-      result: (taskId) => automationResult(c, deps, taskId),
+      result: (taskId) => automationResult(c, deps, taskId, "agent"),
       preview: (taskId, imageIndex) => automationPreview(c, deps, taskId, imageIndex),
     });
   });

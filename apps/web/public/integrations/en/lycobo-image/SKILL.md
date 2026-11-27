@@ -18,7 +18,7 @@ Use `Authorization` as the header name and `Bearer <image API key>` as its value
 2. For a single standalone image, call `generate_image` with `prompt`, `resolution`, and `requestId`. The prompt must be 1–5,000 characters.
 3. Call `generate_image_set` once per set with `title`, `resolution`, `requestId`, and `images`. The set title and each image title must be 1–40 characters. The set title must contain at least one letter or number. Each image prompt must be 5–4,000 characters. A set contains 1–20 square images. If the user requests ten sets of ten, submit ten tasks with no extra confirmation for the combined count. If a single set exceeds 20, explain the limit and ask how to split it.
 4. Generate a separate UUID for every new task’s `requestId`. Keep the UUID and inputs before submitting. If a timeout or lost response leaves acceptance unclear, make a bounded retry with the same UUID and unchanged inputs. Once you have a task `id`, query that task with `get_image`. If the request conflicts with an existing submission, check the saved receipt and original inputs.
-5. Save the returned `id` and `historyUrl`. An `id` confirms acceptance. `replayed: true` means the request returned an existing task. For multiple sets, track and report each by name as accepted, explicitly rejected, or awaiting confirmation.
+5. Save the returned `id`, `publicId`, and `historyUrl`. Show the actual `publicId` to the user, for example, “Task ID `WS8TZGMH5`.” `id` is the internal task UUID. `replayed: true` means the request returned an existing task. For multiple sets, report each set’s title, short ID, and status.
 
 Example `generate_image_set` arguments for a two-image set. Generate a fresh UUID for each real submission and reuse it for retries of that submission.
 
@@ -42,15 +42,15 @@ Example `generate_image_set` arguments for a two-image set. Generate a fresh UUI
 
 ## Check status and share results
 
-Share `historyUrl` after submission. Users can track progress, preview images, and download the set in Lycobo’s **Image Set Planner**. When the user asks for status or results, call `get_image` with the task UUID as `taskId`. If the tool wraps JSON in a text item inside `content`, read the result from that item.
+When the user wants images delivered in chat, follow submission with `get_image`. Pass either the short `publicId` or the UUID `id` as `taskId`. Query an existing task directly. If the tool wraps JSON in a text item inside `content`, read the status, task number, and links from that item.
 
-- For `queued` or `running`, wait according to `retryAfterSeconds`. Check the same task at most three times in the current run. If it is still processing, return the state and the task link.
-- For `succeeded`, report completion. For `partially_failed`, report that the set is partially complete and direct the user to the generated images in Image Set Planner. Report available images only when the tool confirms they exist.
+- For `queued` or `running`, wait according to `retryAfterSeconds`. Check the same task at most three times in the current run. If it is still processing, return the task ID and current status.
+- For `succeeded`, show the task ID, previews, and links to download the originals. For `partially_failed`, report the partial failure and deliver the images the tool returned.
 - For `failed` or `needs_reconciliation`, report the failure or pending review. Ask before submitting a replacement that could use credits again.
 
-When the user asks to see an image in the conversation, call `preview_image` with `taskId` and an optional `imageIndex`. The index starts at 1 and counts generated images. The default is the first image. Each call returns one thumbnail. Display the MCP image result if the client can render it. If it cannot, the thumbnail is unavailable, or the user requests the entire set, share `historyUrl`. For example, to preview the second generated image, set `imageIndex` to `2`.
+For in-chat previews, call `preview_image` with the task ID and `imageIndex` (starting at 1, defaulting to the first image). If the client cannot render the MCP image result, share the `images[].previewUrl` from `get_image` so the user can open the thumbnail. For multiple images, list each preview link by `imageIndex`.
 
-Each `images[].url` is a temporary download URL with an `expiresAt` time. The media service validates the request origin. Use `preview_image` for in-agent previews and `historyUrl` for originals and batch downloads. The task page can provide fresh download links.
+Turn each `images[].url` into a clickable “Download original N” file link in chat. Preview and download links expire at `expiresAt`, normally after 15 minutes. Call `get_image` again with the same task ID to refresh them. Share `historyUrl` if the user needs the set as a ZIP or wants to open its web record.
 
 ## Handle failures
 

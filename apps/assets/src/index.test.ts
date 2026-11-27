@@ -1,6 +1,6 @@
 import { servePrivateAsset } from "@lycoboai/storage/asset-server";
 import type { ImageObjectBucket } from "@lycoboai/storage/bucket";
-import { assetDeliverySigner } from "@lycoboai/storage/delivery";
+import { assetDeliverySigner, assetSigningKey, signAsset } from "@lycoboai/storage/delivery";
 import sharp from "sharp";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -93,6 +93,39 @@ function fixture(processor = false) {
   return { request, cache, get, head, work };
 }
 describe("private asset edge delivery", () => {
+  it("allows signed Agent previews and downloads without a site referrer", async () => {
+    const f = fixture();
+    const signer = assetDeliverySigner("https://assets.example.test", secret);
+    const links = await signer(key, "agent");
+    const preview = await f.request(links.thumbnail_url, { Referer: "https://agent.example/" });
+    expect(preview.headers.get("Content-Type")).toBe("image/webp");
+    expect(preview.headers.get("Content-Disposition")).toContain("inline");
+    expect(await preview.text()).toBe("thumbnail fixture");
+    const download = await f.request(links.download_url, {});
+    expect(download.headers.get("Content-Type")).toBe("image/png");
+    expect(download.headers.get("Content-Disposition")).toContain("attachment");
+    expect(download.headers.get("Cache-Control")).toBe("private, no-store");
+    expect(await download.text()).toBe("original fixture");
+    expect((await f.request((await signer(key)).download_url, {})).status).toBe(403);
+
+    const invalid = new URL(links.thumbnail_url);
+    invalid.searchParams.set("variant", "agent-download");
+    expect((await f.request(invalid.href, {})).status).toBe(403);
+    const expired = Math.floor(Date.now() / 1000) - 1;
+    invalid.searchParams.set("expires", String(expired));
+    invalid.searchParams.set(
+      "sig",
+      await signAsset(key, expired, await assetSigningKey(secret), "agent-download"),
+    );
+    expect((await f.request(invalid.href, {})).status).toBe(403);
+    expect(f.get.mock.calls.flat()).toEqual([key.replace(/\.png$/, ".thumbnail.webp"), key]);
+    await Promise.all(f.work);
+    const missing = fixture(true);
+    missing.get.mockResolvedValueOnce(null);
+    expect((await missing.request(links.thumbnail_url, {})).status).toBe(404);
+    expect(missing.get).toHaveBeenCalledExactlyOnceWith(key.replace(/\.png$/, ".thumbnail.webp"));
+  });
+
   it("serves original/thumbnail streams, reuses cached objects and verifies before cache", async () => {
     const f = fixture();
     const links = await assetDeliverySigner("https://assets.example.test", secret)(key);
