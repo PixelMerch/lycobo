@@ -37,9 +37,9 @@
 | POST | `/api/v1/enterprise/image-api/mcp`                 | Bearer 生图 Key、Streamable HTTP。提供 `generate_image`、`generate_image_set`、`get_image` 和 `preview_image`。          |
 | POST | `/api/v1/enterprise/image-api/key/copy`            | 企业登录会话，返回本人当前可复制的有效 `{ key }`。旧摘要版、过期或已撤销的 Key 返回 404。                                |
 
-REST 和 MCP 的 `generate_image` 接收单张图片请求。`generate_image_set` 接收一套 1–20 张图片，参数为 `title`、`resolution`、可选 `aspectRatio`、`images`（每项包含 `title` 和 `prompt`）及 UUID `requestId`，套内图片共用比例。分辨率支持 `1.5K`、`2K`、`4K`。`aspectRatio` 表示宽比高，复用主站的比例枚举，例如 `4:5`、`9:16`、`16:9`。省略时使用 `1:1`，旧方图请求以相同幂等键显式传 `1:1` 可重放。多套分别提交，10 套每套 10 张会创建 10 条任务。API 和 MCP 与网页共用逐图审核与扣费、持久任务和图片队列。
+REST 和 MCP 的 `generate_image` 接收单张图片请求。`generate_image_set` 接收一套 1–20 张图片，参数为 `title`、`resolution`、可选 `aspectRatio`、`images`（每项包含 `title` 和 `prompt`）及 UUID `requestId`，套内图片共用比例。分辨率支持 `1.5K`、`2K`、`4K`。`aspectRatio` 表示宽比高，复用主站的比例枚举，例如 `4:5`、`9:16`、`16:9`。直接传入的比例优先。MCP 省略比例时，使用文本中唯一明确且受支持的宽高比，例如「宽高比 16:9」或「16:9 横版构图」。没有唯一值时使用 `1:1`。REST 省略比例时使用 `1:1`。旧请求用原幂等键重放时保留原任务的比例和扣费结果。多套分别提交，10 套每套 10 张会创建 10 条任务。API 和 MCP 与网页共用逐图审核与扣费、持久任务和图片队列。
 
-所有已标记 MCP 来源的任务归入「套图计划」，素材仍支持「MCP 生成」筛选。MCP 提交回执和 `get_image` 提供任务 UUID `id`、可展示的短编号 `publicId`（例如 `WS8TZGMH5`）和网页任务地址 `historyUrl`。逐图方案由 Agent 提供，服务端按请求编号保存，复用套图生成流程。
+所有已标记 MCP 来源的任务归入「套图计划」，素材仍支持「MCP 生成」筛选。MCP 提交回执和 `get_image` 提供任务 UUID `id`、可展示的短编号 `publicId`（例如 `WS8TZGMH5`）、任务实际采用的 `aspectRatio` 和网页任务地址 `historyUrl`。逐图方案由 Agent 提供，服务端按请求编号保存，复用套图生成流程。
 
 `get_image` 和 `preview_image` 的 `taskId` 支持短编号或任务 UUID，均按组织和用户限定归属。`preview_image` 的可选 `imageIndex` 从 1 开始，按已有输出顺序，默认 1。验证归属后只读取一张已有的 WebP 缩略图，最大 256 KiB，返回 MCP `image` 内容。MCP `get_image` 返回每张图片的 `imageIndex`、缩略图 `previewUrl`、原图下载 `url` 和 `expiresAt`。链接用独立用途签名，有效期 15 分钟，可在 Agent 中直接打开且无需站内请求来源。失效时可按原任务再次查询。媒体桶保持私有，Agent 预览链接只读取已有缩略图。整套 ZIP 可通过 `historyUrl` 在网页下载。两个 MCP 工具复用现有账号通用限流。
 

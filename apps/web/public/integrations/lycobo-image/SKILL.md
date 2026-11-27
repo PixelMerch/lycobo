@@ -18,7 +18,9 @@ description: 使用 Lycobo 生成单张图片或多套图片、查询任务、�
 2. 生成一张独立图片时，调用 `generate_image`，传入 `prompt`、`resolution`、`aspectRatio` 和 `requestId`。`prompt` 为 1–5,000 字符。
 3. 每套调用一次 `generate_image_set`，传入 `title`、`resolution`、`aspectRatio`、`requestId` 和 `images`。套名与每张图的标题都是 1–40 字符，套名至少包含一个字母或数字（含汉字），单图提示词为 5–4,000 字符。每套 1–20 张，套内共用同一比例。用户要求 10 套、每套 10 张时，直接提交 10 个独立任务，无需为总张数额外确认。单套超出 20 张时，说明上限并让用户决定如何拆分。
 4. 每个新任务使用不同的 UUID 作为 `requestId`。提交前保留该 UUID 和原参数。网络超时、响应丢失等导致结果未知时，使用同一 UUID 和同一组参数有限重试。已经取得任务 `id` 后，用 `get_image` 查询该任务。出现请求冲突时先核对已有回执与原参数。
-5. 保存回执里的 `id`、`publicId` 和 `historyUrl`。回复用户时显示实际 `publicId` 和提交时所用比例，例如「任务编号 `WS8TZGMH5` · `4:5`」。`id` 是内部任务 UUID，`replayed: true` 表示复用了原任务。多套提交时，每套对应自己的套名、短编号和状态。
+5. 保存回执里的 `id`、`publicId` 和 `historyUrl`。回复用户时显示任务编号 `publicId` 和 Lycobo 返回的 `aspectRatio`，例如「任务编号 `WS8TZGMH5` · `4:5`」。若返回比例与要求不同，说明实际比例，先由用户确认再重新生成。回执未包含比例时，只报告已确认的信息。`id` 是内部任务 UUID，`replayed: true` 表示复用了原任务。多套提交时，每套对应自己的套名、短编号和状态。
+
+旧版连接器未列出 `aspectRatio` 时，在单图提示词或套图的每张提示词中明确写一次「宽高比 16:9」（替换为所需比例）。
 
 下面是一套两张图的 `generate_image_set` 参数示例。每次实际提交都生成新的 UUID，同一任务重试除外。
 

@@ -19,6 +19,7 @@ const principal = z.object({
 const ownTask = z.object({
   id: z.uuid(),
   publicId: imageJobSchema.shape.public_id.unwrap(),
+  aspectRatio: imageJobSchema.shape.aspect_ratio,
   status: imageJobSchema.shape.status,
   asset_ids: z.array(z.uuid()),
 });
@@ -111,7 +112,8 @@ export function imageAutomationRepository(sql: postgres.Sql) {
       const match = z.uuid().safeParse(taskId).success
         ? sql`j.id=${taskId}`
         : sql`j.public_id=${taskId}`;
-      const [row] = await sql`select j.id,j.public_id as "publicId",j.status,
+      const [row] =
+        await sql`select j.id,j.public_id as "publicId",j.aspect_ratio as "aspectRatio",j.status,
         to_json(array(select i.output_asset_id from generation_job_items i where i.job_id=j.id
           and i.superseded_at is null and i.output_asset_id is not null order by i.position)) as asset_ids
         from generation_jobs j where ${match} and j.organization_id=${scope.organizationId}

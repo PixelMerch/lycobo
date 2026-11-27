@@ -105,12 +105,12 @@ export async function serveImageAutomationMcp(
       { jsonrpc: "2.0", id: null, error: { code: -32600, message: "Invalid Request" } },
       400,
     );
-  const server = new McpServer({ name: "lycobo-image", version: "1.0.0" });
+  const server = new McpServer({ name: "lycobo-image", version: "1.1.0" });
   server.registerTool(
     "generate_image",
     {
       description:
-        "生成一张图片，归入套图计划。向用户展示返回的任务编号 publicId。重试复用原 requestId。",
+        "生成一张图片，归入套图计划。传入 aspectRatio 指定宽高比。向用户展示回执的 publicId 和 aspectRatio。重试复用原 requestId。",
       inputSchema: imageAutomationInputSchema.extend({ requestId: id }),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },
@@ -120,7 +120,7 @@ export async function serveImageAutomationMcp(
     "generate_image_set",
     {
       description:
-        "提交一套 1–20 张图片，向用户展示返回的任务编号 publicId。每套使用独立 requestId，重试复用原值。",
+        "提交一套 1–20 张图片。用 aspectRatio 设置套内共用宽高比。向用户展示回执的 publicId 和 aspectRatio。每套使用独立 requestId，重试复用原值。",
       inputSchema: imageAutomationSetInputSchema.extend({ requestId: id }),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
     },

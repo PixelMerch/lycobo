@@ -170,7 +170,7 @@ async function supportedRetryInput(deps: ImageApiDependencies, input: unknown) {
 }
 
 function imageSubmissionReceipt(
-  result: { id: string; publicId: string; replayed: boolean },
+  result: { id: string; publicId: string; aspectRatio: string; replayed: boolean },
   source?: "mcp",
 ) {
   return source === "mcp" ? result : { id: result.id, replayed: result.replayed };
@@ -183,6 +183,7 @@ export async function submitImageTask(
   input: z.infer<typeof imageTaskSubmissionSchema>,
   key: string,
   submissionSource?: "mcp",
+  inferredAspectRatio = false,
 ) {
   if (!deps.enabled) return fail(c, "GENERATION_NOT_CONFIGURED", "生图服务尚未启用", 503);
   const { userPrompt, ...modelInput } = input;
@@ -190,7 +191,12 @@ export async function submitImageTask(
   const scope = c.get("principal");
   const submitted = { ...normalized, userPrompt };
   if (deps.billing) {
-    const replay = await deps.repository.replayImageSubmission(scope, submitted, key);
+    const replay = await deps.repository.replayImageSubmission(
+      scope,
+      submitted,
+      key,
+      inferredAspectRatio,
+    );
     if (replay) return c.json(imageSubmissionReceipt(replay, submissionSource));
   }
   const positions = Array.from({ length: normalized.count }, (_, index) => index);
@@ -203,7 +209,11 @@ export async function submitImageTask(
     return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "当前模型暂不可用，请选择其他模型", 400);
   const result = await deps.repository.create(
     scope,
-    { ...submitted, ...(submissionSource && { submissionSource }) },
+    {
+      ...submitted,
+      ...(submissionSource && { submissionSource }),
+      ...(inferredAspectRatio && { inferredAspectRatio }),
+    },
     key,
     imageUnitCredits,
     deps.managedModelsOnly,

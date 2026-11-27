@@ -53,7 +53,12 @@ function fixture(
 ) {
   const create = vi
     .fn<ImageRepository["create"]>()
-    .mockResolvedValue({ id: crypto.randomUUID(), publicId: "WS8TZGMH5", replayed: false });
+    .mockImplementation(async (_scope, { aspectRatio }) => ({
+      id: crypto.randomUUID(),
+      publicId: "WS8TZGMH5",
+      aspectRatio,
+      replayed: false,
+    }));
   const userId = crypto.randomUUID();
   const repository: ImageRepository = {
     automation: extra.automation ?? {
@@ -352,7 +357,12 @@ it("wakes background processing once per newly enqueued task, never for a replay
   const { create, submit } = fixture(false, false, { wake });
   expect((await submit()).status).toBe(202);
   expect(wake).toHaveBeenCalledOnce();
-  create.mockResolvedValueOnce({ id: crypto.randomUUID(), publicId: "WS8TZGMH5", replayed: true });
+  create.mockResolvedValueOnce({
+    id: crypto.randomUUID(),
+    publicId: "WS8TZGMH5",
+    aspectRatio: "1:1",
+    replayed: true,
+  });
   expect((await submit()).status).toBe(200);
   expect(wake).toHaveBeenCalledOnce();
 });
@@ -930,6 +940,7 @@ it("limits automation credentials to enterprise image calls and serves MCP witho
       result: async (_scope, id) => ({
         id,
         publicId: "WS8TZGMH5",
+        aspectRatio: "1:1",
         status: "queued",
         asset_ids: [],
       }),
@@ -993,8 +1004,14 @@ it("limits automation credentials to enterprise image calls and serves MCP witho
     id: 1,
     result: {
       tools: [
-        { name: "generate_image" },
-        { name: "generate_image_set" },
+        {
+          name: "generate_image",
+          inputSchema: { properties: { aspectRatio: { enum: expect.arrayContaining(["16:9"]) } } },
+        },
+        {
+          name: "generate_image_set",
+          inputSchema: { properties: { aspectRatio: { enum: expect.arrayContaining(["16:9"]) } } },
+        },
         { name: "get_image" },
         { name: "preview_image" },
       ],
@@ -1021,6 +1038,20 @@ it("limits automation credentials to enterprise image calls and serves MCP witho
     count: 1,
     submissionSource: "mcp",
   });
+  const prompt = "哑光深空灰耳机，16:9 横版构图，高清质感";
+  const inferred = await request(`${path}/mcp`, key, {
+    jsonrpc: "2.0",
+    id: 3,
+    method: "tools/call",
+    params: {
+      name: "generate_image",
+      arguments: { ...input, prompt, requestId: crypto.randomUUID() },
+    },
+  });
+  expect(await inferred.json()).toMatchObject({
+    result: { content: [{ text: expect.stringContaining('"aspectRatio":"16:9"') }] },
+  });
+  expect(create.mock.calls[3]?.[1]).toMatchObject({ aspectRatio: "16:9", submissionSource: "mcp" });
 });
 
 it("returns owned media in task order and reads a thumbnail only when requested", async () => {
@@ -1049,7 +1080,7 @@ it("returns owned media in task order and reads a thumbnail only when requested"
       revoke: unexpected,
       result: async (scope, id) =>
         scope.userId === identity.userId && (id === taskId || id === publicId)
-          ? { id: taskId, publicId, status: "succeeded", asset_ids: assetIds }
+          ? { id: taskId, publicId, aspectRatio: "16:9", status: "succeeded", asset_ids: assetIds }
           : null,
     },
     assetLocations,
@@ -1092,6 +1123,7 @@ it("returns owned media in task order and reads a thumbnail only when requested"
   expect(JSON.parse(receipt.result.content[0].text)).toMatchObject({
     id: taskId,
     publicId,
+    aspectRatio: "16:9",
     status: "succeeded",
     images: assetIds.map((id, index) => ({
       imageIndex: index + 1,
