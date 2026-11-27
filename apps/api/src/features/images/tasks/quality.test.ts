@@ -976,8 +976,14 @@ it("limits automation credentials to enterprise image calls and serves MCP witho
 
   const input = { prompt: "fixture", resolution: "2K" };
   expect((await request(`${path}/generations`, key, input)).status).toBe(202);
-  expect(create.mock.calls[0]?.[1]).toMatchObject({ ...input, count: 1 });
+  expect(create.mock.calls[0]?.[1]).toMatchObject({ ...input, aspectRatio: "1:1", count: 1 });
   expect(create.mock.calls[0]?.[1]).not.toHaveProperty("submissionSource");
+  const landscape = { ...input, aspectRatio: "16:9" };
+  expect((await request(`${path}/generations`, key, { ...input, aspectRatio: "7:5" })).status).toBe(
+    400,
+  );
+  expect((await request(`${path}/generations`, key, landscape)).status).toBe(202);
+  expect(create.mock.calls[1]?.[1]).toMatchObject(landscape);
   const pending = await request(`${path}/generations/${crypto.randomUUID()}`, key);
   expect(pending.headers.get("Retry-After")).toBe("10");
 
@@ -998,15 +1004,23 @@ it("limits automation credentials to enterprise image calls and serves MCP witho
     jsonrpc: "2.0",
     id: 2,
     method: "tools/call",
-    params: { name: "generate_image", arguments: { ...input, requestId: crypto.randomUUID() } },
+    params: {
+      name: "generate_image",
+      arguments: { ...input, aspectRatio: "9:16", requestId: crypto.randomUUID() },
+    },
   });
   expect(await call.json()).toMatchObject({
     jsonrpc: "2.0",
     id: 2,
     result: { content: [{ type: "text" }] },
   });
-  expect(create).toHaveBeenCalledTimes(2);
-  expect(create.mock.calls[1]?.[1]).toMatchObject({ ...input, count: 1, submissionSource: "mcp" });
+  expect(create).toHaveBeenCalledTimes(3);
+  expect(create.mock.calls[2]?.[1]).toMatchObject({
+    ...input,
+    aspectRatio: "9:16",
+    count: 1,
+    submissionSource: "mcp",
+  });
 });
 
 it("returns owned media in task order and reads a thumbnail only when requested", async () => {
@@ -1145,7 +1159,13 @@ it("accepts one MCP set through moderation and the queue, with a 20-image cap pe
         method: "tools/call",
         params: {
           name: "generate_image_set",
-          arguments: { title: "窗边商品套图", resolution: "2K", images: items, requestId },
+          arguments: {
+            title: "窗边商品套图",
+            resolution: "2K",
+            aspectRatio: "4:5",
+            images: items,
+            requestId,
+          },
         },
       }),
     });
@@ -1165,7 +1185,7 @@ it("accepts one MCP set through moderation and the queue, with a 20-image cap pe
   });
   expect(saveAutomationPlan).toHaveBeenCalledWith(
     identity,
-    expect.objectContaining({ images }),
+    expect.objectContaining({ images, aspectRatio: "4:5" }),
     requestId,
   );
   expect(moderate.mock.calls[0]?.[0]).toEqual(
@@ -1174,6 +1194,7 @@ it("accepts one MCP set through moderation and the queue, with a 20-image cap pe
   expect(create).toHaveBeenCalledOnce();
   expect(create.mock.calls[0]?.[1]).toMatchObject({
     userPrompt: "窗边商品套图",
+    aspectRatio: "4:5",
     count: 20,
     submissionSource: "mcp",
     variation: { planId },

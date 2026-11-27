@@ -30,14 +30,14 @@
 
 上线前应用至 `0058_image_automation_key_ciphertext`，然后在 API Worker 配置 `IMAGE_AUTOMATION_KEY_SECRET`。值为独立的 32 随机字节经 Base64 编码，跨版本和恢复环境要保持原值，否则已保存的 Key 无法解密。配置缺失时签发和复制返回 503，已有 Key 仍可凭摘要鉴权。
 
-| 方法 | 路径                                               | 输入与结果                                                                                                                             |
-| ---- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| POST | `/api/v1/enterprise/image-api/generations`         | Bearer 生图 Key、`Idempotency-Key` UUID，JSON 为 `prompt` 与 `resolution`。返回任务 `id`，`202` 表示已接收，重复请求返回已创建的任务。 |
-| GET  | `/api/v1/enterprise/image-api/generations/:taskId` | Bearer 生图 Key。返回任务 `status` 和 `images`，完成后提供有效期内的签名下载地址。排队或执行中的结果返回 `Retry-After`。               |
-| POST | `/api/v1/enterprise/image-api/mcp`                 | Bearer 生图 Key、Streamable HTTP。提供 `generate_image`、`generate_image_set`、`get_image` 和 `preview_image`。                        |
-| POST | `/api/v1/enterprise/image-api/key/copy`            | 企业登录会话，返回本人当前可复制的有效 `{ key }`。旧摘要版、过期或已撤销的 Key 返回 404。                                              |
+| 方法 | 路径                                               | 输入与结果                                                                                                               |
+| ---- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| POST | `/api/v1/enterprise/image-api/generations`         | Bearer 生图 Key、`Idempotency-Key` UUID。接收 `prompt`、`resolution` 和可选 `aspectRatio`，返回任务 `id`。               |
+| GET  | `/api/v1/enterprise/image-api/generations/:taskId` | Bearer 生图 Key。返回任务 `status` 和 `images`，完成后提供有效期内的签名下载地址。排队或执行中的结果返回 `Retry-After`。 |
+| POST | `/api/v1/enterprise/image-api/mcp`                 | Bearer 生图 Key、Streamable HTTP。提供 `generate_image`、`generate_image_set`、`get_image` 和 `preview_image`。          |
+| POST | `/api/v1/enterprise/image-api/key/copy`            | 企业登录会话，返回本人当前可复制的有效 `{ key }`。旧摘要版、过期或已撤销的 Key 返回 404。                                |
 
-分辨率支持 `1.5K`、`2K`、`4K`。REST 和 MCP 的 `generate_image` 接收单张方图请求。`generate_image_set` 接收一套 1–20 张方图，参数为 `title`、`resolution`、`images`（每项包含 `title` 和 `prompt`）及 UUID `requestId`。多套分别提交，10 套每套 10 张会创建 10 条任务。API 和 MCP 与网页共用逐图审核与扣费、持久任务和图片队列。重试同一套或同一张时复用原幂等键。
+REST 和 MCP 的 `generate_image` 接收单张图片请求。`generate_image_set` 接收一套 1–20 张图片，参数为 `title`、`resolution`、可选 `aspectRatio`、`images`（每项包含 `title` 和 `prompt`）及 UUID `requestId`，套内图片共用比例。分辨率支持 `1.5K`、`2K`、`4K`。`aspectRatio` 表示宽比高，复用主站的比例枚举，例如 `4:5`、`9:16`、`16:9`。省略时使用 `1:1`，旧方图请求以相同幂等键显式传 `1:1` 可重放。多套分别提交，10 套每套 10 张会创建 10 条任务。API 和 MCP 与网页共用逐图审核与扣费、持久任务和图片队列。
 
 所有已标记 MCP 来源的任务归入「套图计划」，素材仍支持「MCP 生成」筛选。MCP 提交回执和 `get_image` 提供任务 UUID `id`、可展示的短编号 `publicId`（例如 `WS8TZGMH5`）和网页任务地址 `historyUrl`。逐图方案由 Agent 提供，服务端按请求编号保存，复用套图生成流程。
 
@@ -48,7 +48,7 @@ curl --fail-with-body https://lycobo.com/api/v1/enterprise/image-api/generations
   -H "Authorization: Bearer ${LYCOBO_IMAGE_API_KEY}" \
   -H 'Idempotency-Key: 4cbaf693-df1d-44c7-838b-3dd1aa802d58' \
   -H 'Content-Type: application/json' \
-  --data '{"prompt":"自然光下的米色亚麻床品商品图","resolution":"2K"}'
+  --data '{"prompt":"自然光下的米色亚麻床品海报","resolution":"2K","aspectRatio":"4:5"}'
 ```
 
 在「应用连接」的豆包行展开「配置连接」，复制连接地址。签发 Key 后，点击「复制请求头值」取得包含 `Bearer ` 前缀的值。打开豆包桌面版并添加 HTTP 连接器。填入连接地址，再在自定义 Headers 中将名称填写为 `Authorization`，粘贴刚复制的值并保存。 [豆包技能指南](https://open.doubao.com/document/doubao-developer-guide/skill-integration-guide)

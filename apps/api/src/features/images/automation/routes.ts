@@ -38,11 +38,19 @@ async function submitAutomationSet(
   key: string,
 ) {
   if (!deps.enabled) return fail(c, "GENERATION_NOT_CONFIGURED", "生图服务尚未启用", 503);
-  const plan = await deps.repository.variation.saveAutomationPlan(c.get("principal"), input, key);
+  const { aspectRatio, ...details } = input;
+  // 显式指定方图和旧请求省略比例使用同一方案哈希，避免重放时冲突。
+  const planInput = aspectRatio === "1:1" ? details : input;
+  const plan = await deps.repository.variation.saveAutomationPlan(
+    c.get("principal"),
+    planInput,
+    key,
+  );
   const task = imageTaskSubmissionSchema.parse({
     prompt: input.title,
     userPrompt: input.title,
     resolution: input.resolution,
+    aspectRatio,
     model: "gpt-image-2.6",
     count: plan.items.length,
     variation: { version: 1, planId: plan.id, items: plan.items },
@@ -171,7 +179,7 @@ export function registerImageAutomation(app: Hono<Env>, deps: ImageApiDependenci
     const input = imageAutomationInputSchema.safeParse(await c.req.json());
     const key = id.safeParse(c.req.header("Idempotency-Key"));
     if (!input.success || !key.success)
-      return fail(c, "VALIDATION_ERROR", "请检查提示词、分辨率和 Idempotency-Key", 400);
+      return fail(c, "VALIDATION_ERROR", "请检查提示词、分辨率、图片比例和 Idempotency-Key", 400);
     return submitAutomation(c, deps, input.data, key.data);
   });
   app.get(`${generationPath}/:taskId`, async (c) => {
