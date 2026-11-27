@@ -1,5 +1,6 @@
 import { Button, Dropdown, Header } from "@heroui/react";
 import { IconCoins, IconFileInvoice, IconSparkle } from "@tabler/icons-react";
+import { ValueSkeleton } from "../../../components/data-skeleton";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
 import { useHoverMenu } from "../../../lib/use-hover-menu";
@@ -22,8 +23,8 @@ export function HeaderBenefits({
   const menu = useHoverMenu();
   const openOverlay = useAccountOverlays((state) => state.open);
   const t = useMessages(accountMenuMessages);
-  const { purchaseEntry, lowPrice, recharge } = useMessages(creditsMessages);
-  // 读取失败或尚未读到时显示“—”，不把未知余额当成 0。
+  const { purchaseEntry, lowPrice, recharge, loadingBalance } = useMessages(creditsMessages);
+  // 后台重新读取余额时继续展示缓存值。
   const total = totalWalletCredits(wallet.data);
   const balance = total === undefined ? "—" : formatCredits(total);
   function openFromMenu(key: string | number) {
@@ -38,14 +39,16 @@ export function HeaderBenefits({
         <Dropdown.Trigger
           ref={menu.triggerRef}
           className="header-credits"
-          aria-label={t.creditsPill(balance)}
+          aria-label={wallet.isDataPending ? loadingBalance : t.creditsPill(balance)}
           onHoverStart={(event) => {
             if (event.pointerType === "mouse") menu.openOnHover();
           }}
           onHoverEnd={menu.closeSoon}
         >
           <UiIcon icon={IconSparkle} size="small" />
-          <span className="header-credits-value">{balance}</span>
+          <span className="header-credits-value">
+            {wallet.isDataPending ? <ValueSkeleton label={loadingBalance} /> : balance}
+          </span>
         </Dropdown.Trigger>
         <Dropdown.Popover
           ref={menu.popoverRef}
@@ -65,7 +68,9 @@ export function HeaderBenefits({
               <Header>
                 <div className="credits-menu-balance">
                   <span>{t.balance}</span>
-                  <strong>{balance}</strong>
+                  <strong>
+                    {wallet.isDataPending ? <ValueSkeleton label={loadingBalance} /> : balance}
+                  </strong>
                 </div>
               </Header>
               <Dropdown.Item id="recharge" textValue={recharge} className="credits-menu-action">

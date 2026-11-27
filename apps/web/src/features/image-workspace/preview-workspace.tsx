@@ -1,7 +1,7 @@
 import { Button, Slider } from "@heroui/react";
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import { componentsMessages } from "../../components/components-messages";
-import { LoadingState } from "../../components/loading-state";
+import { MediaSkeleton } from "../../components/data-skeleton";
 import { AssetImage } from "../generation/asset-image";
 import { modelDisplayName } from "../generation/models/model-display-name";
 import { useModelPresentation } from "../generation/models/model-logos";
@@ -180,7 +180,7 @@ function PreviewSourceImage({
           </p>
         }
       />
-      {loading && <LoadingState className="image-preview-loading" label={t.viewerLoading} />}
+      {loading && <MediaSkeleton label={t.viewerLoading} />}
     </>
   );
 }

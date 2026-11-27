@@ -43,10 +43,11 @@ export function useVideoModel(enabled = true) {
       videoCapabilitySchema.parse(await (await imageRequest("video-model", { signal })).json()),
   });
 }
+/** 分页读取已启用的视频记录，并暴露前置配置读取的状态。 */
 export function useVideoTasks() {
   const session = useEnterpriseSession();
   const model = useVideoModel();
-  return useInfiniteQuery({
+  const query = useInfiniteQuery({
     queryKey: ["video-tasks", session.data?.organizationId, session.data?.userId],
     enabled: !!session.data && model.data?.enabled === true,
     initialPageParam: "",
@@ -65,6 +66,10 @@ export function useVideoTasks() {
         ? 10000
         : false,
   });
+  return {
+    query,
+    isDataPending: session.isPending || (!!session.data && model.isPending) || query.isLoading,
+  };
 }
 /** 提交视频任务：同一账号同时只允许一个提交，回执丢失时用同一个请求确认。 */
 export function useSubmitVideo(source?: "storyboard") {

@@ -2,6 +2,7 @@ import { Button, EmptyState, Spinner } from "@heroui/react";
 import { IconMovie } from "@tabler/icons-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { DataSkeleton } from "../../../components/data-skeleton";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
 import { useMessages } from "../../../i18n/messages";
@@ -26,7 +27,7 @@ export function VideoHistory({
   production?: Production;
 }) {
   const t = useMessages(videoHistoryMessages);
-  const query = useVideoTasks();
+  const { query, isDataPending } = useVideoTasks();
   useErrorToast(query.error?.message);
   const tasks = query.data?.pages.flatMap((page) => page.data) ?? [];
   const client = useQueryClient();
@@ -51,7 +52,7 @@ export function VideoHistory({
     (production.busy || production.needsResume || (videoId && query.isFetching)) ? (
       <VideoProductionCard production={production} />
     ) : null;
-  if (query.isLoading && !productionCard) return <Spinner aria-label={t.loading} />;
+  if (isDataPending && !productionCard) return <DataSkeleton layout="history" label={t.loading} />;
   if (query.isError && !query.data)
     return (
       <>
@@ -96,7 +97,7 @@ export function VideoHistoryRail({ production }: { production: Production }) {
   const t = useMessages(videoHistoryMessages);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const query = useVideoTasks();
+  const { query, isDataPending } = useVideoTasks();
   const tasks = query.data?.pages.flatMap((page) => page.data) ?? [];
   const producing =
     !production.draft.progress.acceptedVideoId && (production.busy || production.needsResume);
@@ -131,6 +132,7 @@ export function VideoHistoryRail({ production }: { production: Production }) {
             </Button>
           </div>
         )}
+        {isDataPending && <DataSkeleton layout="rail" label={t.loading} />}
         {tasks.map((task) => (
           <div className="history-rail-item" key={task.id}>
             <Button

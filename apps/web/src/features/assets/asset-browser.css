@@ -242,27 +242,21 @@
   flex-wrap: wrap;
   gap: 12px;
 }
-.asset-skeleton span {
+.asset-skeleton > .skeleton {
   height: 200px;
   border-radius: 12px;
-  background: linear-gradient(100deg, #171717 30%, #202020 50%, #171717 70%) 0 0 / 200% 100%;
-  animation: asset-skeleton 1.4s ease-in-out infinite;
 }
 .asset-skeleton[data-compact="true"] {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-2);
 }
-.asset-skeleton[data-compact="true"] span {
+.asset-skeleton[data-compact="true"] > .skeleton {
   width: auto;
 }
-@keyframes asset-skeleton {
-  to {
-    background-position: -200% 0;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
-  .asset-skeleton span {
+  .asset-skeleton > .skeleton,
+  .asset-skeleton > .skeleton::after {
     animation: none;
   }
 }

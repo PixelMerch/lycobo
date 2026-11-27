@@ -1,8 +1,8 @@
-import { Spinner } from "@heroui/react";
 import { useEffect, useRef } from "react";
 import "./infinite-load.css";
 import { useMessages } from "../i18n/messages";
 import { componentsMessages } from "./components-messages";
+import { ValueSkeleton } from "./data-skeleton";
 
 /** 列表末尾的共用加载哨兵，进入所在滚动区域的可视范围时加载下一页。 */
 export function InfiniteLoad({
@@ -37,7 +37,7 @@ export function InfiniteLoad({
   if (!hasMore && !isLoading) return null;
   return (
     <div className="infinite-load" ref={sentinel}>
-      {isLoading && <Spinner size="sm" aria-label={t.loadingList} />}
+      {isLoading && <ValueSkeleton label={t.loadingList} />}
     </div>
   );
 }

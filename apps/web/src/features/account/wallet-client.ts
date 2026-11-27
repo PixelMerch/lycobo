@@ -17,7 +17,7 @@ import { openCheckoutWindow, watchCheckoutReturn } from "./checkout-window";
 /** 查询工作区和当前用户的两个积分余额。 */
 export function useWallet() {
   const session = useImageSession();
-  return useQuery({
+  const query = useQuery({
     queryKey: ["wallet", session.data?.organizationId, session.data?.userId],
     enabled: session.isSuccess,
     retry: false,
@@ -25,6 +25,11 @@ export function useWallet() {
     queryFn: async ({ signal }) =>
       walletBalanceSchema.parse(await (await imageRequest("wallet", { signal })).json()),
   });
+  return {
+    data: query.data,
+    error: query.error ?? session.error,
+    isDataPending: session.isPending || (session.isSuccess && query.isPending),
+  };
 }
 /** 弹窗使用服务端的近半年消耗或获得视图。 */
 export type WalletEntryView = "spent" | "earned";
@@ -32,7 +37,7 @@ export type WalletEntryView = "spent" | "earned";
 /** 读取合并后的积分收支，按视图和批量大小独立缓存。 */
 export function useWalletEntries(pageSize = 20, view?: WalletEntryView) {
   const session = useImageSession();
-  return useInfiniteQuery({
+  const query = useInfiniteQuery({
     queryKey: [
       "wallet-entries",
       session.data?.organizationId,
@@ -53,10 +58,16 @@ export function useWalletEntries(pageSize = 20, view?: WalletEntryView) {
     },
     getNextPageParam: (page) => page.nextCursor ?? undefined,
   });
+  return {
+    query,
+    error: query.error ?? session.error,
+    isDataPending: session.isPending || (session.isSuccess && query.isPending),
+  };
 }
+/** 分页读取已登录账号的充值订单，并区分首次加载与后台刷新。 */
 export function useRechargeOrders() {
   const session = useImageSession();
-  return useInfiniteQuery({
+  const query = useInfiniteQuery({
     queryKey: ["wallet-recharges", session.data?.organizationId, session.data?.userId],
     enabled: session.isSuccess,
     retry: false,
@@ -72,6 +83,11 @@ export function useRechargeOrders() {
       ),
     getNextPageParam: (page) => (page.data.length === 20 ? page.data.at(-1)?.id : undefined),
   });
+  return {
+    query,
+    error: query.error ?? session.error,
+    isDataPending: session.isPending || (session.isSuccess && query.isPending),
+  };
 }
 
 /** 按登录身份加载实际可购买的档位，商品编号留在服务端。 */

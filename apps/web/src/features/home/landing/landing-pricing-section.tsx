@@ -9,6 +9,7 @@ import { useMessages } from "../../../i18n/messages";
 import { useAppLocation } from "../../../i18n/use-localized-navigation";
 import { CheckoutAction } from "../../account/credits/checkout-action";
 import { creditPackDisplay } from "../../account/credits/credit-pack-pricing";
+import { CreditPackSkeleton } from "../../account/credits/credit-pack-skeleton";
 import { creditsMessages } from "../../account/credits/credits-messages";
 import { useCheckoutOptions, useCreditCheckout } from "../../account/wallet-client";
 import { useEnterpriseSession } from "../../auth/auth-client";
@@ -35,7 +36,7 @@ const featuredPacks: Partial<
 };
 
 function usePublicCreditOffer(offerEndFromCheckout: string | undefined, publicFallback: boolean) {
-  const { data } = useQuery({
+  const { data, isPending } = useQuery({
     queryKey: ["public-credit-pricing"],
     enabled: publicFallback,
     staleTime: 60_000,
@@ -62,7 +63,7 @@ function usePublicCreditOffer(offerEndFromCheckout: string | undefined, publicFa
     return () => window.clearTimeout(timer);
   }, [end, now]);
   // 读取配置失败时仍展示常规价，避免使用未经确认的活动价。
-  return end > Math.max(now, Date.now());
+  return { includeOffer: end > Math.max(now, Date.now()), isLoading: publicFallback && isPending };
 }
 
 /** 访客可比较五档积分包并弹框登录，登录后直达所选档位的结账。 */
@@ -72,13 +73,14 @@ export function LandingPricingSection() {
   const packText = useMessages(creditsMessages);
   const account = useEnterpriseSession();
   const signedIn = !!account.data;
-  const { data: options, isError: optionsFailed } = useCheckoutOptions();
+  const { data: options, isError: optionsFailed, isLoading: optionsLoading } = useCheckoutOptions();
   const checkout = useCreditCheckout("#pricing");
   // 已登录的档位接口包含活动截止时间；公开接口只为访客与失败回退读取。
-  const includeOffer = usePublicCreditOffer(
+  const { includeOffer, isLoading: offerLoading } = usePublicCreditOffer(
     options?.offerEnd,
     (!account.isPending && !signedIn) || optionsFailed,
   );
+  const pricingLoading = account.isPending || optionsLoading || offerLoading;
   const { search } = useAppLocation();
   const [login, setLogin] = useState<{ pack: string; returnTo: string } | null>(null);
   const resumeCheckout = useEffectEvent((intentSearch: string) => {
@@ -111,28 +113,32 @@ export function LandingPricingSection() {
           </h2>
           <p className="lp-section-description">{t.description}</p>
         </header>
-        <ul className="credit-pack-grid" aria-label={packText.packs}>
-          {creditPacks.map((pack) => {
-            const display = creditPackDisplay(pack, locale, undefined, includeOffer);
-            const selected = checkout.variables?.endsWith(`:${pack.id}`) === true;
-            const pending = selected && checkout.isOpening;
-            const unavailable = signedIn && !options?.packs.includes(display.checkoutKey);
-            return (
-              <LandingPricingPack
-                key={pack.id}
-                id={pack.id}
-                display={display}
-                includeOffer={includeOffer}
-                pending={pending}
-                disabled={account.isPending || (!pending && (unavailable || checkout.isOpening))}
-                error={selected ? checkout.error : null}
-                checkoutUrl={selected ? checkout.url : undefined}
-                focusCheckout={checkout.focusCheckout}
-                onBuy={buyPack}
-              />
-            );
-          })}
-        </ul>
+        {pricingLoading ? (
+          <CreditPackSkeleton />
+        ) : (
+          <ul className="credit-pack-grid" aria-label={packText.packs}>
+            {creditPacks.map((pack) => {
+              const display = creditPackDisplay(pack, locale, undefined, includeOffer);
+              const selected = checkout.variables?.endsWith(`:${pack.id}`) === true;
+              const pending = selected && checkout.isOpening;
+              const unavailable = signedIn && !options?.packs.includes(display.checkoutKey);
+              return (
+                <LandingPricingPack
+                  key={pack.id}
+                  id={pack.id}
+                  display={display}
+                  includeOffer={includeOffer}
+                  pending={pending}
+                  disabled={account.isPending || (!pending && (unavailable || checkout.isOpening))}
+                  error={selected ? checkout.error : null}
+                  checkoutUrl={selected ? checkout.url : undefined}
+                  focusCheckout={checkout.focusCheckout}
+                  onBuy={buyPack}
+                />
+              );
+            })}
+          </ul>
+        )}
         <p className="credit-recharge-note">{t.checkoutNote}</p>
       </div>
       {login && (

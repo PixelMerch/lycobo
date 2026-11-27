@@ -1,8 +1,8 @@
-import { Spinner } from "@heroui/react";
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from "react";
 import { useMessages } from "../../i18n/messages";
 import { useErrorToast } from "../../lib/error-toast";
 import { componentsMessages } from "../components-messages";
+import { MediaSkeleton } from "../data-skeleton";
 import { imageWheelFactor } from "./image-zoom-motion";
 import { useImageViewerZoom } from "./use-image-viewer-zoom";
 export type ViewerImage = { src: string; thumbnailSrc?: string; alt: string };
@@ -181,9 +181,7 @@ export function ImageViewerStage({
       onPointerCancel={endPan}
       onLostPointerCapture={endPan}
     >
-      {!ready && !failed && (
-        <Spinner className="browse-image-loading" aria-label={t.viewerLoading} />
-      )}
+      {!ready && !failed && <MediaSkeleton label={t.viewerLoading} />}
       <div className="browse-image-frame">
         <div
           className="browse-image-transform"

@@ -12,6 +12,7 @@ import {
 import { IconRobot } from "@tabler/icons-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type RefObject, useRef, useState } from "react";
+import { ValueSkeleton } from "../../../components/data-skeleton";
 import { ConfirmDialog } from "../../../components/overlays/confirm-dialog";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
@@ -237,9 +238,7 @@ function ImageApiCredentials({
         new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(expires)),
       )
     : undefined;
-  const statusText = status.isError
-    ? t.statusFailed
-    : (validity ?? (status.isPending ? t.loading : t.inactive));
+  const statusText = validity ?? (status.isError ? t.statusFailed : t.inactive);
   const maskedKey = expires
     ? `${imageAutomationKeyPrefix}********${status.data?.lastFour ?? ""}`
     : undefined;
@@ -253,7 +252,7 @@ function ImageApiCredentials({
       >
         <SettingsRow
           label={t.keyTitle}
-          hint={statusText}
+          hint={status.isPending ? <ValueSkeleton label={t.loading} /> : statusText}
           value={
             maskedKey && (
               <>

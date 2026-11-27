@@ -3,6 +3,7 @@ import { imageDeliverySchema } from "@lycoboai/contracts";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { MediaSkeleton } from "../../../components/data-skeleton";
 import { useCenteredDialogEntrance } from "../../../components/overlays/use-centered-dialog-entrance";
 import { useErrorToast } from "../../../lib/error-toast";
 import { imageRequest } from "../../generation/generation-client";
@@ -52,15 +53,19 @@ function VideoPreviewStage({ video }: { video: PreviewVideo }) {
       aria-label={t.frame}
     >
       <PreviewDotGrid stage={stage} />
-      <VideoPlayer
-        assetId={video.id}
-        title={video.taskPublicId ?? t.preview}
-        src={delivery.data?.url}
-        unavailable={delivery.isError}
-        aspect={video.aspect}
-        seconds={video.seconds}
-        onRetry={() => void delivery.refetch()}
-      />
+      {delivery.isPending ? (
+        <MediaSkeleton label={t.loading} aspect={video.aspect} />
+      ) : (
+        <VideoPlayer
+          assetId={video.id}
+          title={video.taskPublicId ?? t.preview}
+          src={delivery.data?.url}
+          unavailable={delivery.isError}
+          aspect={video.aspect}
+          seconds={video.seconds}
+          onRetry={() => void delivery.refetch()}
+        />
+      )}
     </section>
   );
 }

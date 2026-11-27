@@ -12,6 +12,7 @@ export const creditsMessages = defineMessages({
     noEntriesOfKind: "已加载记录中暂无此类型",
     noEntries: "暂无收支记录",
     entriesUnavailable: "收支记录暂时不可用",
+    loadingBalance: "正在加载积分余额",
     loadingEntries: "正在加载收支记录…",
     creditHistory: "积分明细",
     closeCreditHistory: "关闭积分明细",
@@ -48,6 +49,7 @@ export const creditsMessages = defineMessages({
     rechargeDescription: "按需选择积分包，用于图片生成和编辑。",
     creditUnits: "积分",
     packs: "积分包",
+    loadingPacks: "正在加载积分包",
     packDescriptions: {
       trial: "为单个商品试做主图，比较不同构图和光线。",
       starter: "为小批新品制作主图和场景图，准备上架素材。",
@@ -105,6 +107,7 @@ export const creditsMessages = defineMessages({
     noEntriesOfKind: "No entries of this type in the loaded records",
     noEntries: "No credit records yet",
     entriesUnavailable: "Credit records are unavailable right now",
+    loadingBalance: "Loading credit balance",
     loadingEntries: "Loading credit records…",
     creditHistory: "Credit history",
     closeCreditHistory: "Close credit history",
@@ -144,6 +147,7 @@ export const creditsMessages = defineMessages({
     rechargeDescription: "Choose a credit pack for image generation and editing.",
     creditUnits: "credits",
     packs: "Credit packs",
+    loadingPacks: "Loading credit packs",
     packDescriptions: {
       trial: "Try different lighting and compositions for one product.",
       starter: "Create main images and lifestyle scenes for a small product launch.",

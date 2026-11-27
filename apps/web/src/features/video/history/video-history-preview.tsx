@@ -27,7 +27,7 @@ function previewVideos(task: VideoTask): PreviewVideo[] {
   ];
 }
 
-/** The rail pages through the same history as the list behind the dialog. */
+/** 视频预览侧栏与背后的历史列表共用分页数据。 */
 export function VideoHistoryPreview({
   assetId,
   onClose,
@@ -35,7 +35,7 @@ export function VideoHistoryPreview({
   assetId: string;
   onClose: () => void;
 }) {
-  const query = useVideoTasks();
+  const { query } = useVideoTasks();
   return (
     <VideoPlayerDialog
       videos={query.data?.pages.flatMap((page) => page.data).flatMap(previewVideos) ?? []}

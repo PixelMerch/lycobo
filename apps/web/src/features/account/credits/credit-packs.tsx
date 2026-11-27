@@ -8,6 +8,7 @@ import { useCheckoutOptions, useCreditCheckout, useWallet } from "../wallet-clie
 import { CheckoutAction } from "./checkout-action";
 import { CreditOffer, useCreditOffer } from "./credit-offer";
 import { cnyPerUsdEstimate, creditPackDisplay } from "./credit-pack-pricing";
+import { CreditPackSkeleton } from "./credit-pack-skeleton";
 import { creditsMessages } from "./credits-messages";
 
 const featuredPacks: Partial<
@@ -18,10 +19,11 @@ const featuredPacks: Partial<
 export function CreditPacks() {
   const t = useMessages(creditsMessages);
   const wallet = useWallet();
-  const { data: checkoutOptions } = useCheckoutOptions();
+  const { data: checkoutOptions, isLoading: loadingOptions } = useCheckoutOptions();
   const checkout = useCreditCheckout();
   const locale = useLocale();
   const offer = useCreditOffer(checkoutOptions?.offerEnd);
+  if (loadingOptions) return <CreditPackSkeleton />;
   const unit = wallet.data?.unitCredits ?? imageUnitCredits;
   const packs = creditPacks.map((pack) => {
     const display = creditPackDisplay(pack, locale, unit, offer.includeOffer);

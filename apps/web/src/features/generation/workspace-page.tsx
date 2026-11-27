@@ -109,6 +109,7 @@ function Workspace({ model }: { model: ModelId }) {
         />
         <ParameterGroup
           label={t.resolution}
+          loading={session.isPending || modelQuery.isLoading}
           values={publicImageResolutions}
           value={draft.resolution}
           disabledValues={publicImageResolutions.filter(

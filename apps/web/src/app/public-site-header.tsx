@@ -18,10 +18,12 @@ import "./public-site-header.css";
 /** 公共页面共用导航与账户入口，首页额外同步滚动品牌和区块焦点。 */
 export function PublicSiteHeader({
   account,
+  accountPending,
   isLanding,
   showStartCreating,
 }: {
   account: ReturnType<typeof useEnterpriseSession>["data"];
+  accountPending: boolean;
   isLanding: boolean;
   showStartCreating: boolean;
 }) {
@@ -122,7 +124,7 @@ export function PublicSiteHeader({
         onPricing={isLanding ? scrollToLandingPricing : undefined}
       />
       <div className="public-site-actions">
-        <SiteHeaderControls account={account} publicMenus />
+        <SiteHeaderControls account={account} accountPending={accountPending} publicMenus />
         {showStartCreating && (
           <RouteLink to={dashboardPath} className="public-site-start">
             {t.startCreating}

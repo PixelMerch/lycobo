@@ -143,6 +143,15 @@
   background: #171717;
   color: var(--foreground);
 }
+.credit-pack-skeleton {
+  gap: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .credit-pack-skeleton .skeleton,
+  .credit-pack-skeleton .skeleton::after {
+    animation: none;
+  }
+}
 @media (hover: hover) and (pointer: fine) {
   .credit-pack-surface {
     position: relative;

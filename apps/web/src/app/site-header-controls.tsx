@@ -1,3 +1,4 @@
+import { Skeleton } from "@heroui/react";
 import { IconBook, IconLayoutDashboard } from "@tabler/icons-react";
 import { useState } from "react";
 import { RouteLink } from "../components/router-link";
@@ -17,10 +18,12 @@ const popoverOffset = 18;
 /** 公共页与创作页共用顶栏控件，公共页的语言下拉沿用站点工具菜单的材质。 */
 export function SiteHeaderControls({
   account,
+  accountPending = false,
   showWorkspaceLink = true,
   publicMenus = false,
 }: {
   account: ReturnType<typeof useEnterpriseSession>["data"];
+  accountPending?: boolean;
   showWorkspaceLink?: boolean;
   publicMenus?: boolean;
 }) {
@@ -45,6 +48,7 @@ export function SiteHeaderControls({
           popoverOffset={popoverOffset}
         />
       </div>
+      {accountPending && <HeaderAccountSkeleton />}
       {account && (
         <div className="landing-account-controls">
           {showWorkspaceLink && <WorkspaceHeaderLink />}
@@ -59,6 +63,17 @@ export function SiteHeaderControls({
           />
         </div>
       )}
+    </div>
+  );
+}
+
+/** 会话确认期间保留顶栏账户区域的位置。 */
+export function HeaderAccountSkeleton() {
+  const t = useMessages(shellMessages);
+  return (
+    <div className="header-account-skeleton" role="status" aria-label={t.loadingAccount}>
+      <Skeleton className="header-account-skeleton-controls" aria-hidden="true" />
+      <Skeleton className="header-account-skeleton-avatar" aria-hidden="true" />
     </div>
   );
 }

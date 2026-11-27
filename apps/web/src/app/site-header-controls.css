@@ -28,6 +28,28 @@
   gap: var(--landing-control-gap);
   min-width: 0;
 }
+.header-account-skeleton {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--landing-control-gap, 8px);
+}
+.header-account-skeleton-controls {
+  width: clamp(36px, 9vw, 104px);
+  height: var(--landing-control-fill-height, var(--shell-pill-height));
+  border-radius: var(--control-radius);
+}
+.header-account-skeleton-avatar {
+  width: var(--landing-control-fill-height, var(--shell-pill-height));
+  height: var(--landing-control-fill-height, var(--shell-pill-height));
+  border-radius: 50%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .header-account-skeleton .skeleton,
+  .header-account-skeleton .skeleton::after {
+    animation: none;
+  }
+}
 .header-workspace.link {
   display: inline-flex;
   flex: none;

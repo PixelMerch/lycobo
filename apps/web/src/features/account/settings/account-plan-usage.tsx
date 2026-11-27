@@ -2,6 +2,7 @@ import { Button, ToggleButton, ToggleButtonGroup } from "@heroui/react";
 import { imageUnitCredits } from "@lycoboai/contracts";
 import { type ReactNode, useState } from "react";
 import { CreditCoin } from "../../../components/credit-coin";
+import { ValueSkeleton } from "../../../components/data-skeleton";
 import { useMessages } from "../../../i18n/messages";
 import { formatCredits, imagesFor, totalWalletCredits } from "../account-format";
 import { useAccountOverlays } from "../account-overlay-store";
@@ -50,6 +51,7 @@ export function AccountPlanUsage() {
   const [view, setView] = useState<UsageView>("ledger");
   const unit = wallet.data?.unitCredits ?? imageUnitCredits;
   const balance = totalWalletCredits(wallet.data);
+  const balanceText = balance === undefined ? "—" : formatCredits(balance);
   // 单张图片由同一钱包全额支付，两个钱包不足一张的余数不能相加。
   const imagesHint =
     balance === undefined || !wallet.data
@@ -76,7 +78,7 @@ export function AccountPlanUsage() {
         value={
           <>
             <CreditCoin size="default" />
-            {balance === undefined ? "—" : formatCredits(balance)}
+            {wallet.isDataPending ? <ValueSkeleton /> : balanceText}
           </>
         }
         hint={`${t.perImage(unit)}${imagesHint}`}
