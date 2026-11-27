@@ -1,35 +1,6 @@
-/* 浏览器加载应用脚本之前使用静态启动标记。 */
+/* 应用脚本加载期间保留深色底，页面骨架由已挂载的内容区渲染。 */
 .loading-state {
   position: fixed;
   inset: 0;
-  z-index: 1000;
-  display: grid;
-  place-items: center;
-  background: var(--background, #121212);
-}
-.loading-state-placeholder {
-  position: relative;
-  width: 1em;
-  height: 1em;
-  color: var(--studio-accent, #a8ff00);
-  font-size: 30px;
-  transform: rotate(165deg);
-}
-.loading-state-placeholder::before,
-.loading-state-placeholder::after {
-  position: absolute;
-  inset: 0.4em;
-  border-radius: 50%;
-  content: "";
-}
-.loading-state-placeholder::before {
-  box-shadow:
-    0.4em -0.2em currentColor,
-    -0.4em 0.2em currentColor;
-  opacity: 0.75;
-}
-.loading-state-placeholder::after {
-  box-shadow:
-    0.2em 0.4em currentColor,
-    -0.2em -0.4em currentColor;
+  background: #0b0b0b;
 }

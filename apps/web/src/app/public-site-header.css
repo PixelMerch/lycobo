@@ -72,11 +72,15 @@
 }
 .public-site-desktop-nav .nav-row {
   padding-inline: 12px;
+  border-radius: var(--control-radius);
+}
+.public-site-category {
+  position: relative;
 }
 .public-site-header
   .public-site-desktop-nav
   .nav-row:is(:hover, [data-hovered="true"], [aria-expanded="true"], :focus-visible) {
-  background-color: var(--site-header-nav-hover-fill);
+  background-color: var(--site-header-button-fill);
 }
 .public-site-section.button {
   font-weight: 500;
@@ -116,7 +120,6 @@
   [data-landing-header],
   .studio-app:has(:is(.inspiration-library, .legal-page)) > *
 ) {
-  padding-inline: var(--public-site-header-gutter);
   .public-site-brand-art {
     --site-brand-wordmark-offset: 0%;
   }

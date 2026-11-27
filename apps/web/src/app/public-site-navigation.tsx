@@ -1,5 +1,6 @@
 import { Button, Disclosure, Dropdown } from "@heroui/react";
 import { IconChevronDown } from "@tabler/icons-react";
+import { useState } from "react";
 import { RouteLink } from "../components/router-link";
 import { UiIcon } from "../components/ui-icon";
 import { landingPricingPath } from "../features/home/landing/landing-pricing-navigation";
@@ -71,55 +72,61 @@ export function PublicSiteNavigation({
 
 function PublicCategoryMenu({ category }: { category: WorkspaceToolCategory }) {
   const { navigation } = useMessages(workspaceToolMessages);
+  const [anchor, setAnchor] = useState<HTMLDivElement | null>(null);
   const menu = useHoverMenu(100);
   const navigate = useAppNavigate();
   const entries = category.sections.flatMap((section) => section.entries);
   return (
-    <Dropdown isOpen={menu.isOpen} onOpenChange={menu.onOpenChange}>
-      <Dropdown.Trigger
-        ref={menu.triggerRef}
-        className="nav-row topbar-menu-trigger"
-        onHoverStart={(event) => {
-          if (event.pointerType === "mouse") menu.openOnHover();
-        }}
-        onHoverEnd={menu.closeSoon}
-      >
-        {navigation[category.label]}
-        <UiIcon icon={IconChevronDown} size="small" className="topbar-menu-chevron" />
-      </Dropdown.Trigger>
-      <Dropdown.Popover
-        ref={menu.popoverRef}
-        className="topbar-menu header-menu landing-control-popover"
-        placement="bottom start"
-        offset={4}
-        isNonModal
-        onPointerEnter={menu.cancelClose}
-        onPointerLeave={menu.closeSoon}
-      >
-        <Dropdown.Menu
-          aria-label={navigation[category.label]}
-          {...(menu.openedByHover ? { autoFocus: false } : {})}
-          onAction={(key) => {
-            const entry = entries.find(({ tool }) => tool === key);
-            if (!entry) return;
-            menu.close();
-            void navigate(dashboardToolPaths[entry.tool]);
+    // 将弹层挂在吸顶导航内，使定位随按钮保持在视口中。
+    <div ref={setAnchor} className="public-site-category">
+      <Dropdown isOpen={menu.isOpen} onOpenChange={menu.onOpenChange}>
+        <Dropdown.Trigger
+          ref={menu.triggerRef}
+          className="nav-row topbar-menu-trigger"
+          onHoverStart={(event) => {
+            if (event.pointerType === "mouse") menu.openOnHover();
           }}
+          onHoverEnd={menu.closeSoon}
         >
-          {entries.map(({ tool }) => (
-            <Dropdown.Item
-              key={tool}
-              id={tool}
-              textValue={navigation.tools[tool]}
-              className="topbar-menu-item menu-item"
-            >
-              <UiIcon icon={toolIcons[tool]} size="small" />
-              {navigation.tools[tool]}
-            </Dropdown.Item>
-          ))}
-        </Dropdown.Menu>
-      </Dropdown.Popover>
-    </Dropdown>
+          {navigation[category.label]}
+          <UiIcon icon={IconChevronDown} size="small" className="topbar-menu-chevron" />
+        </Dropdown.Trigger>
+        <Dropdown.Popover
+          ref={menu.popoverRef}
+          {...(anchor ? { UNSTABLE_portalContainer: anchor } : {})}
+          className="topbar-menu header-menu landing-control-popover"
+          placement="bottom start"
+          offset={4}
+          containerPadding={0}
+          isNonModal
+          onPointerEnter={menu.cancelClose}
+          onPointerLeave={menu.closeSoon}
+        >
+          <Dropdown.Menu
+            aria-label={navigation[category.label]}
+            {...(menu.openedByHover ? { autoFocus: false } : {})}
+            onAction={(key) => {
+              const entry = entries.find(({ tool }) => tool === key);
+              if (!entry) return;
+              menu.close();
+              void navigate(dashboardToolPaths[entry.tool]);
+            }}
+          >
+            {entries.map(({ tool }) => (
+              <Dropdown.Item
+                key={tool}
+                id={tool}
+                textValue={navigation.tools[tool]}
+                className="topbar-menu-item menu-item"
+              >
+                <UiIcon icon={toolIcons[tool]} size="small" />
+                {navigation.tools[tool]}
+              </Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown.Popover>
+      </Dropdown>
+    </div>
   );
 }
 

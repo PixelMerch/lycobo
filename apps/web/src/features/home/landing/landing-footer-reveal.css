@@ -1,3 +1,7 @@
+.lp-footer-reveal > .site-footer {
+  padding-inline: var(--public-site-header-gutter);
+}
+
 @media (prefers-reduced-motion: no-preference) {
   /* 正文盖住后层页脚，继续滚动时由正文底边逐步露出页脚。 */
   .lp-page {
