@@ -14,6 +14,8 @@ import { ModerationError } from "../moderation/service";
 import { registerImageWallet } from "../wallet/wallet-routes";
 import { registerImageAssetDelivery, registerImageAssetLibrary } from "./assets/asset-routes";
 import { imageDeliveries } from "./assets/delivery";
+import { registerAutomationTaskDownloads } from "./automation/downloads";
+import { registerAutomationReferenceUpload } from "./automation/references";
 import { registerImageAutomation } from "./automation/routes";
 import { registerImageEvents } from "./events/event-routes";
 import { registerImageModels } from "./model-routes";
@@ -123,6 +125,8 @@ export function imageRoutes(deps: ImageApiDependencies) {
   app.get("/credit-pricing", (c) =>
     c.json({ offerEnd: deps.checkout?.offerEnd ?? defaultCreditOfferEnd }),
   );
+  registerAutomationReferenceUpload(app, deps);
+  registerAutomationTaskDownloads(app, deps);
   app.use("*", async (c, next) => {
     const principal = await resolvePrincipal(c);
     if (!principal) return rejectImageAuthentication(c);

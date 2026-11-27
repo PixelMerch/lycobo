@@ -5,6 +5,9 @@ on:
       version:
         required: true
         type: string
+      consumer_first:
+        type: boolean
+        default: false
     secrets:
       CLOUDFLARE_API_TOKEN:
         required: true
@@ -16,6 +19,10 @@ on:
         description: "重试部署最新的已发布版本"
         required: true
         type: string
+      consumer_first:
+        description: "先部署图片消费者（主站开始写入新契约时使用）"
+        type: boolean
+        default: false
 permissions:
   contents: read
   actions: read
@@ -70,6 +77,7 @@ jobs:
           RELEASE_BILLING_PRODUCTS: ${{ secrets.BILLING_PRODUCTS }}
           RELEASE_VERSION: ${{ inputs.version }}
           WRANGLER_SEND_METRICS: "false"
+          RELEASE_CONSUMER_FIRST: ${{ inputs.consumer_first }}
         run: |
           set -euo pipefail
           if [[ -z "$CLOUDFLARE_API_TOKEN" ]]; then
@@ -85,8 +93,16 @@ jobs:
           secrets_file="$(mktemp "$RUNNER_TEMP/lycobo-billing.XXXXXXXX.json")"
           trap 'rm -f "$secrets_file"' EXIT
           jq -nce 'env.RELEASE_BILLING_PRODUCTS as $mapping | ($mapping | try fromjson catch null) as $products | if ($products | type) == "object" then {BILLING_PRODUCTS: $mapping} else error("Invalid BILLING_PRODUCTS mapping") end' > "$secrets_file"
+          deploy_images() {
+            pnpm exec wrangler deploy --config wrangler.images.jsonc --message "$message"
+          }
+          if [[ "$RELEASE_CONSUMER_FIRST" == true ]]; then
+            deploy_images
+          fi
           pnpm exec wrangler deploy --config wrangler.jsonc --message "$message" --secrets-file "$secrets_file"
-          pnpm exec wrangler deploy --config wrangler.images.jsonc --message "$message"
+          if [[ "$RELEASE_CONSUMER_FIRST" != true ]]; then
+            deploy_images
+          fi
           pnpm cf:check:config
       - name: Verify production health
         run: curl --fail --silent --show-error --retry 4 --retry-all-errors --max-time 15 https://lycobo.com/api/health/live

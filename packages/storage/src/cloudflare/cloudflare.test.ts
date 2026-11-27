@@ -87,6 +87,38 @@ it("rejects oversized and animated input before invoking Images", async () => {
   await expect(codec.info(animated)).rejects.toThrow("INVALID_IMAGE");
   expect(f.info).not.toHaveBeenCalled();
 });
+it("stores automated references byte-for-byte as one private WebP object", async () => {
+  const f = imagesFixture();
+  const put = vi.fn<ImageObjectBucket["put"]>(async () => undefined);
+  const bucket: ImageObjectBucket = {
+    put,
+    get: async () => null,
+    head: async () => null,
+    delete: async () => undefined,
+  };
+  const store = cloudflareImageStore(bucket, f.binding, async () => "1234567890");
+  const scope = { organizationId: crypto.randomUUID(), userId: crypto.randomUUID() };
+  const image = sharp({
+    create: { width: 1601, height: 900, channels: 4, background: "transparent" },
+  });
+  await expect(
+    store.putAutomationReference?.(scope, await image.clone().webp().toBuffer()),
+  ).rejects.toThrow("INVALID_IMAGE");
+  await expect(
+    store.putAutomationReference?.(scope, await image.clone().png().toBuffer()),
+  ).rejects.toThrow("INVALID_IMAGE");
+  const webp = await image.resize(1600).webp().toBuffer();
+  const asset = await store.putAutomationReference?.(scope, webp);
+  expect(asset).toMatchObject({
+    objectKey: expect.stringMatching(/\.webp$/),
+    width: 1600,
+    mimeType: "image/webp",
+  });
+  expect(put).toHaveBeenCalledExactlyOnceWith(asset?.objectKey, webp, {
+    httpMetadata: { contentType: "image/webp" },
+  });
+  expect(f.output).not.toHaveBeenCalled();
+});
 it.each([undefined, { width: 705, height: 1254 }])(
   "delivers the original provider PNG when Images transformations are unavailable (%j)",
   async (outputSize) => {

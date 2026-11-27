@@ -6,7 +6,7 @@ const agentAssetLifetime = 900;
 export const assetPlaybackLifetime = 900;
 // 同一时间窗口共享过期时间，重载时复用浏览器缓存。
 export const assetLinkWindow = 900;
-export const assetKeyPattern = /^[0-9]{10}\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(png|mp4)$/;
+export const assetKeyPattern = /^[0-9]{10}\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(png|webp|mp4)$/;
 export type AssetVariant =
   | "preview"
   | "thumbnail"
@@ -160,14 +160,14 @@ export function videoReferenceOrigin(env: {
   return url.pathname === "/" && !url.search ? url.origin : undefined;
 }
 
-/** Worker 为供应商签发不依赖浏览器请求头的原图链接。 */
+/** Worker 为供应商签发不依赖浏览器请求头的 PNG 或 WebP 参考图链接。 */
 export function providerReferenceSigner(origin: string, secret: string, prefix = "/") {
   const publicOrigin = videoReferenceOrigin({ VIDEO_REFERENCE_ORIGIN: origin });
   if (!publicOrigin || !/^\/(?:[a-z0-9_-]+\/)*$/.test(prefix))
     throw new Error("INVALID_ASSET_ORIGIN");
   const signingKey = assetSigningKey(secret);
   return async (key: string) => {
-    if (!key.endsWith(".png")) throw new Error("INVALID_REFERENCE");
+    if (!key.endsWith(".png") && !key.endsWith(".webp")) throw new Error("INVALID_REFERENCE");
     const expires = Math.floor(Date.now() / 1000) + 3600;
     const url = new URL(prefix + key, publicOrigin);
     url.searchParams.set("expires", String(expires));

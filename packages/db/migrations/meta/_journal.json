@@ -414,6 +414,13 @@
       "when": 1795744903652,
       "tag": "0058_image_automation_key_ciphertext",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1795781495657,
+      "tag": "0059_automation_reference_fingerprints",
+      "breakpoints": true
     }
   ]
 }

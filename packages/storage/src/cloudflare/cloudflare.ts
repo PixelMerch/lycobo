@@ -8,6 +8,7 @@ import {
   objectKeySchema,
   type StorageUid,
   userObjectKey,
+  validateAutomationReference,
 } from "../images/core";
 import {
   displayObjectKey,
@@ -84,6 +85,21 @@ export function cloudflareImageStore(
     return new Uint8Array(await object.arrayBuffer());
   };
   return {
+    async putAutomationReference(scope, input) {
+      const dimensions = validateAutomationReference(input, await codec.info(input));
+      const id = randomUUID();
+      const objectKey = userObjectKey(await resolveUid(scope), scope.organizationId, id, "webp");
+      const mimeType = "image/webp";
+      await bucket.put(objectKey, input, { httpMetadata: { contentType: mimeType } });
+      return {
+        id,
+        objectKey,
+        mimeType,
+        ...dimensions,
+        bytes: input.length,
+        sha256: createHash("sha256").update(input).digest("hex"),
+      };
+    },
     async ready() {
       await bucket.head("health/storage-probe");
     },
@@ -141,6 +157,8 @@ export function cloudflareImageStore(
     readDisplayThumbnail: (objectKey) => readStoredDisplayThumbnail(bucket, objectKey),
     async remove(asset) {
       objectKeySchema.parse(asset.objectKey);
+      if (asset.mimeType === "image/webp" || asset.objectKey.endsWith(".webp"))
+        return bucket.delete(asset.objectKey);
       await bucket.delete([
         asset.objectKey,
         `${asset.objectKey}.source`,

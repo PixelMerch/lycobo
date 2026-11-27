@@ -5,6 +5,7 @@ import {
   type CreateTaskInput,
   createTaskSchema,
   imageAutomationMcpPath,
+  imageAutomationReferenceUploadPath,
 } from "@lycoboai/contracts";
 import { type Context, Hono, type MiddlewareHandler } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -135,14 +136,21 @@ export function createApp(
   const app = new Hono<ApiEnv>();
   app.use("*", responseEnvelope(reportError));
   app.use("*", secureHeaders());
+  const referenceUploadPath = `/api/v1${imageAutomationReferenceUploadPath}`;
+  const isAutomationUpload = (c: Context<ApiEnv>) =>
+    c.req.method === "PUT" && c.req.path === referenceUploadPath;
   const generalSizeLimit = requestSizeLimit(11 * 1024 * 1024);
   app.use("/api/*", (c, next) => {
     // 上传路由在鉴权和限流后再读取文件，仍通过流式大小限制。
-    if (images && c.req.method === "POST" && c.req.path === "/api/v1/image-assets") return next();
+    if (
+      images &&
+      (isAutomationUpload(c) || (c.req.method === "POST" && c.req.path === "/api/v1/image-assets"))
+    )
+      return next();
     return generalSizeLimit(c, next);
   });
   app.use("/api/*", async (c, next) => {
-    if (c.req.path === "/api/v1/image-assets") {
+    if (c.req.path === "/api/v1/image-assets" || (images && isAutomationUpload(c))) {
       await next();
       return;
     }

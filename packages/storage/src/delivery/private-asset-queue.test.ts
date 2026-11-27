@@ -1,5 +1,5 @@
 import { expect, it, vi } from "vitest";
-import { assetDeliverySigner } from "./asset-delivery";
+import { assetDeliverySigner, providerReferenceSigner } from "./asset-delivery";
 import { type PrivateAssetOptions, servePrivateAsset } from "./private-asset-server";
 
 it("enqueues missing variants only after signature/source validation and never during HEAD", async () => {
@@ -130,4 +130,32 @@ it("serves a private original while a missing preview waits for repair", async (
   expect(response.headers.get("Access-Control-Allow-Origin")).toBe(accessHeaders.Origin);
   expect(new Uint8Array(await response.arrayBuffer())).toEqual(body);
   expect(queueVariant).toHaveBeenCalledExactlyOnceWith(key);
+});
+
+it("serves a signed WebP reference to the provider without queuing a derivative", async () => {
+  const key = `1234567890/${crypto.randomUUID()}/${crypto.randomUUID()}.webp`;
+  const signingSecret = "fixture-private-asset-queue-secret-0001";
+  const origin = "https://media.example.com";
+  const bytes = Uint8Array.of(1, 2, 3);
+  const get = vi.fn(async () => ({
+    size: bytes.length,
+    body: new Response(bytes).body!,
+    arrayBuffer: async () => bytes.buffer,
+  }));
+  const options: PrivateAssetOptions = {
+    bucket: { get, head: async () => null, put: vi.fn(), delete: vi.fn() },
+    signingSecret,
+    allowedOrigins: "https://app.example.test",
+    queueVariant: vi.fn(),
+  };
+  const url = await providerReferenceSigner(origin, signingSecret)(key);
+  const response = await servePrivateAsset(new Request(url), options);
+  expect(response.status).toBe(200);
+  expect(response.headers.get("Content-Type")).toBe("image/webp");
+  expect(get).toHaveBeenCalledExactlyOnceWith(key);
+  expect(await response.bytes()).toEqual(bytes);
+  expect(options.queueVariant).not.toHaveBeenCalled();
+  const unsigned = new URL(url);
+  unsigned.searchParams.delete("sig");
+  expect((await servePrivateAsset(new Request(unsigned), options)).status).toBe(403);
 });

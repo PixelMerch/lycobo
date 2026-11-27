@@ -3,7 +3,12 @@ import type { ImageScope, StoredImage } from "@lycoboai/contracts";
 import { imageLimits } from "@lycoboai/contracts";
 import sharp from "sharp";
 import type { ImageObjectBucket } from "../buckets/object-bucket";
-import { normalizeImage, normalizeReferenceUpload, providerReference } from "../local/image-store";
+import {
+  automationReferenceDimensions,
+  normalizeImage,
+  normalizeReferenceUpload,
+  providerReference,
+} from "../local/image-store";
 import {
   type ImageStorageTiming,
   type ImageStore,
@@ -54,6 +59,22 @@ export function objectImageStore(bucket: ImageObjectBucket, resolveUid?: Storage
     return new Uint8Array(await object.arrayBuffer());
   };
   return {
+    async putAutomationReference(scope, input) {
+      if (!resolveUid) throw new Error("STORAGE_IDENTITY_NOT_CONFIGURED");
+      const dimensions = await automationReferenceDimensions(input);
+      const id = randomUUID();
+      const objectKey = userObjectKey(await resolveUid(scope), scope.organizationId, id, "webp");
+      const mimeType = "image/webp";
+      await bucket.put(objectKey, input, { httpMetadata: { contentType: mimeType } });
+      return {
+        id,
+        objectKey,
+        mimeType,
+        ...dimensions,
+        bytes: input.length,
+        sha256: createHash("sha256").update(input).digest("hex"),
+      };
+    },
     prepareReferenceUpload: normalizeReferenceUpload,
     prepareProviderReference: providerReference,
     async ready() {
@@ -96,20 +117,23 @@ export function objectImageStore(bucket: ImageObjectBucket, resolveUid?: Storage
     read: (asset: StoredImage) => read(asset.objectKey),
     async thumbnail(asset) {
       objectKeySchema.parse(asset.objectKey);
-      const cached = await bucket.get(thumbnailKey(asset.objectKey));
+      const cached =
+        asset.mimeType === "image/png" ? await bucket.get(thumbnailKey(asset.objectKey)) : null;
       if (cached) return new Uint8Array(await cached.arrayBuffer());
       const bytes = await sharp(await read(asset.objectKey))
         .resize({ width: 512, height: 512, fit: "inside", withoutEnlargement: true })
         .png()
         .toBuffer();
-      await bucket.put(thumbnailKey(asset.objectKey), bytes, {
-        httpMetadata: { contentType: "image/png" },
-      });
+      if (asset.mimeType === "image/png")
+        await bucket.put(thumbnailKey(asset.objectKey), bytes, {
+          httpMetadata: { contentType: "image/png" },
+        });
       return bytes;
     },
     readDisplayThumbnail: (objectKey) => readStoredDisplayThumbnail(bucket, objectKey),
     async remove(asset) {
       objectKeySchema.parse(asset.objectKey);
+      if (asset.objectKey.endsWith(".webp")) return bucket.delete(asset.objectKey);
       await bucket.delete([
         asset.objectKey,
         thumbnailKey(asset.objectKey),

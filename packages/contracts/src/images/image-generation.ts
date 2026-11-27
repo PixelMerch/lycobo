@@ -185,10 +185,11 @@ export function imageUserPrompt(
   return prompt;
 }
 export type ImageScope = { userId: string; organizationId: string };
+/** 私有图片对象的实际保存格式与像素信息。 */
 export type StoredImage = {
   id: string;
   objectKey: string;
-  mimeType: "image/png";
+  mimeType: "image/png" | "image/webp";
   bytes: number;
   width: number;
   height: number;

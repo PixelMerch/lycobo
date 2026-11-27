@@ -10,6 +10,7 @@ import {
   objectKeySchema,
   type StorageUid,
   userObjectKey,
+  validateAutomationReference,
 } from "../images/core";
 import { displayVariants } from "../images/image-variants";
 
@@ -22,6 +23,18 @@ async function openImage(bytes: Uint8Array) {
   if (!["png", "jpeg", "webp"].includes(metadata.format ?? "") || (metadata.pages ?? 1) > 1)
     throw new Error("INVALID_IMAGE");
   return { source, metadata };
+}
+
+/** 在本地对象存储写入前完整解码静态 WebP，检查损坏与尺寸。 */
+export async function automationReferenceDimensions(bytes: Uint8Array) {
+  try {
+    const { source, metadata } = await openImage(bytes);
+    const dimensions = validateAutomationReference(bytes, metadata);
+    await source.stats();
+    return dimensions;
+  } catch {
+    throw new ImageValidationError("INVALID_IMAGE");
+  }
 }
 
 async function decodeImage(bytes: Uint8Array, outputSize?: ImageOutputSize) {
@@ -117,6 +130,24 @@ export function imageStore(directory: string, resolveUid?: StorageUid) {
     return file;
   };
   return {
+    async putAutomationReference(scope: ImageScope, bytes: Uint8Array): Promise<StoredImage> {
+      const dimensions = await automationReferenceDimensions(bytes);
+      const id = randomUUID();
+      const objectKey = resolveUid
+        ? userObjectKey(await resolveUid(scope), scope.organizationId, id, "webp")
+        : `${scope.organizationId}/${scope.userId}/${id}.webp`;
+      const file = filename(objectKey);
+      await mkdir(path.dirname(file), { recursive: true, mode: 0o700 });
+      await writeFile(file, bytes, { mode: 0o600, flag: "wx" });
+      return {
+        id,
+        objectKey,
+        mimeType: "image/webp",
+        ...dimensions,
+        bytes: bytes.length,
+        sha256: createHash("sha256").update(bytes).digest("hex"),
+      };
+    },
     prepareReferenceUpload: normalizeReferenceUpload,
     prepareProviderReference: providerReference,
     async ready() {

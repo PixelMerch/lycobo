@@ -8,6 +8,11 @@ import { normalizeGeminiReply } from "./gemini-protocol";
 import { ImageProviderError } from "./provider-errors";
 import { referenceType } from "./reference-type";
 
+function referenceUrlMimeType({ pathname }: URL) {
+  if (pathname.endsWith(".webp")) return "image/webp";
+  return pathname.endsWith(".jpg") ? "image/jpeg" : "image/png";
+}
+
 /** SDK-style /v1 base URLs and root origins both resolve to a single API origin. */
 export function imageProviderOrigin(value: string) {
   let url: URL;
@@ -84,7 +89,7 @@ export const imageProtocolAdapters: Record<ProviderSnapshot["adapter"], ImagePro
               ...(referenceUrls ?? []).map((url) => ({
                 fileData: {
                   fileUri: url.href,
-                  mimeType: url.pathname.endsWith(".jpg") ? "image/jpeg" : "image/png",
+                  mimeType: referenceUrlMimeType(url),
                 },
               })),
               ...references.map((bytes) => ({

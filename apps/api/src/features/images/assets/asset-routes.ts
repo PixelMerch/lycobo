@@ -183,10 +183,11 @@ export function registerImageAssetDelivery(
     const asset = await deps.repository.asset(c.get("principal"), parsed.data);
     if (!asset) return fail(c, "NOT_FOUND", "图片不存在", 404);
     const bytes = thumbnail ? await deps.store.thumbnail(asset) : await deps.store.read(asset);
-    c.header("Content-Type", "image/png");
+    const mimeType = thumbnail ? "image/png" : asset.mimeType;
+    c.header("Content-Type", mimeType);
     c.header(
       "Content-Disposition",
-      `${download ? "attachment" : "inline"}; filename="${asset.id}.png"`,
+      `${download ? "attachment" : "inline"}; filename="${asset.id}.${mimeType === "image/webp" ? "webp" : "png"}"`,
     );
     return c.body(new Uint8Array(bytes));
   });

@@ -107,7 +107,7 @@ export function imageAutomationRepository(sql: postgres.Sql) {
           and ${enterpriseMember(sql)}`;
       return principal.safeParse(row).data ?? null;
     },
-    async result(scope: ImageScope, taskId: string) {
+    async result(scope: ImageScope, taskId: string, requireActiveEnterprise = false) {
       // 自动化 Key 只能读取自己的结果，状态查询不代替队列恢复作业。
       const match = z.uuid().safeParse(taskId).success
         ? sql`j.id=${taskId}`
@@ -117,7 +117,14 @@ export function imageAutomationRepository(sql: postgres.Sql) {
         to_json(array(select i.output_asset_id from generation_job_items i where i.job_id=j.id
           and i.superseded_at is null and i.output_asset_id is not null order by i.position)) as asset_ids
         from generation_jobs j where ${match} and j.organization_id=${scope.organizationId}
-          and j.user_id=${scope.userId} and j.archived_at is null and not (j.input ? 'video')`;
+          and j.user_id=${scope.userId} and j.archived_at is null and not (j.input ? 'video')
+          ${
+            requireActiveEnterprise
+              ? sql`and exists(
+            select 1 from organization_members m where m.organization_id=j.organization_id
+              and m.user_id=j.user_id and ${enterpriseMember(sql)})`
+              : sql``
+          }`;
       return row ? ownTask.parse(row) : null;
     },
   };
