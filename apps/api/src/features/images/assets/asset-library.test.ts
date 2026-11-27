@@ -85,6 +85,7 @@ it("applies tool, model and favorite filters in the repository, before paginatio
 
 it.each([
   "tool=unknown",
+  "source=unknown",
   "model=..%2Fsecrets",
   `model=${"m".repeat(81)}`,
   "since=not-a-date",
@@ -95,6 +96,24 @@ it.each([
   const request = fixture({ listAssets: unexpected });
   const response = await request(`/image-assets?${query}`);
   expect(response.status).toBe(400);
+});
+
+it("passes the MCP source and cursor to the scoped asset query", async () => {
+  const listAssets = vi.fn<ImageRepository["listAssets"]>().mockResolvedValue([]);
+  const request = fixture({ listAssets });
+  const cursor = crypto.randomUUID();
+  const response = await request(
+    `/image-assets?source=mcp&type=image&before=${cursor}&favorite=true`,
+  );
+  expect(response.status).toBe(200);
+  expect(listAssets).toHaveBeenCalledWith(
+    principal,
+    30,
+    cursor,
+    undefined,
+    "image",
+    expect.objectContaining({ source: "mcp", favorite: true }),
+  );
 });
 
 it("saves and removes favorites idempotently and hides assets outside the organization", async () => {

@@ -4,6 +4,7 @@ import {
   type Capabilities,
   type CreateTaskInput,
   createTaskSchema,
+  imageAutomationMcpPath,
 } from "@lycoboai/contracts";
 import { type Context, Hono, type MiddlewareHandler } from "hono";
 import { bodyLimit } from "hono/body-limit";
@@ -88,6 +89,8 @@ function responseEnvelope(reportError: ErrorReporter | undefined): MiddlewareHan
     c.header("X-Request-Id", c.get("requestId"));
     c.header("Cache-Control", "no-store");
     await next();
+    // MCP 客户端直接读取 JSON-RPC 协议响应，不能套用站内 REST 外层结构。
+    if (c.req.path === `/api/v1${imageAutomationMcpPath}`) return;
     if (c.req.method === "HEAD" || !c.res.headers.get("Content-Type")?.includes("application/json"))
       return;
     const envelope = await jsonEnvelope(c, startedAt, reportError);
@@ -115,6 +118,11 @@ function requestSizeLimit(maxSize: number) {
   });
 }
 
+const requestBodyLimits: Readonly<Record<string, number>> = {
+  "/api/v1/video-storyboards": 64,
+  [`/api/v1${imageAutomationMcpPath}`]: 256,
+};
+
 /** 组装 API 路由、统一响应和可注入的业务服务。 */
 export function createApp(
   reportError?: ErrorReporter,
@@ -138,7 +146,7 @@ export function createApp(
       await next();
       return;
     }
-    const limit = (c.req.path === "/api/v1/video-storyboards" ? 64 : 32) * 1024;
+    const limit = (requestBodyLimits[c.req.path] ?? 32) * 1024;
     return requestSizeLimit(limit)(c, next);
   });
   app.route("/api/v1/auth", authRoutes(auth));

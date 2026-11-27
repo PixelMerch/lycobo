@@ -1,5 +1,5 @@
 import { EmptyState } from "@heroui/react";
-import type { ImageJob } from "@lycoboai/contracts";
+import { type ImageJob, imageJobTool } from "@lycoboai/contracts";
 import { IconPhotoPlus } from "@tabler/icons-react";
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { InfiniteLoad } from "../../../components/infinite-load";
@@ -149,11 +149,7 @@ function historyJobs(
 }
 
 function matchesHistoryTool(job: ImageJob, tool: Parameters<typeof useImageHistory>[0]) {
-  if (tool === "all") return true;
-  if (tool === "replica") return !!job.input?.replica;
-  if (tool === "variation") return !!job.input?.variation;
-  if (tool === "textile") return !!job.input?.textileSet;
-  return !job.input?.textileSet && !job.input?.variation && !job.input?.replica;
+  return tool === "all" || imageJobTool(job) === (tool ?? "create");
 }
 
 function useActiveHistory(

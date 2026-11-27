@@ -10,7 +10,7 @@ export function imageHistoryRepository(
   expireTimedOut: ReturnType<typeof imageSettlement>["expireTimedOut"],
 ) {
   const { publicModelSql, toolMatchSql } = imageQueryViews(sql);
-  const jobView = sql`j.public_id,j.id,j.organization_id,j.user_id,${publicModelSql} as model,j.prompt,j.user_prompt,j.resolution,j.aspect_ratio,
+  const jobView = sql`j.public_id,j.id,j.organization_id,j.user_id,${publicModelSql} as model,j.prompt,j.user_prompt,j.submission_source,j.resolution,j.aspect_ratio,
     j.requested_count,j.unit_credits,j.status,j.input,j.created_at,j.updated_at,j.completed_at,
     (select coalesce(json_agg(json_build_object('id',i.id,'position',i.position,'status',i.status,
       'worker_id',i.worker_id,'provider',i.provider,'provider_request_id',i.provider_request_id,

@@ -1,5 +1,12 @@
 import { BillingError } from "@lycoboai/billing";
-import { defaultCreditOfferEnd } from "@lycoboai/contracts";
+import {
+  defaultCreditOfferEnd,
+  imageAutomationKeyCopyPath,
+  imageAutomationKeyIssuedSchema,
+  imageAutomationKeyPath,
+  imageAutomationMcpPath,
+  imageAutomationPath,
+} from "@lycoboai/contracts";
 import { ImageRepositoryError, VariationError, WalletError } from "@lycoboai/db";
 import { type Context, Hono } from "hono";
 import { enterprisePrincipal } from "../auth/principal";
@@ -7,6 +14,7 @@ import { ModerationError } from "../moderation/service";
 import { registerImageWallet } from "../wallet/wallet-routes";
 import { registerImageAssetDelivery, registerImageAssetLibrary } from "./assets/asset-routes";
 import { imageDeliveries } from "./assets/delivery";
+import { registerImageAutomation } from "./automation/routes";
 import { registerImageEvents } from "./events/event-routes";
 import { registerImageModels } from "./model-routes";
 import { registerImagePlanning, registerPromptOptimization } from "./planning/planning-routes";
@@ -20,6 +28,30 @@ import {
 } from "./tasks/task-routes";
 
 export type { ImageApiDependencies } from "./route-context";
+
+function automationAuthenticationDetail(authorization: string | undefined) {
+  if (!authorization) return "缺少 Authorization 请求头，请在连接器中填写 Bearer <生图 Key>。";
+  if (
+    !authorization.startsWith("Bearer ") ||
+    !imageAutomationKeyIssuedSchema.shape.key.safeParse(authorization.slice(7)).success
+  )
+    return "Authorization 格式不正确，请填写 Bearer <生图 Key>，Bearer 后留一个空格。";
+  return "生图 Key 无效、已过期或已撤销，请在「头像菜单 → 应用连接」确认并更新连接器中的 Key。";
+}
+
+function rejectImageAuthentication(c: Context<Env>) {
+  if (c.req.path !== `/api/v1${imageAutomationMcpPath}`)
+    return fail(c, "UNAUTHORIZED", "请先验证身份", 401);
+  return c.json(
+    {
+      code: "UNAUTHORIZED",
+      message: "请先验证身份",
+      requestId: c.get("requestId"),
+      error: automationAuthenticationDetail(c.req.header("Authorization")),
+    },
+    401,
+  );
+}
 
 function repositoryFailure(code: string): { status: 400 | 403 | 404 | 409 | 503; message: string } {
   switch (code) {
@@ -48,13 +80,25 @@ export function imageRoutes(deps: ImageApiDependencies) {
   const app = new Hono<Env>();
   const resolvePrincipal = async (c: Context<Env>) => {
     const bearer = c.req.header("Authorization");
+    const automationPath = `/api/v1${imageAutomationPath}`;
+    if (
+      c.req.path.startsWith(`${automationPath}/`) &&
+      c.req.path !== `/api/v1${imageAutomationKeyPath}` &&
+      c.req.path !== `/api/v1${imageAutomationKeyCopyPath}`
+    )
+      return bearer?.startsWith("Bearer ")
+        ? deps.repository.automation.authenticate(bearer.slice(7))
+        : null;
     // 保留服务 API 密钥的兼容性，浏览器会话不回退到本地身份。
     if (deps.auth && bearer && /^Bearer [\w-]{43}$/.test(bearer))
       return deps.repository.authenticate(bearer.slice(7));
     if (!deps.auth) return workbenchPrincipal(c, deps.repository, deps.session);
     const identity = await enterprisePrincipal(c, deps.auth);
     // 充值需要已校验的登录会话，API 密钥和本地工作台身份不具备付款权限。
-    if (identity) c.set("authenticatedSession", true);
+    if (identity) {
+      c.set("authenticatedSession", true);
+      c.set("enterpriseSession", identity.user.loginMethod !== "social");
+    }
     return identity?.user;
   };
   app.post("/image-session", async (c) => {
@@ -81,7 +125,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
   );
   app.use("*", async (c, next) => {
     const principal = await resolvePrincipal(c);
-    if (!principal) return fail(c, "UNAUTHORIZED", "请先验证身份", 401);
+    if (!principal) return rejectImageAuthentication(c);
     if (deps.rateLimits) {
       const limited = await checkImageRequestLimit(c, deps.rateLimits, principal.userId);
       if (limited) return limited;
@@ -115,6 +159,7 @@ export function imageRoutes(deps: ImageApiDependencies) {
   registerPromptOptimization(app, deps);
   registerImagePlanning(app, deps);
   registerImageWallet(app, deps);
+  registerImageAutomation(app, deps);
   registerImageTaskSubmission(app, deps);
   const delivery = deps.signAsset ? imageDeliveries(deps.repository, deps.signAsset) : undefined;
   registerImageTaskHistory(app, deps, delivery);

@@ -24,7 +24,42 @@
 
 ## API
 
-所有 JSON 响应遵循 [统一返回格式](node-ts-best-practices.md#api-响应)，原业务结果放入顶层 data；错误使用 request_id、数字业务码和中文 message。未验证身份返回 401，跨组织资源返回 404。API 客户端使用 `Authorization: Bearer <LycoBo 访问令牌>`（不是供应商密钥）；浏览器支持企业 JWT HttpOnly Cookie，不开放凭证通配 CORS。图片内容接口保留二进制响应。
+### 企业生图 API 与豆包技能
+
+企业成员从头像菜单进入「应用连接」，也可从账户设置打开同一页面，在「技能与密钥」中签发、更新或撤销个人 Key。每人一把，签发后 90 天有效。数据库保存鉴权摘要、用于遮罩的末四位和绑定到组织与成员的 AES-GCM 密文。打开设置只加载状态与末四位。每次点击「复制请求头值」时，服务端校验当前企业会话和账号归属，再解密有效 Key。响应使用 `Cache-Control: no-store`，前端将完整 `Bearer <Key>` 写入剪贴板。更换会覆盖旧密文，撤销会清除密文。旧摘要版 Key 保持可用，想启用复制功能可在界面确认更换。每次验证 Key 时检查企业账号仍启用，结果只能由原作者在原工作区查询。
+
+上线前应用至 `0058_image_automation_key_ciphertext`，然后在 API Worker 配置 `IMAGE_AUTOMATION_KEY_SECRET`。值为独立的 32 随机字节经 Base64 编码，跨版本和恢复环境要保持原值，否则已保存的 Key 无法解密。配置缺失时签发和复制返回 503，已有 Key 仍可凭摘要鉴权。
+
+| 方法 | 路径                                               | 输入与结果                                                                                                                             |
+| ---- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| POST | `/api/v1/enterprise/image-api/generations`         | Bearer 生图 Key、`Idempotency-Key` UUID，JSON 为 `prompt` 与 `resolution`。返回任务 `id`，`202` 表示已接收，重复请求返回已创建的任务。 |
+| GET  | `/api/v1/enterprise/image-api/generations/:taskId` | Bearer 生图 Key。返回任务 `status` 和 `images`，完成后提供有效期内的签名下载地址。排队或执行中的结果返回 `Retry-After`。               |
+| POST | `/api/v1/enterprise/image-api/mcp`                 | Bearer 生图 Key、Streamable HTTP。提供 `generate_image`、`generate_image_set`、`get_image` 和 `preview_image`。                        |
+| POST | `/api/v1/enterprise/image-api/key/copy`            | 企业登录会话，返回本人当前可复制的有效 `{ key }`。旧摘要版、过期或已撤销的 Key 返回 404。                                              |
+
+分辨率支持 `1.5K`、`2K`、`4K`。REST 和 MCP 的 `generate_image` 接收单张方图请求。`generate_image_set` 接收一套 1–20 张方图，参数为 `title`、`resolution`、`images`（每项包含 `title` 和 `prompt`）及 UUID `requestId`。多套分别提交，10 套每套 10 张会创建 10 条任务。API 和 MCP 与网页共用逐图审核与扣费、持久任务和图片队列。重试同一套或同一张时复用原幂等键。
+
+所有已标记 MCP 来源的任务归入「套图计划」，素材仍支持「MCP 生成」筛选。MCP 提交回执与 `get_image` 的 `historyUrl` 指向套图记录，可在网页查看进度并下载整套。逐图方案由 Agent 提供，服务端按请求编号保存，复用套图生成流程。
+
+`preview_image` 接收任务 UUID `taskId` 和可选 `imageIndex`（从 1 开始，按已有输出顺序，默认 1）。验证任务归属后只读取一张已有的 WebP 缩略图，最大 256 KiB，返回 MCP `image` 内容。预览使用现有账号通用限流。Agent 需要支持渲染 MCP 图片内容；缩略图缺失或客户端无法展示时，从 `historyUrl` 进入主站。`get_image` 只返回状态和链接，原图下载地址使用既有签名和来源校验。
+
+```sh
+curl --fail-with-body https://lycobo.com/api/v1/enterprise/image-api/generations \
+  -H "Authorization: Bearer ${LYCOBO_IMAGE_API_KEY}" \
+  -H 'Idempotency-Key: 4cbaf693-df1d-44c7-838b-3dd1aa802d58' \
+  -H 'Content-Type: application/json' \
+  --data '{"prompt":"自然光下的米色亚麻床品商品图","resolution":"2K"}'
+```
+
+在「应用连接」的豆包行展开「配置连接」，复制连接地址。签发 Key 后，点击「复制请求头值」取得包含 `Bearer ` 前缀的值。打开豆包桌面版并添加 HTTP 连接器。填入连接地址，再在自定义 Headers 中将名称填写为 `Authorization`，粘贴刚复制的值并保存。 [豆包技能指南](https://open.doubao.com/document/doubao-developer-guide/skill-integration-guide)
+
+从「技能与密钥」按当前界面语言下载技能。中文为 `lycobo-image.zip`，英文为 `lycobo-image-en.zip`。技能包适用于支持技能导入和 Streamable HTTP MCP 的 Agent。单张和套图在用户未指定分辨率时默认 1.5K。
+
+连接成功后，豆包从 Lycobo MCP 服务读取工具列表。MCP 鉴权失败返回 HTTP 401，响应直接包含 `code`、`message`、`requestId` 和 `error`。`error` 说明是缺少 `Authorization`、格式不正确，还是生图 Key 未通过验证。后者统一提示检查 Key 是否无效、过期或已撤销。
+
+维护技能时，同步更新 `apps/web/public/integrations/` 下的中文 `lycobo-image/SKILL.md`、英文 `en/lycobo-image/SKILL.md` 和对应压缩包。两个压缩包都只包含 `lycobo-image/SKILL.md`，技能标识保持 `lycobo-image`。
+
+REST JSON 响应遵循 [统一返回格式](node-ts-best-practices.md#api-响应)，原业务结果放入顶层 data；错误使用 request_id、数字业务码和中文 message。MCP 工具请求和结果遵循 JSON-RPC。未验证身份返回 401，跨组织资源返回 404。API 客户端使用 `Authorization: Bearer <LycoBo 访问令牌>`（不是供应商密钥）；浏览器支持企业 JWT HttpOnly Cookie，不开放凭证通配 CORS。图片内容接口保留二进制响应。
 
 | 方法与路径                                                                                                              | 功能                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -160,7 +195,9 @@ Worker 以 `Image generation stage timing` 输出结构化分段计时，包含 
 
 ## 素材库筛选与收藏
 
-2026-11-03 起，素材库页面与各工具右侧的“我的素材”使用上表的筛选和收藏接口；2026-11-10 改版后来源“全部”不传 `kind`，“仅看收藏”传 `favorite=true`，前端不再传 `model`。收藏存于 `image_asset_favorites`（组织、成员、素材联合主键，组合外键约束素材归属与成员关系，按成员与收藏时间建索引），按成员区分；数量上限在同一成员的事务级 advisory lock 内校验，并发收藏不会超出。工具由任务输入判定：含 `textileSet` 为家纺裂变，含 `variation` 为套图计划，其余为主图制作，与历史筛选一致。
+「我的素材 → 来源 → MCP 生成」列出通过 Lycobo MCP 工具提交的成图。服务端把 `mcp` 写入任务的 `submission_source`，原模型参数与幂等哈希保持兼容。素材 API 的 `source=mcp` 与时间、收藏一起在分页前过滤。早期任务没有来源标记，仍可在「全部来源」和原工具筛选中查看。部署时先应用 `0056_image_submission_source` 迁移，再更新 API 和前端。
+
+2026-11-03 起，素材库页面与各工具右侧的“我的素材”使用上表的筛选和收藏接口；2026-11-10 改版后来源“全部”不传 `kind`，“仅看收藏”传 `favorite=true`，前端不再传 `model`。收藏存于 `image_asset_favorites`（组织、成员、素材联合主键，组合外键约束素材归属与成员关系，按成员与收藏时间建索引），按成员区分；数量上限在同一成员的事务级 advisory lock 内校验，并发收藏不会超出。素材分类与历史使用相同规则：含 `variation` 或来源为 `mcp` 的任务归入套图计划，家纺和复制爆款沿用各自的任务输入标记。
 
 迁移统一使用 `packages/db/migrations/0038_asset_favorites.sql` 及其后续追加迁移。先升级目标 PostgreSQL，再部署 API；主站和独立图片 Worker 共用同一条 Drizzle 迁移链，不在运行时修改结构。
 

@@ -26,6 +26,7 @@ import { checkoutService } from "./features/billing/service";
 import { externalWalletService } from "./features/billing/wallet-service";
 import { readWorkbenchSession } from "./features/images/session";
 import { createCreemModerator } from "./features/moderation/creem-moderation";
+import { localAutomationKeySecret } from "./local-automation-secret";
 
 // Node 入口只用于隔离开发，生产由 cloudflare.ts 启动。
 const env = readEnv(process.env);
@@ -44,6 +45,9 @@ const events =
 const directory = process.env.IMAGE_DATA_DIR ?? "";
 if (!process.env.S3_ENDPOINT && !isAbsolute(directory))
   throw new Error("IMAGE_DATA_DIR must be absolute");
+const automationKeySecret = auth
+  ? await localAutomationKeySecret(directory, process.env.IMAGE_AUTOMATION_KEY_SECRET)
+  : undefined;
 const store = process.env.S3_ENDPOINT
   ? objectImageStore(imageObjectBucket({ ...process.env }), repository.storageUid)
   : imageStore(directory, repository.storageUid);
@@ -96,6 +100,7 @@ const app = createApp(
         : undefined,
     store,
     auth,
+    automationKeySecret,
     signAsset,
     events,
     standaloneKey: process.env.STANDALONE_IMAGE_API_KEY,

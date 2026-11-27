@@ -13,8 +13,8 @@ import { toast } from "../../lib/toast";
 import { imageRequest, useImageSession } from "../generation/generation-client";
 import { assetsMessages } from "./assets-messages";
 
-/** 素材来源：全部、我上传的或 AI 生成；AI 生成还能按功能细分。 */
-export type AssetSource = "all" | "uploads" | "generated";
+/** 素材来源包括上传、AI 生成和通过 MCP 提交的生成。 */
+export type AssetSource = "all" | "uploads" | "generated" | "mcp";
 /** 时间范围：全部时间，或今天、最近 7／30／90 天（按本地日历日零点计算，含今天）。 */
 export type AssetTimeRange = "all" | "today" | "7" | "30" | "90";
 /** 我的素材的一组筛选，弹窗和素材库页面共用；都由接口在分页前执行。 */
@@ -34,7 +34,7 @@ export const defaultAssetFilters: AssetLibraryFilters = {
   favorite: false,
   time: "all",
 };
-const sources = ["all", "uploads", "generated"] as const;
+const sources = ["all", "uploads", "generated", "mcp"] as const;
 /** 时间筛选的选项，顺序就是菜单里的顺序。 */
 export const assetTimeRanges = [
   "all",
@@ -56,7 +56,7 @@ export function toolAssetFilters(tool: AssetTool | undefined): AssetLibraryFilte
 }
 
 /**
- * 素材库把筛选写进地址栏，刷新和分享的链接回到同一视图。带功能的链接一律落在 AI 生成；
+ * 素材库把筛选写进地址栏，刷新和分享的链接回到同一视图。显式的 MCP 来源优先于工具；
  * 兼容旧收藏链接，忽略已停用的类型和模型筛选。
  */
 export function filtersFromSearch(search: URLSearchParams): AssetLibraryFilters {
@@ -64,6 +64,7 @@ export function filtersFromSearch(search: URLSearchParams): AssetLibraryFilters 
   const source = search.get("source");
   const favorite = search.get("favorite") === "1" || source === "favorites";
   const time = assetTimeRanges.find((entry) => entry === search.get("time")) ?? "all";
+  if (source === "mcp") return { source, tool: "all", favorite, time };
   if (tool.success) return { source: "generated", tool: tool.data, favorite, time };
   return {
     source: sources.find((entry) => entry === source) ?? "all",
@@ -98,6 +99,7 @@ export function libraryQuery(filters: AssetLibraryFilters, now = new Date()) {
     type: "image",
   });
   if (filters.source === "generated") query.set("kind", "output");
+  if (filters.source === "mcp") query.set("source", "mcp");
   if (filters.source === "uploads") query.set("kind", "reference");
   if (filters.source === "generated" && filters.tool !== "all") query.set("tool", filters.tool);
   if (filters.favorite) query.set("favorite", "true");

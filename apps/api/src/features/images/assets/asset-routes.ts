@@ -8,6 +8,7 @@ import { type Env, fail, type ImageApiDependencies, id } from "../route-context"
 import type { ImageDeliveries } from "./delivery";
 import { saveReferenceUpload } from "./reference-upload";
 
+/** 注册按组织读取的素材列表和按成员保存的收藏。 */
 export function registerImageAssetLibrary(
   app: Hono<Env>,
   deps: ImageApiDependencies,
@@ -25,7 +26,8 @@ export function registerImageAssetLibrary(
     const kind = z.enum(["output", "reference"]).optional().safeParse(c.req.query("kind"));
     const type = assetTypeSchema.optional().safeParse(c.req.query("type"));
     const tool = assetToolSchema.optional().safeParse(c.req.query("tool"));
-    // Public model ids only, e.g. gpt-image-2.5; the repository maps provider variants onto them.
+    const source = z.literal("mcp").optional().safeParse(c.req.query("source"));
+    // 对外只接受公开模型 ID，仓储负责归并供应商型号。
     const model = z
       .string()
       .regex(/^[a-z0-9][a-z0-9.-]{0,79}$/i)
@@ -39,6 +41,7 @@ export function registerImageAssetLibrary(
       !kind.success ||
       !type.success ||
       !tool.success ||
+      !source.success ||
       !model.success ||
       !favorite.success ||
       !since.success
@@ -57,13 +60,14 @@ export function registerImageAssetLibrary(
         tool: tool.data,
         model: model.data,
         favorite: favorite.data === "true",
+        ...(source.data ? { source: source.data } : {}),
         ...(since.data ? { since: since.data } : {}),
         ...(includeVideo.data ? { includeVideo: true } : {}),
       },
     );
     return c.json({ data: delivery ? await delivery.assets(scope, assets) : assets });
   });
-  // The signed-in member's favorite ids, bounded by the per-member favorite limit.
+  // 只读取当前成员的收藏 ID，数量受个人收藏上限约束。
   app.get("/image-asset-favorites", async (c) =>
     c.json({ data: await deps.repository.favoriteAssetIds(c.get("principal")) }),
   );

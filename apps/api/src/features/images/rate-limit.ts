@@ -1,3 +1,4 @@
+import { imageAutomationPath } from "@lycoboai/contracts";
 import type { Context } from "hono";
 import { type Env, fail, type ImageRequestRateLimits } from "./route-context";
 
@@ -6,9 +7,13 @@ function requestBudget(method: string, path: string): keyof ImageRequestRateLimi
   const route = path.replace(/^\/api\/v1(?=\/)/, "").replace(/\/$/, "");
   if (route === "/image-assets") return "upload";
   if (
-    ["/image-tasks", "/prompt-optimizations", "/variation-plans", "/video-storyboards"].includes(
-      route,
-    ) ||
+    [
+      "/image-tasks",
+      "/prompt-optimizations",
+      "/variation-plans",
+      "/video-storyboards",
+      `${imageAutomationPath}/generations`,
+    ].includes(route) ||
     /^\/image-tasks\/[^/]+\/retry$/.test(route)
   )
     return "generation";
@@ -20,8 +25,8 @@ export async function checkImageRequestLimit(
   c: Context<Env>,
   limits: ImageRequestRateLimits,
   userId: string,
+  budget = requestBudget(c.req.method, c.req.path),
 ) {
-  const budget = requestBudget(c.req.method, c.req.path);
   try {
     if ((await limits[budget].limit({ key: userId })).success) return;
   } catch {

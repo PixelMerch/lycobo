@@ -51,5 +51,6 @@ export interface ImageStore {
   ): Promise<StoredImage>;
   read(asset: StoredImage): Promise<Uint8Array>;
   thumbnail(asset: StoredImage): Promise<Uint8Array>;
+  readDisplayThumbnail?(objectKey: string): Promise<Uint8Array | null>;
   remove(asset: StoredImage): Promise<unknown>;
 }

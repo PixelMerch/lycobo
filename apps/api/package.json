@@ -15,22 +15,23 @@
     "test:events": "node --env-file-if-exists=../../.env --import tsx scripts/check-image-events-integration.ts"
   },
   "dependencies": {
-    "hono": "4.13.17",
     "@hono/node-server": "2.1.5",
     "@hono/zod-validator": "0.9.1",
-    "pino": "10.4.0",
-    "zod": "4.6.7",
+    "@lycoboai/billing": "workspace:*",
     "@lycoboai/contracts": "workspace:*",
     "@lycoboai/db": "workspace:*",
-    "@lycoboai/storage": "workspace:*",
     "@lycoboai/generation": "workspace:*",
-    "sharp": "0.35.5",
-    "postgres": "4.1.0",
     "@lycoboai/queue": "workspace:*",
-    "@lycoboai/billing": "workspace:*"
+    "@lycoboai/storage": "workspace:*",
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "hono": "4.13.17",
+    "pino": "10.4.0",
+    "postgres": "4.1.0",
+    "sharp": "0.35.5",
+    "zod": "4.6.7"
   },
   "devDependencies": {
-    "tsx": "4.23.15",
-    "tsup": "9.0.0"
+    "tsup": "9.0.0",
+    "tsx": "4.23.15"
   }
 }

@@ -206,7 +206,7 @@ async function insertSubmission(
   tx: postgres.TransactionSql,
   scope: ImageScope,
   input: ImageGenerationInput,
-  userPrompt: string,
+  details: { userPrompt: string; source: "mcp" | undefined },
   key: string,
   inputHash: string,
   requireManaged: boolean,
@@ -217,8 +217,8 @@ async function insertSubmission(
   if (replay) return replay;
   const snapshot = await submissionSnapshot(tx, input, requireManaged, independent);
   const inserted =
-    await tx`insert into generation_jobs (organization_id,user_id,idempotency_key,input_hash,input,model,provider_model,prompt,user_prompt,resolution,aspect_ratio,requested_count,unit_credits,provider_snapshot)
-          values (${scope.organizationId},${scope.userId},${key},${inputHash},${tx.json(input)},${input.model},${snapshot ? providerModelForResolution(snapshot, input.resolution) : imageProviderModel(input)},${input.prompt},${userPrompt},${input.resolution},${input.aspectRatio},${input.count},${unitCredits},${snapshot ? tx.json(snapshot) : null})
+    await tx`insert into generation_jobs (organization_id,user_id,idempotency_key,input_hash,input,model,provider_model,prompt,user_prompt,submission_source,resolution,aspect_ratio,requested_count,unit_credits,provider_snapshot)
+          values (${scope.organizationId},${scope.userId},${key},${inputHash},${tx.json(input)},${input.model},${snapshot ? providerModelForResolution(snapshot, input.resolution) : imageProviderModel(input)},${input.prompt},${details.userPrompt},${details.source ?? null},${input.resolution},${input.aspectRatio},${input.count},${unitCredits},${snapshot ? tx.json(snapshot) : null})
           on conflict (organization_id,user_id,idempotency_key) do nothing returning id`;
   if (!inserted[0]) {
     const [existing] =
@@ -289,7 +289,7 @@ export function imageSubmissionRepository(
     },
     async create(
       scope: ImageScope,
-      submitted: ImageTaskSubmission,
+      submitted: ImageTaskSubmission & { submissionSource?: "mcp" },
       key: string,
       _legacyUnitCredits?: number,
       requireManaged = false,
@@ -297,16 +297,20 @@ export function imageSubmissionRepository(
       credit?: ImageCreditAuthorization,
     ) {
       const unitCredits = imageUnitCredits;
-      // 用户文字单独落库，不改变旧请求的幂等哈希，也不进入消费者的模型快照。
-      const { userPrompt, ...input } = submitted;
-      const inputHash = hash(JSON.stringify(submitted));
+      // 提交来源只作素材筛选。保留首次接收时的来源，旧请求重试仍使用原幂等哈希。
+      const { submissionSource, ...request } = submitted;
+      const { userPrompt, ...input } = request;
+      const inputHash = hash(JSON.stringify(request));
       return sql.begin(async (tx) => {
         await verifyMember(tx, scope);
         const submission = await insertSubmission(
           tx,
           scope,
           input,
-          userPrompt ?? imageUserPrompt(input.prompt, input),
+          {
+            userPrompt: userPrompt ?? imageUserPrompt(input.prompt, input),
+            source: submissionSource,
+          },
           key,
           inputHash,
           requireManaged,

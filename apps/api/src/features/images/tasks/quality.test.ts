@@ -5,7 +5,7 @@ import {
   unwrapApiData,
 } from "@lycoboai/contracts";
 import type { ImageRepository } from "@lycoboai/db";
-import { supportedResolutions, validateModelInput } from "@lycoboai/generation";
+import { sealProviderKey, supportedResolutions, validateModelInput } from "@lycoboai/generation";
 import type { ImageStore } from "@lycoboai/storage";
 import { assetDeliverySigner } from "@lycoboai/storage/delivery";
 import { expect, it, vi } from "vitest";
@@ -19,10 +19,13 @@ import type { ImageApiDependencies, ImageRequestRateLimits } from "../route-cont
 const unexpected = async (): Promise<never> => {
   throw new Error("Unexpected dependency call");
 };
+const fixtureAutomationSecret = Buffer.alloc(32, 1).toString("base64");
 function fixture(
   editsEnabled = false,
   managedModelsOnly = false,
   extra: {
+    automation?: ImageRepository["automation"];
+    saveAutomationPlan?: ImageRepository["variation"]["saveAutomationPlan"];
     auth?: ImageApiDependencies["auth"];
     rateLimits?: ImageRequestRateLimits;
     wake?: () => Promise<void>;
@@ -38,6 +41,7 @@ function fixture(
     getMany?: ImageRepository["getMany"];
     assetLocations?: ImageRepository["assetLocations"];
     asset?: ImageRepository["asset"];
+    readDisplayThumbnail?: NonNullable<ImageStore["readDisplayThumbnail"]>;
     signAsset?: ReturnType<typeof assetDeliverySigner>;
     optimizer?: {
       repository: ImageRepository["promptOptimization"];
@@ -51,11 +55,20 @@ function fixture(
     .mockResolvedValue({ id: crypto.randomUUID(), replayed: false });
   const userId = crypto.randomUUID();
   const repository: ImageRepository = {
+    automation: extra.automation ?? {
+      status: unexpected,
+      keyCiphertext: unexpected,
+      rotate: unexpected,
+      revoke: unexpected,
+      authenticate: unexpected,
+      result: unexpected,
+    },
     waitingReferenceUploads: unexpected,
     close: unexpected,
     promptOptimization: extra.optimizer?.repository ?? { begin: unexpected, finish: unexpected },
     variation: {
       config: extra.optimizer?.config ?? unexpected,
+      saveAutomationPlan: extra.saveAutomationPlan ?? unexpected,
       begin: unexpected,
       get: unexpected,
       finish: unexpected,
@@ -142,10 +155,12 @@ function fixture(
     put: unexpected,
     read: unexpected,
     thumbnail: unexpected,
+    ...(extra.readDisplayThumbnail && { readDisplayThumbnail: extra.readDisplayThumbnail }),
     remove: unexpected,
   };
   const app = createApp(() => {}, {
     auth: extra.auth,
+    automationKeySecret: fixtureAutomationSecret,
     repository,
     rateLimits: extra.rateLimits,
     moderate: extra.moderate,
@@ -837,6 +852,304 @@ it("permits only product page paths as checkout return targets", async () => {
     "offer:trial",
     "/en/dashboard/video",
   );
+});
+
+it("returns a flat MCP authentication failure with actionable details", async () => {
+  const { app } = fixture(false, false, {
+    automation: {
+      authenticate: async () => null,
+      rotate: unexpected,
+      status: unexpected,
+      keyCiphertext: unexpected,
+      revoke: unexpected,
+      result: unexpected,
+    },
+  });
+  const key = `lcb_img_${"A".repeat(43)}`;
+  const cases = [
+    { authorization: undefined, detail: "缺少 Authorization 请求头" },
+    { authorization: key, detail: "Authorization 格式不正确" },
+    { authorization: "Bearer wrong-format", detail: "Authorization 格式不正确" },
+    { authorization: `Bearer ${key}`, detail: "生图 Key 无效、已过期或已撤销" },
+  ];
+  for (const { authorization, detail } of cases) {
+    const response = await app.request("/api/v1/enterprise/image-api/mcp", {
+      method: "POST",
+      headers: authorization ? { Authorization: authorization } : {},
+    });
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({
+      code: "UNAUTHORIZED",
+      message: "请先验证身份",
+      requestId: response.headers.get("X-Request-Id"),
+      error: expect.stringContaining(detail),
+    });
+  }
+});
+
+it("limits automation credentials to enterprise image calls and serves MCP without a REST envelope", async () => {
+  const key = `lcb_img_${"A".repeat(43)}`;
+  const identity = {
+    userId: crypto.randomUUID(),
+    organizationId: crypto.randomUUID(),
+    uid: "1234567890",
+    role: "member" as const,
+  };
+  const rotate = vi.fn(async () => ({ key, expiresAt: "2027-02-01T00:00:00Z" }));
+  const expiry = "2027-02-01T00:00:00Z";
+  const ciphertext = await sealProviderKey(
+    key,
+    fixtureAutomationSecret,
+    `image-automation-key:${identity.organizationId}:${identity.userId}`,
+  );
+  const keyCiphertext = vi.fn(async () => ciphertext);
+  const origin = "https://lycobo.example";
+  const { app, create } = fixture(false, false, {
+    auth: {
+      config: { origins: [origin], secret: "fixture", secureCookie: false },
+      authenticate: async (token) => {
+        if (token !== "enterprise" && token !== "personal") return null;
+        return {
+          user: {
+            ...identity,
+            account: "fixture",
+            ...(token === "personal" && { loginMethod: "social" as const }),
+          },
+          sessionId: crypto.randomUUID(),
+          expiresAt: 60,
+        };
+      },
+    },
+    automation: {
+      authenticate: async (token) => (token === key ? identity : null),
+      rotate,
+      status: async () => ({ expiresAt: expiry, lastFour: "AAAA", copyable: true }),
+      keyCiphertext,
+      revoke: async () => true,
+      result: async () => ({ status: "queued", asset_ids: [] }),
+    },
+  });
+  const path = "/api/v1/enterprise/image-api";
+  const request = (route: string, token: string, body?: object) =>
+    app.request(route, {
+      method: body ? "POST" : "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+        "Idempotency-Key": crypto.randomUUID(),
+      },
+      ...(body && { body: JSON.stringify(body) }),
+    });
+  expect((await request(`${path}/key`, "personal", {})).status).toBe(403);
+  expect((await request(`${path}/key`, key, {})).status).toBe(401);
+  expect((await request(`${path}/key/copy`, "personal", {})).status).toBe(403);
+  expect((await request(`${path}/key/copy`, key, {})).status).toBe(401);
+  const status = await request(`${path}/key`, "enterprise");
+  expect(unwrapApiData(await status.json())).toEqual({
+    expiresAt: expiry,
+    lastFour: "AAAA",
+    copyable: true,
+  });
+  expect(keyCiphertext).not.toHaveBeenCalled();
+  const copyWithCookie = (requestOrigin: string) =>
+    app.request(`${path}/key/copy`, {
+      method: "POST",
+      headers: { Cookie: "lycobo_enterprise_session=enterprise", Origin: requestOrigin },
+    });
+  expect((await copyWithCookie("https://other.example")).status).toBe(401);
+  const copied = await copyWithCookie(origin);
+  expect(copied.status).toBe(200);
+  expect(copied.headers.get("Cache-Control")).toContain("no-store");
+  expect(unwrapApiData(await copied.json())).toEqual({ key });
+  expect(keyCiphertext).toHaveBeenCalledExactlyOnceWith(expect.objectContaining(identity));
+  expect((await request("/api/v1/wallet", key)).status).toBe(401);
+  const issued = await request(`${path}/key`, "enterprise", {});
+  expect(issued.status).toBe(201);
+  expect(rotate).toHaveBeenCalledOnce();
+
+  const input = { prompt: "fixture", resolution: "2K" };
+  expect((await request(`${path}/generations`, key, input)).status).toBe(202);
+  expect(create.mock.calls[0]?.[1]).toMatchObject({ ...input, count: 1 });
+  expect(create.mock.calls[0]?.[1]).not.toHaveProperty("submissionSource");
+  const pending = await request(`${path}/generations/${crypto.randomUUID()}`, key);
+  expect(pending.headers.get("Retry-After")).toBe("10");
+
+  const tools = await request(`${path}/mcp`, key, { jsonrpc: "2.0", id: 1, method: "tools/list" });
+  expect(await tools.json()).toMatchObject({
+    jsonrpc: "2.0",
+    id: 1,
+    result: {
+      tools: [
+        { name: "generate_image" },
+        { name: "generate_image_set" },
+        { name: "get_image" },
+        { name: "preview_image" },
+      ],
+    },
+  });
+  const call = await request(`${path}/mcp`, key, {
+    jsonrpc: "2.0",
+    id: 2,
+    method: "tools/call",
+    params: { name: "generate_image", arguments: { ...input, requestId: crypto.randomUUID() } },
+  });
+  expect(await call.json()).toMatchObject({
+    jsonrpc: "2.0",
+    id: 2,
+    result: { content: [{ type: "text" }] },
+  });
+  expect(create).toHaveBeenCalledTimes(2);
+  expect(create.mock.calls[1]?.[1]).toMatchObject({ ...input, count: 1, submissionSource: "mcp" });
+});
+
+it("returns only the requested owned thumbnail as MCP image content", async () => {
+  const identity = {
+    userId: crypto.randomUUID(),
+    organizationId: crypto.randomUUID(),
+    role: "member" as const,
+  };
+  const taskId = crypto.randomUUID();
+  const assetIds = [crypto.randomUUID(), crypto.randomUUID()];
+  const assetLocations = vi.fn<ImageRepository["assetLocations"]>(async (_scope, ids) =>
+    ids.map((id) => ({ id, objectKey: `fixture/${id}.png` })),
+  );
+  const readDisplayThumbnail = vi.fn<NonNullable<ImageStore["readDisplayThumbnail"]>>(async () =>
+    Uint8Array.of(1, 2, 3),
+  );
+  const { app } = fixture(false, false, {
+    automation: {
+      authenticate: async (token) =>
+        token === "owner" ? identity : { ...identity, userId: crypto.randomUUID() },
+      status: unexpected,
+      keyCiphertext: unexpected,
+      rotate: unexpected,
+      revoke: unexpected,
+      result: async (scope, id) =>
+        scope.userId === identity.userId && id === taskId
+          ? { status: "succeeded", asset_ids: assetIds }
+          : null,
+    },
+    assetLocations,
+    readDisplayThumbnail,
+  });
+  const call = async (name: string, args: object, token = "owner") => {
+    const response = await app.request("/api/v1/enterprise/image-api/mcp", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: { name, arguments: args },
+      }),
+    });
+    expect(response.headers.get("Cache-Control")).toContain("no-store");
+    return response.json();
+  };
+  await call("get_image", { taskId });
+  expect(await call("preview_image", { taskId }, "other")).toMatchObject({
+    result: { isError: true },
+  });
+  expect(await call("preview_image", { taskId, imageIndex: 3 })).toMatchObject({
+    result: { isError: true },
+  });
+  expect(assetLocations).not.toHaveBeenCalled();
+  expect(readDisplayThumbnail).not.toHaveBeenCalled();
+  expect(await call("preview_image", { taskId, imageIndex: 2 })).toMatchObject({
+    result: { content: [{ type: "image", mimeType: "image/webp", data: "AQID" }] },
+  });
+  expect(assetLocations).toHaveBeenCalledExactlyOnceWith(identity, [assetIds[1]]);
+  expect(readDisplayThumbnail).toHaveBeenCalledExactlyOnceWith(`fixture/${assetIds[1]}.png`);
+  readDisplayThumbnail.mockResolvedValueOnce(new Uint8Array(256 * 1024 + 1));
+  expect(await call("preview_image", { taskId })).toMatchObject({ result: { isError: true } });
+});
+
+it("accepts one MCP set through moderation and the queue, with a 20-image cap per task", async () => {
+  const identity = {
+    userId: crypto.randomUUID(),
+    organizationId: crypto.randomUUID(),
+    role: "member" as const,
+  };
+  const planId = crypto.randomUUID();
+  const saveAutomationPlan = vi.fn<ImageRepository["variation"]["saveAutomationPlan"]>(
+    async (_scope, set) => ({
+      id: planId,
+      status: "ready",
+      description: set.title,
+      referenceAssetIds: [],
+      items: set.images.map((image) => ({ ...image, id: crypto.randomUUID() })),
+    }),
+  );
+  const moderate = vi.fn<GenerationModerator>(async () => undefined);
+  const { app, create } = fixture(false, false, {
+    moderate,
+    saveAutomationPlan,
+    automation: {
+      authenticate: async () => identity,
+      status: unexpected,
+      keyCiphertext: unexpected,
+      rotate: unexpected,
+      revoke: unexpected,
+      result: unexpected,
+    },
+  });
+  const images = Array.from({ length: 20 }, (_, index) => ({
+    title: `图片 ${index + 1}`,
+    prompt: `${index + 1} ${"窗边自然光商品图".repeat(100)}`,
+  }));
+  const requestId = crypto.randomUUID();
+  const call = (items: typeof images) =>
+    app.request("/api/v1/enterprise/image-api/mcp", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer fixture",
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+          name: "generate_image_set",
+          arguments: { title: "窗边商品套图", resolution: "2K", images: items, requestId },
+        },
+      }),
+    });
+  expect(await (await call([...images, ...images.slice(0, 1)])).json()).toMatchObject({
+    result: { isError: true },
+  });
+  expect(saveAutomationPlan).not.toHaveBeenCalled();
+  const response = await call(images);
+  const job = await create.mock.results[0]?.value;
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({
+    result: {
+      content: [
+        { text: expect.stringContaining(`/dashboard/commerce/smart-variation?task=${job?.id}`) },
+      ],
+    },
+  });
+  expect(saveAutomationPlan).toHaveBeenCalledWith(
+    identity,
+    expect.objectContaining({ images }),
+    requestId,
+  );
+  expect(moderate.mock.calls[0]?.[0]).toEqual(
+    images.map(({ prompt }) => expect.stringContaining(prompt)),
+  );
+  expect(create).toHaveBeenCalledOnce();
+  expect(create.mock.calls[0]?.[1]).toMatchObject({
+    userPrompt: "窗边商品套图",
+    count: 20,
+    submissionSource: "mcp",
+    variation: { planId },
+  });
 });
 
 it("validates unified credit history cursors before reading the authenticated account", async () => {

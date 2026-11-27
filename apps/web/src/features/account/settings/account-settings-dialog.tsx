@@ -3,6 +3,7 @@ import type { EnterpriseIdentity } from "@lycoboai/contracts";
 import {
   IconChartBar,
   IconLogout,
+  IconRobot,
   IconShieldLock,
   IconUserCircle,
   IconUsersGroup,
@@ -18,6 +19,7 @@ import { accountDisplayName, roleLabel } from "../account-format";
 import { useAccountOverlays } from "../account-overlay-store";
 import { AccountAvatar } from "../avatar/account-avatar";
 import { useWideViewport } from "../use-wide-viewport";
+import { AccountImageAutomation } from "./account-image-automation";
 import { AccountPasswordForm } from "./account-password-form";
 import { AccountPlanUsage } from "./account-plan-usage";
 import { accountSettingsMessages } from "./account-settings-messages";
@@ -31,6 +33,7 @@ const sectionIcons: Record<SettingsSection, TablerIcon> = {
   account: IconUserCircle,
   plan: IconChartBar,
   security: IconShieldLock,
+  automation: IconRobot,
   members: IconUsersGroup,
 };
 
@@ -82,6 +85,13 @@ function SectionContent({
 }) {
   if (id === "plan") return <AccountPlanUsage />;
   if (id === "security") return <AccountPasswordForm />;
+  if (id === "automation")
+    return (
+      <AccountImageAutomation
+        key={`${account.organizationId}:${account.userId}`}
+        account={account}
+      />
+    );
   if (id === "members") return <AccountSettingsMembers />;
   // 宽屏的身份与退出登录在左侧栏；手机没有左侧栏，放回账户分区。
   return <AccountSettingsProfile account={account} withIdentity={!wide} />;
@@ -104,7 +114,8 @@ export function AccountSettingsDialog({
   const wide = useWideViewport();
   if (!account) return null;
   const sections = settingsSections.filter((id) => {
-    if (id === "security" && account.loginMethod === "social") return false;
+    if ((id === "security" || id === "automation") && account.loginMethod === "social")
+      return false;
     return id !== "members" || account.role === "admin";
   });
   return (

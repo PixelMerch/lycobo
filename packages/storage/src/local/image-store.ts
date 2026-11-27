@@ -11,6 +11,7 @@ import {
   type StorageUid,
   userObjectKey,
 } from "../images/core";
+import { displayVariants } from "../images/image-variants";
 
 export { ImageValidationError, maxImageBytes } from "../images/core";
 
@@ -106,6 +107,7 @@ export async function providerReference(bytes: Uint8Array) {
     return bytes;
   }
 }
+/** 仅在本地开发环境读写文件系统中的图片。 */
 export function imageStore(directory: string, resolveUid?: StorageUid) {
   const root = path.resolve(directory);
   const filename = (key: string) => {
@@ -155,6 +157,13 @@ export function imageStore(directory: string, resolveUid?: StorageUid) {
       return sharp(await readFile(filename(asset.objectKey)))
         .resize({ width: 512, height: 512, fit: "inside", withoutEnlargement: true })
         .png()
+        .toBuffer();
+    },
+    async readDisplayThumbnail(objectKey: string) {
+      const { width, height, quality } = displayVariants.thumbnail;
+      return sharp(filename(objectKey))
+        .resize({ width, height, fit: "inside", withoutEnlargement: true })
+        .webp({ quality })
         .toBuffer();
     },
     remove: (asset: StoredImage) => unlink(filename(asset.objectKey)),

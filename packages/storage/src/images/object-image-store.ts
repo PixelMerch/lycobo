@@ -11,7 +11,12 @@ import {
   type StorageUid,
   userObjectKey,
 } from "./core";
-import { displayObjectKey, displayVariants, providerReferenceObjectKey } from "./image-variants";
+import {
+  displayObjectKey,
+  displayVariants,
+  providerReferenceObjectKey,
+  readStoredDisplayThumbnail,
+} from "./image-variants";
 
 function reportStorageTiming(
   onTiming: ((event: ImageStorageTiming) => void) | undefined,
@@ -38,7 +43,7 @@ async function encodeDisplayVariants(original: Uint8Array, key: string) {
   return variants;
 }
 
-/** Node image processing for private cloud storage. */
+/** 本地 Node 进程通过私有对象存储保存原图和展示变体。 */
 export function objectImageStore(bucket: ImageObjectBucket, resolveUid?: StorageUid): ImageStore {
   const thumbnailKey = (key: string) => key.replace(/\.png$/, ".thumbnail.png");
   const read = async (key: string) => {
@@ -52,7 +57,7 @@ export function objectImageStore(bucket: ImageObjectBucket, resolveUid?: Storage
     prepareReferenceUpload: normalizeReferenceUpload,
     prepareProviderReference: providerReference,
     async ready() {
-      // Credentials are validated when the bucket adapter is constructed.
+      // 创建存储适配器时已验证凭据配置。
     },
     async put(scope: ImageScope, input, id = randomUUID(), outputSize, onTiming) {
       if (!resolveUid) throw new Error("STORAGE_IDENTITY_NOT_CONFIGURED");
@@ -64,9 +69,8 @@ export function objectImageStore(bucket: ImageObjectBucket, resolveUid?: Storage
       const originalStarted = performance.now();
       await bucket.put(key, image.data, { httpMetadata: { contentType: "image/png" } });
       reportStorageTiming(onTiming, "image_original_put", originalStarted);
-      // Save the paid original first; failed variants must never cause provider resubmission.
-      // Pages only show the WebP variants. The PNG thumbnail (about 16 times the WebP size)
-      // serves the variation planner alone, so thumbnail() creates it on first use.
+      // 先保存付费原图，变体失败时不得重新提交供应商任务。
+      // 页面和 Agent 使用 WebP。套图规划专用的 PNG 缩略图由 thumbnail() 按需生成。
       const variantEncodeStarted = performance.now();
       const variants = await encodeDisplayVariants(image.data, key);
       reportStorageTiming(onTiming, "image_variant_encode", variantEncodeStarted);
@@ -103,6 +107,7 @@ export function objectImageStore(bucket: ImageObjectBucket, resolveUid?: Storage
       });
       return bytes;
     },
+    readDisplayThumbnail: (objectKey) => readStoredDisplayThumbnail(bucket, objectKey),
     async remove(asset) {
       objectKeySchema.parse(asset.objectKey);
       await bucket.delete([

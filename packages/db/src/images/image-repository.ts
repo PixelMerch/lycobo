@@ -8,6 +8,7 @@ import { generationCharges } from "../wallet/generation-charges";
 import { walletRepository } from "../wallet/wallet-repository";
 import { nativeProviderWebhooks } from "../webhooks/provider-webhook-repository";
 import { imageAssetRepository } from "./image-asset-repository";
+import { imageAutomationRepository } from "./image-automation-repository";
 import { imageExecutionRepository } from "./image-execution-repository";
 import { imageHistoryRepository } from "./image-history-repository";
 import { imageIdentityRepository } from "./image-identity-repository";
@@ -44,6 +45,7 @@ export function openImageRepository(
   return {
     ...nativeProviderWebhooks(sql),
     ...imageIdentityRepository(sql),
+    automation: imageAutomationRepository(sql),
     ...imageReferenceWaiting(sql),
     ...imageSubmissionRepository(sql, settlement, independent),
     ...imageHistoryRepository(sql, settlement.expireTimedOut),

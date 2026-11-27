@@ -1,5 +1,5 @@
 import { Button, Tooltip } from "@heroui/react";
-import type { ImageJob } from "@lycoboai/contracts";
+import { type ImageJob, imageJobTool } from "@lycoboai/contracts";
 import { IconAspectRatio } from "@tabler/icons-react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
@@ -16,7 +16,7 @@ export function HistoryTaskMeta({ job, modelName }: { job: ImageJob; modelName: 
   const t = useMessages(historyMessages);
   const locale = useLocale();
   const imageModelName = job.input?.textileSet ? t.textileSet : modelName;
-  const taskModelName = job.input?.variation ? t.variationPlan : imageModelName;
+  const taskModelName = imageJobTool(job) === "variation" ? t.variationPlan : imageModelName;
   return (
     <dl className="generation-meta" aria-label={t.taskInfo}>
       <div>

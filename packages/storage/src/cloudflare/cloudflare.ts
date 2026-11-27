@@ -9,7 +9,11 @@ import {
   type StorageUid,
   userObjectKey,
 } from "../images/core";
-import { displayObjectKey, providerReferenceObjectKey } from "../images/image-variants";
+import {
+  displayObjectKey,
+  providerReferenceObjectKey,
+  readStoredDisplayThumbnail,
+} from "../images/image-variants";
 import { persistImageOutput, preserveAndNormalize, timeImageWrite } from "./cloudflare-image-write";
 import { cloudflareImages } from "./cloudflare-images";
 
@@ -134,6 +138,7 @@ export function cloudflareImageStore(
     async thumbnail(asset) {
       return codec.encode(await read(asset.objectKey), 512, 512);
     },
+    readDisplayThumbnail: (objectKey) => readStoredDisplayThumbnail(bucket, objectKey),
     async remove(asset) {
       objectKeySchema.parse(asset.objectKey);
       await bucket.delete([

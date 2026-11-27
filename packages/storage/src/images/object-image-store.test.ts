@@ -105,6 +105,11 @@ describe("Node cloud image processing", () => {
     expect(saved.has(asset.objectKey.replace(/\.png$/, ".thumbnail.png"))).toBe(true);
     const writes = vi.mocked(bucket.put).mock.calls.length;
     expect(new Uint8Array(await store.thumbnail(asset))).toEqual(new Uint8Array(thumbnail));
+    const preview = await store.readDisplayThumbnail?.(asset.objectKey);
+    expect(preview && (await sharp(preview).metadata())).toMatchObject({
+      format: "webp",
+      width: 512,
+    });
     expect(bucket.put).toHaveBeenCalledTimes(writes);
   });
 });

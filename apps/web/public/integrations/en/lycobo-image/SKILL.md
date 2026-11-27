@@ -1,0 +1,66 @@
+---
+
+name: lycobo-image
+description: Generate individual images or multiple image sets with Lycobo, check task status, preview images, and retrieve results. Use when the user asks for Lycobo image generation, Lycobo task results, or scheduled Lycobo generation in an agent that supports scheduling.
+---
+
+# Lycobo Image Generation
+
+## Connect to Lycobo
+
+Use an agent that supports skill imports and Streamable HTTP MCP. If the account has access, open **App connections** from the Lycobo profile menu. Create an image API key and download the skill from **Skill and API key**. In **Set up connection**, copy the URL and header value, then add an HTTP connector to the agent. Import the skill and call its tools through the connector. Use the full registered tool name if the client adds a namespace.
+
+Use `Authorization` as the header name and `Bearer <image API key>` as its value. Save the value in the connector’s credentials settings. Leave real keys out of conversations, prompts, task descriptions, and examples. If the tools are missing, credentials are invalid, or the account lacks access, explain the issue and direct the user to **App connections**.
+
+## Submit generation tasks
+
+1. Turn the request into image prompts while preserving product details, copy language, composition, and layout requirements. The tools generate square images in `1.5K`, `2K`, or `4K`. Default to `1.5K`. These tools accept text prompts. If the user needs to upload a reference image or use a different aspect ratio, direct them to a suitable tool on the Lycobo website.
+2. For a single standalone image, call `generate_image` with `prompt`, `resolution`, and `requestId`. The prompt must be 1–5,000 characters.
+3. Call `generate_image_set` once per set with `title`, `resolution`, `requestId`, and `images`. The set title and each image title must be 1–40 characters. The set title must contain at least one letter or number. Each image prompt must be 5–4,000 characters. A set contains 1–20 square images. If the user requests ten sets of ten, submit ten tasks with no extra confirmation for the combined count. If a single set exceeds 20, explain the limit and ask how to split it.
+4. Generate a separate UUID for every new task’s `requestId`. Keep the UUID and inputs before submitting. If a timeout or lost response leaves acceptance unclear, make a bounded retry with the same UUID and unchanged inputs. Once you have a task `id`, query that task with `get_image`. If the request conflicts with an existing submission, check the saved receipt and original inputs.
+5. Save the returned `id` and `historyUrl`. An `id` confirms acceptance. `replayed: true` means the request returned an existing task. For multiple sets, track and report each by name as accepted, explicitly rejected, or awaiting confirmation.
+
+Example `generate_image_set` arguments for a two-image set. Generate a fresh UUID for each real submission and reuse it for retries of that submission.
+
+```json
+{
+  "title": "Linen bedding",
+  "resolution": "1.5K",
+  "requestId": "ec01a690-674a-4676-9f88-f1eecbdf7bd0",
+  "images": [
+    {
+      "title": "Hero image",
+      "prompt": "Front view of beige linen bedding by a window, soft daylight, natural folds"
+    },
+    {
+      "title": "Texture detail",
+      "prompt": "Close-up of the same beige linen bedding, showing the weave and edge stitching"
+    }
+  ]
+}
+```
+
+## Check status and share results
+
+Share `historyUrl` after submission. Users can track progress, preview images, and download the set in Lycobo’s **Image Set Planner**. When the user asks for status or results, call `get_image` with the task UUID as `taskId`. If the tool wraps JSON in a text item inside `content`, read the result from that item.
+
+- For `queued` or `running`, wait according to `retryAfterSeconds`. Check the same task at most three times in the current run. If it is still processing, return the state and the task link.
+- For `succeeded`, report completion. For `partially_failed`, report that the set is partially complete and direct the user to the generated images in Image Set Planner. Report available images only when the tool confirms they exist.
+- For `failed` or `needs_reconciliation`, report the failure or pending review. Ask before submitting a replacement that could use credits again.
+
+When the user asks to see an image in the conversation, call `preview_image` with `taskId` and an optional `imageIndex`. The index starts at 1 and counts generated images. The default is the first image. Each call returns one thumbnail. Display the MCP image result if the client can render it. If it cannot, the thumbnail is unavailable, or the user requests the entire set, share `historyUrl`. For example, to preview the second generated image, set `imageIndex` to `2`.
+
+Each `images[].url` is a temporary download URL with an `expiresAt` time. The media service validates the request origin. Use `preview_image` for in-agent previews and `historyUrl` for originals and batch downloads. The task page can provide fresh download links.
+
+## Handle failures
+
+When the tool sets `isError: true`, read `code`, `message`, and `retryAfterSeconds` if present.
+
+- For authentication failures, check the connector URL, the `Authorization` value, and the key’s status. Continue the original task after correcting the connection.
+- For invalid input, identify the field and the constraint. For content rejection, explain the reason and wait for revised instructions. For insufficient credits, tell the user that credits are needed. Pause the affected submission after an explicit rejection.
+- When rate-limited, wait as instructed and reuse the original UUID when retrying the same task. If the current run cannot wait, report accepted tasks and what remains.
+- After an ambiguous submission, retain the original UUID to avoid duplicate tasks and charges. If a status check fails, retain the existing task link and ID.
+
+## Schedule generation
+
+When the agent supports scheduling, use the requested cadence and time zone. Ask for missing prompts, set counts, image counts per set, or timing details. Use the default resolution unless the user specifies one. Explain that Lycobo charges credits per image under its generation rules. Generate new task UUIDs for each scheduled run and reuse them for retries of that run. Submit only the work for the current occurrence and report each set’s task link.
