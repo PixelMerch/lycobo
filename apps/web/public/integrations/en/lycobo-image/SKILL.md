@@ -45,15 +45,13 @@ Example `generate_image_set` arguments for a two-image set. Generate a fresh UUI
 
 ## Check status and share results
 
-When the user wants images delivered in chat, follow submission with `get_image`. Pass either the short `publicId` or the UUID `id` as `taskId`. Query an existing task directly. If the tool wraps JSON in a text item inside `content`, read the status, task number, and links from that item.
+Follow submission with status checks and deliver images in the same turn when available. Pass the short `publicId` or the UUID `id` as `taskId` to `get_image`. If the tool wraps JSON in a text item inside `content`, read the status and links from that item.
 
-- For `queued` or `running`, wait according to `retryAfterSeconds`. Check the same task at most three times in the current run. If it is still processing, return the task ID and current status.
-- For `succeeded`, show the task ID, previews, and links to download the originals. For `partially_failed`, report the partial failure and deliver the images the tool returned.
+- For a new task, follow `checkAtSeconds` in the submission receipt. If omitted, check at 40, 60, and 90 seconds after acceptance by waiting 40, then 20, then 30 seconds. Check again only while the task is queued or running. Check at most three times per turn and deliver available images as soon as they are ready. For an existing task, check immediately, then follow `retryAfterSeconds` if it is still processing. If the limit is reached or the turn cannot wait, give the task ID and status along with a ready-to-send follow-up such as “Show previews and original downloads for Lycobo task <ID>.”
+- When `images` contains results, provide two clickable links per image in `imageIndex` order. Use `previewUrl` for “Preview image N” and `url` for “Download original N.” Deliver every available image and explain partial failure when applicable. Call `preview_image` additionally when the user asks for an inline image in the conversation.
 - For `failed` or `needs_reconciliation`, report the failure or pending review. Ask before submitting a replacement that could use credits again.
 
-For in-chat previews, call `preview_image` with the task ID and `imageIndex` (starting at 1, defaulting to the first image). If the client cannot render the MCP image result, share the `images[].previewUrl` from `get_image` so the user can open the thumbnail. For multiple images, list each preview link by `imageIndex`.
-
-Turn each `images[].url` into a clickable “Download original N” file link in chat. Preview and download links expire at `expiresAt`, normally after 15 minutes. Call `get_image` again with the same task ID to refresh them. Share `historyUrl` if the user needs the set as a ZIP or wants to open its web record.
+Image links expire at `expiresAt`, usually after 15 minutes. Check the original task again to refresh expired links. Share `historyUrl` for the set ZIP or the full web record.
 
 ## Handle failures
 

@@ -1029,7 +1029,14 @@ it("limits automation credentials to enterprise image calls and serves MCP witho
   expect(await call.json()).toMatchObject({
     jsonrpc: "2.0",
     id: 2,
-    result: { content: [{ type: "text" }] },
+    result: {
+      content: [
+        {
+          type: "text",
+          text: expect.stringContaining('"checkAtSeconds":[40,60,90],"retryAfterSeconds":40'),
+        },
+      ],
+    },
   });
   expect(create).toHaveBeenCalledTimes(3);
   expect(create.mock.calls[2]?.[1]).toMatchObject({
@@ -1052,6 +1059,15 @@ it("limits automation credentials to enterprise image calls and serves MCP witho
     result: { content: [{ text: expect.stringContaining('"aspectRatio":"16:9"') }] },
   });
   expect(create.mock.calls[3]?.[1]).toMatchObject({ aspectRatio: "16:9", submissionSource: "mcp" });
+  const pendingTask = await request(`${path}/mcp`, key, {
+    jsonrpc: "2.0",
+    id: 4,
+    method: "tools/call",
+    params: { name: "get_image", arguments: { taskId: crypto.randomUUID() } },
+  });
+  expect(await pendingTask.json()).toMatchObject({
+    result: { content: [{ text: expect.stringContaining('"retryAfterSeconds":20') }] },
+  });
 });
 
 it("returns owned media in task order and reads a thumbnail only when requested", async () => {

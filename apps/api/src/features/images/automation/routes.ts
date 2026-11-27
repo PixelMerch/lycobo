@@ -15,7 +15,7 @@ import { checkImageRequestLimit } from "../rate-limit";
 import { type Env, fail, type ImageApiDependencies, id } from "../route-context";
 import { submitImageTask } from "../tasks/task-routes";
 import { inferAutomationAspectRatio } from "./aspect-ratio";
-import { serveImageAutomationMcp } from "./mcp";
+import { mcpImageRetryAfterSeconds, serveImageAutomationMcp } from "./mcp";
 
 const keyPath = imageAutomationKeyPath;
 const generationPath = `${imageAutomationPath}/generations`;
@@ -95,7 +95,8 @@ async function automationResult(
   const task = await repository.automation.result(scope, taskId);
   if (!task) return fail(c, "NOT_FOUND", "任务不存在", 404);
   const pending = task.status === "queued" || task.status === "running";
-  if (pending) c.header("Retry-After", "10");
+  const retryAfterSeconds = audience === "agent" ? mcpImageRetryAfterSeconds : 10;
+  if (pending) c.header("Retry-After", String(retryAfterSeconds));
   const images =
     signAsset && task.asset_ids.length
       ? await resultImages(
@@ -110,7 +111,7 @@ async function automationResult(
     status: task.status,
     images,
     ...(audience === "agent" && { publicId: task.publicId, aspectRatio: task.aspectRatio }),
-    ...(pending && { retryAfterSeconds: 10 }),
+    ...(pending && { retryAfterSeconds }),
   });
 }
 

@@ -27,6 +27,10 @@ const bodySchema = z.object({ method: z.string() }).passthrough();
 const failureSchema = z.object({ error: z.object({ code: z.string(), message: z.string() }) });
 const submittedSchema = z.looseObject({ id });
 const taskIdentifier = z.union([id, imageJobSchema.shape.public_id.unwrap()]);
+const checkAtSeconds = [40, 60, 90] as const;
+
+/** 为未取得新任务查询时点的 Agent 提供重查间隔。 */
+export const mcpImageRetryAfterSeconds = checkAtSeconds[1] - checkAtSeconds[0];
 
 function toolError(code: string, message?: string, retryAfter?: string | null) {
   return {
@@ -40,7 +44,7 @@ function toolError(code: string, message?: string, retryAfter?: string | null) {
   };
 }
 
-async function toolResult(run: () => Promise<Response>, submissionUrl?: string) {
+async function toolResult(run: () => Promise<Response>, requestUrl: string) {
   try {
     const response = await run();
     const body: unknown = await response.json();
@@ -52,7 +56,10 @@ async function toolResult(run: () => Promise<Response>, submissionUrl?: string) 
         response.headers.get("Retry-After"),
       );
     }
-    const result = submissionUrl ? withHistoryUrl(body, submissionUrl) : body;
+    const result = {
+      ...withHistoryUrl(body, requestUrl),
+      ...(response.status === 202 && { checkAtSeconds, retryAfterSeconds: checkAtSeconds[0] }),
+    };
     return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
   } catch (error) {
     // 工具回复仅透出已知业务错误码，不转发异常、供应商详情或凭据。
@@ -67,9 +74,9 @@ async function toolResult(run: () => Promise<Response>, submissionUrl?: string) 
   }
 }
 
-function withHistoryUrl(body: unknown, submissionUrl: string) {
+function withHistoryUrl(body: unknown, requestUrl: string) {
   const task = submittedSchema.parse(body);
-  const history = new URL("/dashboard/commerce/smart-variation", submissionUrl);
+  const history = new URL("/dashboard/commerce/smart-variation", requestUrl);
   history.searchParams.set("task", task.id);
   return { ...task, historyUrl: history.href };
 }
@@ -129,7 +136,8 @@ export async function serveImageAutomationMcp(
   server.registerTool(
     "get_image",
     {
-      description: "按任务编号或任务 UUID 查询状态，获取已生成图片的限时预览和原图下载链接。",
+      description:
+        "按任务编号或任务 UUID 查询状态。新任务按提交回执的 checkAtSeconds 查询，时间从提交算起。查询已有任务时按 retryAfterSeconds 重查。已有成图时直接提供预览与原图下载链接。",
       inputSchema: { taskId: taskIdentifier },
       annotations: { readOnlyHint: true },
     },

@@ -39,15 +39,13 @@ description: 使用 Lycobo 生成单张图片或多套图片、查询任务、�
 
 ## 查询与交付
 
-用户要在对话里收图时，提交后接着调用 `get_image` 查询，可以在 `taskId` 里传入短编号 `publicId` 或任务 UUID `id`。已有任务直接查询。工具把 JSON 放在 `content` 的文本项里时，从该项读取状态、短编号和链接。
+提交后在同一轮继续查询并交付图片。使用短编号 `publicId` 或任务 UUID `id` 作为 `get_image` 的 `taskId`。工具把 JSON 放在 `content` 的文本项里时，从该项读取状态和链接。
 
-- `queued` 或 `running` 时，按 `retryAfterSeconds` 等待。一次执行中，同一任务最多查询三次。还在运行时，返回任务编号和当前状态，供用户稍后继续查询。
-- `succeeded` 时，显示任务编号、已完成的图片及各张原图的下载入口。`partially_failed` 时，说明部分失败，继续交付实际返回的图片。
+- 新任务按提交回执的 `checkAtSeconds` 查询。没有该字段时，用提交成功后的第 40、60、90 秒，依次等待 40、20、30 秒。只在任务仍排队或运行中时继续查，一轮最多查三次，拿到成图就交付。查询已有任务时先立即查一次，仍在处理时按 `retryAfterSeconds` 重查。用完查询次数或当前轮次无法继续等待时，给出任务编号和当前状态，并附上可以直接发送的「查询 Lycobo 任务 <编号> 的预览和原图下载链接」。
+- 只要 `images` 有结果，直接按 `imageIndex` 列出两个可点击链接「预览第 N 张」用 `previewUrl`，「下载第 N 张原图」用 `url`。返回所有已完成的图片，部分失败时同时说明状态。只有用户要求在对话里嵌入图片时，才额外调用 `preview_image`。
 - `failed` 或 `needs_reconciliation` 时，报告失败或待核对。重新提交可能再次消耗积分，先由用户确认。
 
-对话里展示图片时优先调用 `preview_image`，传入任务编号和 `imageIndex`（从 1 开始，默认第一张）。若客户端无法渲染返回的 MCP 图片，提供 `get_image` 的 `images[].previewUrl`，让用户点开缩略图。用户要求看多张时，可按 `imageIndex` 列出每张的预览链接。
-
-把 `images[].url` 作为对话里可点击的「下载第 N 张原图」链接，直接下载文件。预览和下载地址均以 `expiresAt` 为到期时间，默认 15 分钟。过期后按原任务编号再查 `get_image` 以刷新链接。用户需要整套 ZIP 或网页记录时，提供 `historyUrl`。
+图片链接有效期以 `expiresAt` 为准，通常为 15 分钟。链接过期后用原任务编号查询并返回新链接。用户需要整套 ZIP 或网页记录时，提供 `historyUrl`。
 
 ## 处理失败
 
