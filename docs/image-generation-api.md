@@ -41,9 +41,9 @@ REST 和 MCP 的 `generate_image` 接收单张图片请求。`generate_image_set
 
 所有已标记 MCP 来源的任务归入「套图计划」，素材仍支持「MCP 生成」筛选。MCP 提交回执和 `get_image` 提供任务 UUID `id`、可展示的短编号 `publicId`（例如 `WS8TZGMH5`）、任务实际采用的 `aspectRatio` 和网页任务地址 `historyUrl`。逐图方案由 Agent 提供，服务端按请求编号保存，复用套图生成流程。
 
-Skill 提交后立即提供该任务的网页生成记录 `historyUrl`，用户可在浏览器查看进度和图片并下载。用户明确要求等待完成时，按 MCP 回执的 `checkAtSeconds` 在提交后的第 40、60、90 秒查询，最多三次。已有任务需要查状态时先直接查询，排队或运行中通过 `retryAfterSeconds` 建议等待 20 秒。REST 查询等待提示为 10 秒。
+中英文 Skill 只负责提交任务和汇报回执。使用连接器当前的 `aspectRatio` 参数，缺少字段时暂停提交并提示刷新工具列表。收到任务 ID 即确认受理，回复任务短编号并附上回执中的网页生成记录 `historyUrl`，本轮到此结束。网页生成记录提供进度、图片和下载入口。
 
-`get_image` 和 `preview_image` 的 `taskId` 支持短编号或任务 UUID，均按组织和用户限定归属。`preview_image` 的可选 `imageIndex` 从 1 开始，按已有输出顺序，默认 1。验证归属后只读取一张已有的 WebP 缩略图，最大 256 KiB，返回 MCP `image` 内容。MCP `get_image` 返回每张图片的 `imageIndex`、缩略图 `previewUrl`、原图下载 `url` 和 `expiresAt`。链接用独立用途签名，有效期 15 分钟，可在 Agent 中直接打开且无需站内请求来源。失效时可按原任务再次查询。媒体桶保持私有，Agent 预览链接只读取已有缩略图。整套 ZIP 可通过 `historyUrl` 在网页下载。两个 MCP 工具复用现有账号通用限流。
+`get_image` 和 `preview_image` 的 `taskId` 支持短编号或任务 UUID，均按组织和用户限定归属。`preview_image` 的可选 `imageIndex` 从 1 开始，按已有输出顺序，默认 1。验证归属后只读取一张已有的 WebP 缩略图，最大 256 KiB，返回 MCP `image` 内容。MCP `get_image` 返回每张图片的 `imageIndex`、缩略图 `previewUrl`、原图下载 `url` 和 `expiresAt`。链接用独立用途签名，有效期 15 分钟，可在 Agent 中直接打开且无需站内请求来源。失效时可按原任务再次查询。媒体桶保持私有，Agent 预览链接只读取已有缩略图。整套 ZIP 可通过 `historyUrl` 在网页下载。两个 MCP 工具复用现有账号通用限流。 直接集成 MCP 时可使用回执的 `checkAtSeconds`（提交后第 40、60、90 秒）和 `retryAfterSeconds`（任务仍在排队或执行中时为 20 秒）。REST 查询等待提示为 10 秒。
 
 ```sh
 curl --fail-with-body https://lycobo.com/api/v1/enterprise/image-api/generations \
@@ -59,7 +59,14 @@ curl --fail-with-body https://lycobo.com/api/v1/enterprise/image-api/generations
 
 连接成功后，豆包从 Lycobo MCP 服务读取工具列表。MCP 鉴权失败返回 HTTP 401，响应直接包含 `code`、`message`、`requestId` 和 `error`。`error` 说明是缺少 `Authorization`、格式不正确，还是生图 Key 未通过验证。后者统一提示检查 Key 是否无效、过期或已撤销。
 
-维护技能时，同步更新 `apps/web/public/integrations/` 下的中文 `lycobo-image/SKILL.md`、英文 `en/lycobo-image/SKILL.md` 和对应压缩包。两个压缩包都只包含 `lycobo-image/SKILL.md`，技能标识保持 `lycobo-image`。
+维护技能时，同步更新 `apps/web/public/integrations/` 下的中文 `lycobo-image/SKILL.md`、英文 `en/lycobo-image/SKILL.md` 和对应压缩包。两个压缩包都包含对应语言的 `lycobo-image/SKILL.md` 和共用的 `lycobo-image/scripts/reference_files.py`。脚本源文件放在中文技能目录，打包英文版时使用同一份文件。技能标识保持 `lycobo-image`。
+
+#### 定时任务的本地参考图
+
+- 在可持续访问本地文件的 Agent 里选一次目录并保存文件选择规则。每次运行通过技能脚本计算所选原文件的 SHA-256，调用 `prepare_reference_uploads` 批量查重，每次最多 100 个唯一指纹。请求不包含文件内容、路径或名称。仅复用当前工作区同一成员上传且可用的素材。
+- 命中返回 `assetId`，未命中返回上传地址和 10 分钟短期凭证。设备仅压缩未命中的文件，用该凭证作为 `Authorization: Bearer <uploadToken>`，以 `Content-Type: image/webp` 向 `/api/v1/enterprise/image-api/reference-uploads` 发起 PUT。响应的 `data.assetId` 为素材 UUID。上传继续使用账号上传限流，服务器验证静态 WebP、最长边 1600 像素及 1 MiB 硬上限。对象存储只写入压缩副本。长期 Key 继续存于连接器，短期凭证只授权对应参考图上传。
+- 生成时用 `referenceAssetIds` 提交最多五个可用素材 ID。单张与套图都使用同一字段，每套共用该组参考图。已被任务引用的素材沿用现有长期保留规则，尚未引用的素材沿用三天清理规则。重复提交同一生成任务时须复用原请求 UUID 和参考图参数。
+- 部署前先应用 `0059_automation_reference_fingerprints`。发布时启用 `consumer_first`，先更新图片消费者，再发布 API Worker 和技能包。需要验证真实设备定时任务可以读取授权目录，且后续同内容只查重、不发生重复上传。
 
 REST JSON 响应遵循 [统一返回格式](node-ts-best-practices.md#api-响应)，原业务结果放入顶层 data；错误使用 request_id、数字业务码和中文 message。MCP 工具请求和结果遵循 JSON-RPC。未验证身份返回 401，跨组织资源返回 404。API 客户端使用 `Authorization: Bearer <LycoBo 访问令牌>`（不是供应商密钥）；浏览器支持企业 JWT HttpOnly Cookie，不开放凭证通配 CORS。图片内容接口保留二进制响应。
 

@@ -60,7 +60,7 @@ export async function openCloudflareRuntime(env: CloudflareImageEnv) {
     store,
     uploads,
     policy: readImagePolicy({}),
-    // 参考 PNG 已经限制尺寸并清理元信息，局部编辑直接保留像素。
+    // 私有参考图通过签名提供已保存的 PNG 或 WebP，局部编辑保留原有像素。
     deliverReference: async (asset: { objectKey: string }) =>
       new URL(await signReference(asset.objectKey)),
   };

@@ -16,18 +16,21 @@ import { type Env, fail, type ImageApiDependencies, id } from "../route-context"
 import { submitImageTask } from "../tasks/task-routes";
 import { inferAutomationAspectRatio } from "./aspect-ratio";
 import { mcpImageRetryAfterSeconds, serveImageAutomationMcp } from "./mcp";
+import { prepareAutomationReferences } from "./references";
 
 const keyPath = imageAutomationKeyPath;
 const generationPath = `${imageAutomationPath}/generations`;
 const forbidden = (c: Context<Env>) => fail(c, "FORBIDDEN", "仅企业账号可使用生图 API", 403);
 
-function submitAutomation(
+async function submitAutomation(
   c: Context<Env>,
   deps: ImageApiDependencies,
   input: z.infer<typeof imageAutomationInputSchema>,
   key: string,
   submissionSource?: "mcp",
 ) {
+  const denied = await checkAutomationReferences(c, deps, input.referenceAssetIds);
+  if (denied) return denied;
   const inferredRatio =
     submissionSource === "mcp" && input.aspectRatio === undefined
       ? inferAutomationAspectRatio([input.prompt])
@@ -37,7 +40,11 @@ function submitAutomation(
     aspectRatio: input.aspectRatio ?? inferredRatio,
     model: "gpt-image-2.6",
   });
-  return submitImageTask(c, deps, task, key, submissionSource, Boolean(inferredRatio));
+  return submitImageTask(c, deps, task, key, {
+    submissionSource,
+    inferredAspectRatio: Boolean(inferredRatio),
+    referencesAlreadyUploaded: true,
+  });
 }
 
 async function submitAutomationSet(
@@ -47,6 +54,8 @@ async function submitAutomationSet(
   key: string,
 ) {
   if (!deps.enabled) return fail(c, "GENERATION_NOT_CONFIGURED", "生图服务尚未启用", 503);
+  const denied = await checkAutomationReferences(c, deps, input.referenceAssetIds);
+  if (denied) return denied;
   const { aspectRatio, ...details } = input;
   // 显式指定方图和旧请求省略比例使用同一方案哈希，避免重放时冲突。
   const planInput = aspectRatio === "1:1" ? details : input;
@@ -67,9 +76,23 @@ async function submitAutomationSet(
     aspectRatio: aspectRatio ?? inferredRatio,
     model: "gpt-image-2.6",
     count: plan.items.length,
+    referenceAssetIds: plan.referenceAssetIds,
     variation: { version: 1, planId: plan.id, items: plan.items },
   });
-  return submitImageTask(c, deps, task, key, "mcp", Boolean(inferredRatio));
+  return submitImageTask(c, deps, task, key, {
+    submissionSource: "mcp",
+    inferredAspectRatio: Boolean(inferredRatio),
+    referencesAlreadyUploaded: true,
+  });
+}
+
+async function checkAutomationReferences(
+  c: Context<Env>,
+  deps: ImageApiDependencies,
+  ids: string[] | undefined,
+) {
+  if (ids?.length && !(await deps.repository.ownsAutomationReferences(c.get("principal"), ids)))
+    return fail(c, "REFERENCE_NOT_FOUND", "参考素材不可用，请重新查重", 400);
 }
 
 async function limitAutomationSubmission(
@@ -194,7 +217,12 @@ export function registerImageAutomation(app: Hono<Env>, deps: ImageApiDependenci
     const input = imageAutomationInputSchema.safeParse(await c.req.json());
     const key = id.safeParse(c.req.header("Idempotency-Key"));
     if (!input.success || !key.success)
-      return fail(c, "VALIDATION_ERROR", "请检查提示词、分辨率、图片比例和 Idempotency-Key", 400);
+      return fail(
+        c,
+        "VALIDATION_ERROR",
+        "请检查提示词、分辨率、图片比例、参考素材和 Idempotency-Key",
+        400,
+      );
     return submitAutomation(c, deps, input.data, key.data);
   });
   app.get(`${generationPath}/:taskId`, async (c) => {
@@ -213,6 +241,7 @@ export function registerImageAutomation(app: Hono<Env>, deps: ImageApiDependenci
         limitAutomationSubmission(c, deps, () => submitAutomation(c, deps, input, key, "mcp")),
       submitSet: (input, key) =>
         limitAutomationSubmission(c, deps, () => submitAutomationSet(c, deps, input, key)),
+      prepareReferences: (fingerprints) => prepareAutomationReferences(c, deps, fingerprints),
       result: (taskId) => automationResult(c, deps, taskId, "agent"),
       preview: (taskId, imageIndex) => automationPreview(c, deps, taskId, imageIndex),
     });

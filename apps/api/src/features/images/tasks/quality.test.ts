@@ -42,6 +42,10 @@ function fixture(
     getMany?: ImageRepository["getMany"];
     assetLocations?: ImageRepository["assetLocations"];
     asset?: ImageRepository["asset"];
+    automationReferences?: ImageRepository["automationReferences"];
+    ownsAutomationReferences?: ImageRepository["ownsAutomationReferences"];
+    addAutomationReference?: ImageRepository["addAutomationReference"];
+    putAutomationReference?: NonNullable<ImageStore["putAutomationReference"]>;
     readDisplayThumbnail?: NonNullable<ImageStore["readDisplayThumbnail"]>;
     signAsset?: ReturnType<typeof assetDeliverySigner>;
     optimizer?: {
@@ -142,6 +146,9 @@ function fixture(
     get: extra.get ?? unexpected,
     latestEdit: unexpected,
     addReference: unexpected,
+    automationReferences: extra.automationReferences ?? unexpected,
+    ownsAutomationReferences: extra.ownsAutomationReferences ?? unexpected,
+    addAutomationReference: extra.addAutomationReference ?? unexpected,
     listAssets: unexpected,
     setAssetFavorite: unexpected,
     favoriteAssetIds: unexpected,
@@ -162,6 +169,7 @@ function fixture(
     read: unexpected,
     thumbnail: unexpected,
     ...(extra.readDisplayThumbnail && { readDisplayThumbnail: extra.readDisplayThumbnail }),
+    ...(extra.putAutomationReference && { putAutomationReference: extra.putAutomationReference }),
     remove: unexpected,
   };
   const app = createApp(() => {}, {
@@ -1004,6 +1012,7 @@ it("limits automation credentials to enterprise image calls and serves MCP witho
     id: 1,
     result: {
       tools: [
+        { name: "prepare_reference_uploads" },
         {
           name: "generate_image",
           inputSchema: { properties: { aspectRatio: { enum: expect.arrayContaining(["16:9"]) } } },
@@ -1068,6 +1077,140 @@ it("limits automation credentials to enterprise image calls and serves MCP witho
   expect(await pendingTask.json()).toMatchObject({
     result: { content: [{ text: expect.stringContaining('"retryAfterSeconds":20') }] },
   });
+});
+
+it("deduplicates MCP references and accepts only scoped, short-lived WebP uploads", async () => {
+  const identity = {
+    userId: crypto.randomUUID(),
+    organizationId: crypto.randomUUID(),
+    role: "member" as const,
+  };
+  const assetId = crypto.randomUUID();
+  const newId = crypto.randomUUID();
+  const known = "a".repeat(64);
+  const missing = "b".repeat(64);
+  const putAutomationReference = vi.fn<NonNullable<ImageStore["putAutomationReference"]>>(
+    async () => ({
+      id: newId,
+      objectKey: "reference.webp",
+      mimeType: "image/webp",
+      width: 100,
+      height: 100,
+      bytes: 32_769,
+      sha256: "c".repeat(64),
+    }),
+  );
+  const uploaded = new Map([[known, assetId]]);
+  const automationReferences = vi.fn<ImageRepository["automationReferences"]>(
+    async (_scope, hashes) =>
+      hashes.flatMap((sha256) => {
+        const match = uploaded.get(sha256);
+        return match ? [{ sha256, assetId: match }] : [];
+      }),
+  );
+  const { app, create } = fixture(true, false, {
+    putAutomationReference,
+    automationReferences,
+    ownsAutomationReferences: async (_scope, ids) => ids.every((id) => id === newId),
+    addAutomationReference: async (_scope, sha256, asset) => {
+      uploaded.set(sha256, asset.id);
+      return asset.id;
+    },
+    automation: {
+      authenticate: async (token) => (token === "fixture" ? identity : null),
+      status: unexpected,
+      keyCiphertext: unexpected,
+      rotate: unexpected,
+      revoke: unexpected,
+      result: unexpected,
+    },
+  });
+  const mcp = (name: string, args: object) =>
+    app.request("/api/v1/enterprise/image-api/mcp", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer fixture",
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: { name, arguments: args },
+      }),
+    });
+  const lookupResult = z.object({
+    result: z.object({ content: z.array(z.object({ text: z.string() })) }),
+  });
+  const lookup = async () => {
+    const response = await mcp("prepare_reference_uploads", { fingerprints: [known, missing] });
+    const payload = lookupResult.parse(await response.json());
+    return z
+      .object({
+        references: z.array(
+          z.object({
+            sha256: z.string(),
+            assetId: z.string().optional(),
+            uploadUrl: z.string().optional(),
+            uploadToken: z.string().optional(),
+          }),
+        ),
+      })
+      .parse(JSON.parse(payload.result.content[0]?.text ?? ""));
+  };
+  const [hit, ticket] = (await lookup()).references;
+  expect(hit).toEqual({ sha256: known, assetId });
+  expect(automationReferences).toHaveBeenCalledExactlyOnceWith(
+    { userId: identity.userId, organizationId: identity.organizationId },
+    [known, missing],
+  );
+  if (!ticket?.uploadUrl || !ticket.uploadToken) throw new Error("Missing fixture upload ticket");
+  const upload = (token: string, size = 32_769, contentType = "image/webp") =>
+    app.request(ticket.uploadUrl ?? "", {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": contentType },
+      body: new Uint8Array(size),
+    });
+  expect((await upload("fixture")).status).toBe(401);
+  const expired = await sealProviderKey(
+    JSON.stringify({
+      userId: identity.userId,
+      organizationId: identity.organizationId,
+      sha256: missing,
+      expiresAt: Date.now() - 1000,
+    }),
+    fixtureAutomationSecret,
+    "image-automation-reference-upload:v1",
+  );
+  expect((await upload(expired)).status).toBe(401);
+  expect((await upload(ticket.uploadToken, 32_769, "image/png")).status).toBe(400);
+  expect((await upload(ticket.uploadToken, 1024 * 1024 + 1)).status).toBe(413);
+  expect(putAutomationReference).not.toHaveBeenCalled();
+  const saved = await upload(ticket.uploadToken);
+  expect(saved.status).toBe(201);
+  expect(unwrapApiData(await saved.json())).toEqual({ assetId: newId });
+  expect((await upload(ticket.uploadToken)).status).toBe(200);
+  expect(putAutomationReference).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({ userId: identity.userId, organizationId: identity.organizationId }),
+    expect.any(Uint8Array),
+  );
+  expect((await lookup()).references[1]).toEqual({ sha256: missing, assetId: newId });
+  const generate = (referenceId: string) =>
+    mcp("generate_image", {
+      prompt: "fixture",
+      resolution: "1.5K",
+      requestId: crypto.randomUUID(),
+      referenceAssetIds: [referenceId],
+    });
+  expect(await (await generate(crypto.randomUUID())).json()).toMatchObject({
+    result: { isError: true },
+  });
+  expect(create).not.toHaveBeenCalled();
+  expect(await (await generate(newId)).json()).toMatchObject({
+    result: { content: expect.any(Array) },
+  });
+  expect(create.mock.calls[0]?.[1]).toMatchObject({ referenceAssetIds: [newId] });
 });
 
 it("returns owned media in task order and reads a thumbnail only when requested", async () => {
@@ -1166,19 +1309,21 @@ it("accepts one MCP set through moderation and the queue, with a 20-image cap pe
     role: "member" as const,
   };
   const planId = crypto.randomUUID();
+  const referenceAssetIds = [crypto.randomUUID()];
   const saveAutomationPlan = vi.fn<ImageRepository["variation"]["saveAutomationPlan"]>(
     async (_scope, set) => ({
       id: planId,
       status: "ready",
       description: set.title,
-      referenceAssetIds: [],
+      referenceAssetIds: set.referenceAssetIds ?? [],
       items: set.images.map((image) => ({ ...image, id: crypto.randomUUID() })),
     }),
   );
   const moderate = vi.fn<GenerationModerator>(async () => undefined);
-  const { app, create } = fixture(false, false, {
+  const { app, create } = fixture(true, false, {
     moderate,
     saveAutomationPlan,
+    ownsAutomationReferences: async (_scope, ids) => ids[0] === referenceAssetIds[0],
     automation: {
       authenticate: async () => identity,
       status: unexpected,
@@ -1211,6 +1356,7 @@ it("accepts one MCP set through moderation and the queue, with a 20-image cap pe
             title: "窗边商品套图",
             resolution: "2K",
             aspectRatio: "4:5",
+            referenceAssetIds,
             images: items,
             requestId,
           },
@@ -1233,7 +1379,7 @@ it("accepts one MCP set through moderation and the queue, with a 20-image cap pe
   });
   expect(saveAutomationPlan).toHaveBeenCalledWith(
     identity,
-    expect.objectContaining({ images, aspectRatio: "4:5" }),
+    expect.objectContaining({ images, aspectRatio: "4:5", referenceAssetIds }),
     requestId,
   );
   expect(moderate.mock.calls[0]?.[0]).toEqual(
@@ -1243,6 +1389,7 @@ it("accepts one MCP set through moderation and the queue, with a 20-image cap pe
   expect(create.mock.calls[0]?.[1]).toMatchObject({
     userPrompt: "窗边商品套图",
     aspectRatio: "4:5",
+    referenceAssetIds,
     count: 20,
     submissionSource: "mcp",
     variation: { planId },

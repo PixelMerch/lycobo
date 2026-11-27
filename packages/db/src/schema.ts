@@ -234,6 +234,7 @@ export const generationApiKeys = pgTable(
     index("generation_api_keys_member_idx").on(t.organizationId, t.userId),
   ],
 );
+/** 工作区成员的原图、参考图及其存储生命周期。 */
 export const mediaAssets = pgTable(
   "media_assets",
   {
@@ -261,6 +262,7 @@ export const mediaAssets = pgTable(
     height: integer("height").notNull(),
     bytes: integer("bytes").notNull(),
     sha256: text("sha256").notNull(),
+    sourceSha256: text("source_sha256"),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     cleanupStartedAt: timestamp("cleanup_started_at", { withTimezone: true }),
     storageDeletedAt: timestamp("storage_deleted_at", { withTimezone: true }),
@@ -278,6 +280,11 @@ export const mediaAssets = pgTable(
       .on(t.expiresAt)
       .where(sql`${t.expiresAt} is not null and ${t.storageDeletedAt} is null`),
     index("media_assets_member_idx").on(t.organizationId, t.userId),
+    index("media_assets_source_sha256_idx")
+      .on(t.organizationId, t.userId, t.sourceSha256)
+      .where(
+        sql`${t.sourceSha256} is not null and ${t.storageDeletedAt} is null and ${t.cleanupStartedAt} is null`,
+      ),
     check(
       "media_assets_dimensions_check",
       sql`${t.width} > 0 and ${t.height} > 0 and ${t.bytes} > 0`,

@@ -5,6 +5,7 @@ import {
   imageTaskPublicIdSchema,
   imageTasksResponseSchema,
   imageUnitCredits,
+  type StoredImage,
   unwrapApiData,
 } from "@lycoboai/contracts";
 import type { ImageRepository } from "@lycoboai/db";
@@ -98,7 +99,44 @@ async function verifyAutomationSets(
   );
 }
 
-/** 用隔离数据库验证企业 Key 的签发、并发更换、权限与结果归属。 */
+async function verifyAutomationReferenceDeduplication(
+  repository: ImageRepository,
+  sql: postgres.Sql,
+  scope: ImageScope,
+  other: ImageScope,
+) {
+  const sha256 = "a".repeat(64);
+  const fixture = (): StoredImage => ({
+    id: crypto.randomUUID(),
+    objectKey: `fixture/${crypto.randomUUID()}.webp`,
+    mimeType: "image/webp",
+    width: 20,
+    height: 15,
+    bytes: 400,
+    sha256: "b".repeat(64),
+  });
+  const [assetId, competingId] = await Promise.all([
+    repository.addAutomationReference(scope, sha256, fixture()),
+    repository.addAutomationReference(scope, sha256, fixture()),
+  ]);
+  assert.equal(assetId, competingId);
+  assert.deepEqual(await repository.automationReferences(scope, [sha256]), [{ assetId, sha256 }]);
+  const sameWorkspace = { ...scope, userId: other.userId };
+  assert.deepEqual(await repository.automationReferences(sameWorkspace, [sha256]), []);
+  assert.deepEqual(await repository.automationReferences(other, [sha256]), []);
+  assert.equal(await repository.ownsAutomationReferences(sameWorkspace, [assetId]), false);
+  assert.equal(await repository.ownsAutomationReferences(scope, [assetId]), true);
+  assert.equal((await repository.asset(scope, assetId))?.mimeType, "image/webp");
+  await sql`update media_assets set expires_at=now()-interval '1 second' where id=${assetId}`;
+  assert.deepEqual(await repository.automationReferences(scope, [sha256]), []);
+  const replacementId = await repository.addAutomationReference(scope, sha256, fixture());
+  assert.notEqual(replacementId, assetId);
+  assert.deepEqual(await repository.automationReferences(scope, [sha256]), [
+    { assetId: replacementId, sha256 },
+  ]);
+}
+
+/** 用隔离数据库验证企业 Key 生命周期、任务归属和参考图并发去重。 */
 export async function verifyImageAutomation(
   repository: ImageRepository,
   sql: postgres.Sql,
@@ -145,6 +183,7 @@ export async function verifyImageAutomation(
   assert.deepEqual(await keys.result(scope, publicId), task);
   await sql`insert into organization_members (organization_id,user_id,role)
     values (${scope.organizationId},${other.userId},'member')`;
+  await verifyAutomationReferenceDeduplication(repository, sql, scope, other);
   assert.equal(await keys.result({ ...scope, userId: other.userId }, id), null);
   assert.equal(await keys.result({ ...scope, userId: other.userId }, publicId), null);
   assert.equal(await keys.result(other, id), null);

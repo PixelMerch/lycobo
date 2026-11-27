@@ -14,9 +14,45 @@ export function imageAssetRepository(sql: postgres.Sql) {
   const toolSql = sql`case when j.id is null then null when j.input ? 'textileSet' then 'textile'
     when j.input ? 'replica' then 'replica' when ${variationSql} then 'variation' when j.input ? 'video' then 'video' else 'create' end`;
   const visibleAssetSql = sql`(a.expires_at is null or a.expires_at>now()) and a.storage_deleted_at is null`;
+  const automationScope = (scope: ImageScope, query: postgres.ISql) =>
+    query`a.organization_id=${scope.organizationId} and a.user_id=${scope.userId}
+      and a.source_sha256 is not null and a.kind='reference' and a.mime_type='image/webp'
+      and a.storage_deleted_at is null and a.cleanup_started_at is null
+      and (a.expires_at is null or a.expires_at>now())`;
   const submissionSourceFilter = (source: AssetFilters["source"]) =>
     source ? sql`and a.kind='output' and j.submission_source=${source}` : sql``;
   return {
+    /** 按成员和工作区批量命中仍可使用的原文件指纹。 */
+    async automationReferences(scope: ImageScope, fingerprints: string[]) {
+      const rows = await sql<{ assetId: string; sha256: string }[]>`
+        select a.id as "assetId", a.source_sha256 as sha256 from media_assets a
+        where ${automationScope(scope, sql)} and a.source_sha256 in ${sql(fingerprints)}`;
+      return rows.map(({ assetId, sha256 }) => ({ assetId, sha256 }));
+    },
+    /** 仅允许自动化任务引用该成员在当前工作区上传的参考素材。 */
+    async ownsAutomationReferences(scope: ImageScope, ids: string[]) {
+      const rows = await sql`select a.id from media_assets a
+        where ${automationScope(scope, sql)} and a.id in ${sql(ids)}`;
+      return rows.length === ids.length;
+    },
+    /** 同一成员的相同指纹只登记一份，竞争请求复用赢家的素材 ID。 */
+    async addAutomationReference(scope: ImageScope, sourceSha256: string, image: StoredImage) {
+      return sql.begin(async (tx) => {
+        // 上传已结束，锁内只读写数据库。清理中的素材不能作为复用目标。
+        const key = `${scope.organizationId}:${scope.userId}:${sourceSha256}`;
+        await tx`select pg_advisory_xact_lock(hashtextextended(${key},71422))`;
+        const [existing] = await tx<{ id: string }[]>`select a.id from media_assets a
+          where ${automationScope(scope, tx)} and a.source_sha256=${sourceSha256}`;
+        if (existing) return existing.id;
+        await tx`insert into media_assets
+          (id,organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256,source_sha256,expires_at)
+          values (${image.id},${scope.organizationId},${scope.userId},'reference','image',${image.objectKey},
+            ${image.mimeType},${image.width},${image.height},${image.bytes},${image.sha256},
+            ${sourceSha256},now()+interval '3 days')`;
+        await recordImageEvent(tx, scope.organizationId, "asset", image.id);
+        return image.id;
+      });
+    },
     async addReference(scope: ImageScope, image: StoredImage) {
       await sql.begin(async (tx) => {
         await tx`insert into media_assets (id,organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256,expires_at)
@@ -113,7 +149,7 @@ export function imageAssetRepository(sql: postgres.Sql) {
       return {
         id: String(row.id),
         objectKey: String(row.object_key),
-        mimeType: "image/png",
+        mimeType: row.mime_type === "image/webp" ? "image/webp" : "image/png",
         width: Number(row.width),
         height: Number(row.height),
         bytes: Number(row.bytes),
@@ -122,7 +158,8 @@ export function imageAssetRepository(sql: postgres.Sql) {
     },
     async expiredReferences(): Promise<StoredImage[]> {
       const rows = await sql.begin(async (tx) => {
-        const expired = await tx`select id,object_key,width,height,bytes,sha256 from media_assets
+        const expired =
+          await tx`select id,object_key,mime_type,width,height,bytes,sha256 from media_assets
           where expires_at<=now() and storage_deleted_at is null order by expires_at,id limit 20 for update skip locked`;
         if (expired.length)
           await tx`update media_assets set cleanup_started_at=coalesce(cleanup_started_at,now()) where id in ${tx(expired.map((row) => String(row.id)))}`;
@@ -131,7 +168,7 @@ export function imageAssetRepository(sql: postgres.Sql) {
       return rows.map((row) => ({
         id: String(row.id),
         objectKey: String(row.object_key),
-        mimeType: "image/png",
+        mimeType: row.mime_type === "image/webp" ? "image/webp" : "image/png",
         width: Number(row.width),
         height: Number(row.height),
         bytes: Number(row.bytes),

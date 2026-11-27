@@ -144,7 +144,8 @@ export async function servePrivateAsset(request: Request, options: PrivateAssetO
     });
   }
   const asset = { key, variant, pathVariant, expires, allowed };
-  if (key.endsWith(".mp4") || variant === "provider") return serveOriginal(request, options, asset);
+  if (key.endsWith(".mp4") || key.endsWith(".webp") || variant === "provider")
+    return serveOriginal(request, options, asset);
   return serveImage(request, options, asset, url.origin);
 }
 
@@ -232,17 +233,15 @@ async function serveOriginal(
 ) {
   const { key, variant, pathVariant, expires, allowed } = asset;
   const video = key.endsWith(".mp4");
-  if ((variant === "provider" && !key.endsWith(".png")) || (pathVariant && !video))
-    return fail(403);
+  if ((variant === "provider" && video) || (pathVariant && !video)) return fail(403);
   const videoCover = video && variant === "thumbnail";
-  const originalType = video ? "video/mp4" : "image/png";
   const object = await readOriginal(request, options, key, videoCover);
   if (!object) return fail(404);
   const headers = new Headers({
-    "Content-Type": videoCover ? "image/webp" : originalType,
+    "Content-Type": originalMimeType(key, videoCover),
     "Content-Length": String(object.size),
     "Cache-Control":
-      key.endsWith(".mp4") && variant !== "download"
+      video && variant !== "download"
         ? `private, max-age=${Math.max(0, expires - Math.floor(Date.now() / 1000))}, immutable`
         : "private, no-store",
     "X-Content-Type-Options": "nosniff",
@@ -252,10 +251,15 @@ async function serveOriginal(
   setOrigin(headers, request, allowed);
   const body = "body" in object ? object.body : null;
   const range = request.headers.get("Range");
-  if (range && key.endsWith(".mp4") && !videoCover) {
+  if (range && video && !videoCover) {
     return serveMediaRange(body, range, object.size, headers);
   }
   return new Response(body, { headers });
+}
+
+function originalMimeType(key: string, videoCover: boolean) {
+  if (videoCover || key.endsWith(".webp")) return "image/webp";
+  return key.endsWith(".mp4") ? "video/mp4" : "image/png";
 }
 
 async function readImageObject(

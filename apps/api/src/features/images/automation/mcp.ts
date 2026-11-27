@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import { BillingError } from "@lycoboai/billing";
 import {
+  automationReferenceLookupSchema,
   type ImageAutomationSetInput,
   imageAutomationInputSchema,
   imageAutomationSetInputSchema,
@@ -20,6 +21,7 @@ type AutomationInput = z.infer<typeof imageAutomationInputSchema>;
 type AutomationTools = {
   submit: (input: AutomationInput, key: string) => Promise<Response>;
   submitSet: (input: ImageAutomationSetInput, key: string) => Promise<Response>;
+  prepareReferences: (fingerprints: string[]) => Promise<Response>;
   result: (taskId: string) => Promise<Response>;
   preview: (taskId: string, imageIndex: number) => Promise<Uint8Array | null>;
 };
@@ -44,7 +46,7 @@ function toolError(code: string, message?: string, retryAfter?: string | null) {
   };
 }
 
-async function toolResult(run: () => Promise<Response>, requestUrl: string) {
+async function toolResult(run: () => Promise<Response>, requestUrl?: string) {
   try {
     const response = await run();
     const body: unknown = await response.json();
@@ -56,10 +58,12 @@ async function toolResult(run: () => Promise<Response>, requestUrl: string) {
         response.headers.get("Retry-After"),
       );
     }
-    const result = {
-      ...withHistoryUrl(body, requestUrl),
-      ...(response.status === 202 && { checkAtSeconds, retryAfterSeconds: checkAtSeconds[0] }),
-    };
+    const result = requestUrl
+      ? {
+          ...withHistoryUrl(body, requestUrl),
+          ...(response.status === 202 && { checkAtSeconds, retryAfterSeconds: checkAtSeconds[0] }),
+        }
+      : body;
     return { content: [{ type: "text" as const, text: JSON.stringify(result) }] };
   } catch (error) {
     // 工具回复仅透出已知业务错误码，不转发异常、供应商详情或凭据。
@@ -101,10 +105,10 @@ async function previewResult(read: () => Promise<Uint8Array | null>) {
   }
 }
 
-/** 通过无状态 Streamable HTTP 提供任务提交、查询和缩略图预览。 */
+/** 通过无状态 Streamable HTTP 提供参考图准备、任务提交和查询。 */
 export async function serveImageAutomationMcp(
   c: Context<Env>,
-  { submit, submitSet, result, preview }: AutomationTools,
+  { submit, submitSet, prepareReferences, result, preview }: AutomationTools,
 ) {
   const body = bodySchema.safeParse(await c.req.json().catch(() => null));
   if (!body.success)
@@ -112,7 +116,17 @@ export async function serveImageAutomationMcp(
       { jsonrpc: "2.0", id: null, error: { code: -32600, message: "Invalid Request" } },
       400,
     );
-  const server = new McpServer({ name: "lycobo-image", version: "1.1.0" });
+  const server = new McpServer({ name: "lycobo-image", version: "1.2.0" });
+  server.registerTool(
+    "prepare_reference_uploads",
+    {
+      description:
+        "按原文件 SHA-256 批量查重。命中返回素材 ID，未命中返回短期 WebP 上传凭证。不要传文件原文、路径或长期 Key。",
+      inputSchema: automationReferenceLookupSchema,
+      annotations: { readOnlyHint: true },
+    },
+    ({ fingerprints }) => toolResult(() => prepareReferences(fingerprints)),
+  );
   server.registerTool(
     "generate_image",
     {

@@ -55,7 +55,7 @@ export function variationRepository(sql: postgres.Sql) {
     async saveAutomationPlan(scope: ImageScope, set: ImageAutomationSetInput, key: string) {
       const input = variationPlanInputSchema.parse({
         description: `${set.title}（MCP）`,
-        referenceAssetIds: [],
+        referenceAssetIds: set.referenceAssetIds ?? [],
       });
       const items = set.images.map((image) => ({ ...image, id: crypto.randomUUID() }));
       // 同一请求复用已保存的方案和图片 ID。豆包已提供逐图方案，无需调用规划模型。

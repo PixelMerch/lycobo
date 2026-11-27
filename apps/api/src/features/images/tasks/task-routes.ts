@@ -182,8 +182,15 @@ export async function submitImageTask(
   deps: ImageApiDependencies,
   input: z.infer<typeof imageTaskSubmissionSchema>,
   key: string,
-  submissionSource?: "mcp",
-  inferredAspectRatio = false,
+  {
+    submissionSource,
+    inferredAspectRatio = false,
+    referencesAlreadyUploaded = false,
+  }: {
+    submissionSource?: "mcp" | undefined;
+    inferredAspectRatio?: boolean;
+    referencesAlreadyUploaded?: boolean;
+  } = {},
 ) {
   if (!deps.enabled) return fail(c, "GENERATION_NOT_CONFIGURED", "生图服务尚未启用", 503);
   const { userPrompt, ...modelInput } = input;
@@ -202,7 +209,10 @@ export async function submitImageTask(
   const positions = Array.from({ length: normalized.count }, (_, index) => index);
   const [supported, acceptedUploads, credit] = await Promise.all([
     supportsTaskModel(deps, normalized),
-    prepareReferenceUploads(deps, scope, normalized.referenceAssetIds),
+    // MCP 素材同步落库，任务仍在事务内验证素材，不查询浏览器异步上传意图。
+    referencesAlreadyUploaded
+      ? []
+      : prepareReferenceUploads(deps, scope, normalized.referenceAssetIds),
     checkImageCredits(c, deps, normalized, positions),
   ]);
   if (!supported)
