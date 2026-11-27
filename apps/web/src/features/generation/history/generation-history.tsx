@@ -1,8 +1,8 @@
-import { EmptyState } from "@heroui/react";
+import { EmptyState, Skeleton } from "@heroui/react";
 import { type ImageJob, imageJobTool } from "@lycoboai/contracts";
 import { IconPhotoPlus } from "@tabler/icons-react";
 import { type RefObject, useEffect, useRef, useState } from "react";
-import { DataSkeleton } from "../../../components/data-skeleton";
+import { componentsMessages } from "../../../components/components-messages";
 import { InfiniteLoad } from "../../../components/infinite-load";
 import { UiIcon } from "../../../components/ui-icon";
 import type { Locale } from "../../../i18n/locale";
@@ -128,12 +128,34 @@ function historyNotice(
   if (hasJobs) return undefined;
   if (session.isError || query.isError) return null;
   if (session.isPending || (tool !== null && query.isPending))
-    return <DataSkeleton layout="history" />;
+    return <GenerationHistoryLoading compact={compact} />;
   return (
     <EmptyState className="empty-state generation-empty-state">
       <UiIcon icon={IconPhotoPlus} size="illustration" />
       <p>{compact ? t.noTasks : t.emptyHistory}</p>
     </EmptyState>
+  );
+}
+
+function GenerationHistoryLoading({ compact }: { compact: boolean }) {
+  const t = useMessages(componentsMessages);
+  return (
+    <div className="generation-history" role="status" aria-label={t.loadingList}>
+      <article className="generation-job" aria-hidden="true">
+        <header>
+          <Skeleton className="history-loading-tag" animationType="none" />
+          <Skeleton className="history-loading-meta" animationType="none" />
+        </header>
+        <Skeleton className="history-loading-prompt" animationType="none" />
+        {!compact && (
+          <div className="generation-results proportional-results" data-count="1">
+            <div className="history-loading-result">
+              <Skeleton className="generation-placeholder" animationType="none" />
+            </div>
+          </div>
+        )}
+      </article>
+    </div>
   );
 }
 

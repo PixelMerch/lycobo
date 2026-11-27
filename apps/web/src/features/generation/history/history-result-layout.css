@@ -27,6 +27,27 @@
   height: 100%;
   object-fit: contain;
 }
+.history-loading-tag {
+  width: 64px;
+  height: 20px;
+}
+.history-loading-meta {
+  width: min(200px, 50%);
+  height: 14px;
+}
+.history-loading-prompt {
+  width: min(65%, 460px);
+  height: 16px;
+}
+.history-loading-result {
+  --result-ratio: 1;
+  --result-max-ratio: 1;
+}
+.history-loading-result > .skeleton {
+  border-radius: var(--control-radius);
+  background: var(--fill-medium);
+}
+
 @media (max-width: 767px) {
   .unified-workspace .proportional-results[data-count] > div {
     --result-height: min(240px, 60dvh, calc(100cqw / var(--result-max-ratio)));

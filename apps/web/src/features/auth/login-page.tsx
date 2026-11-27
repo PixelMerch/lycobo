@@ -1,10 +1,10 @@
-import { Button, Link } from "@heroui/react";
+import { Button, Link, Skeleton } from "@heroui/react";
 import type { EnterpriseIdentity } from "@lycoboai/contracts";
 import { IconBuilding, IconChevronRight, IconX } from "@tabler/icons-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router";
-import { PageLoading } from "../../app/page-loading";
+import { componentsMessages } from "../../components/components-messages";
 import { useCenteredDialogEntrance } from "../../components/overlays/use-centered-dialog-entrance";
 import { UiIcon } from "../../components/ui-icon";
 import { parseLocale } from "../../i18n/locale";
@@ -32,7 +32,7 @@ export function LoginPage() {
   const returnTo = safeLoginReturnTo(params.get("returnTo"));
   const destination = (user: EnterpriseIdentity) =>
     localizedPath(returnTo, parseLocale(user.preferredLocale) ?? locale);
-  if (session.isPending) return <PageLoading />;
+  if (session.isPending) return <LoginLoading />;
   if (session.data && params.get("reauth") !== "1")
     return (
       <SignedInRedirect
@@ -81,6 +81,44 @@ export function LoginPage() {
           />
         </section>
       </motion.div>
+    </main>
+  );
+}
+
+function LoginLoading() {
+  const t = useMessages(componentsMessages);
+  return (
+    <main className="login-page" aria-busy="true" aria-label={t.loading}>
+      <div className="login-shell" aria-hidden="true">
+        <Skeleton className="login-media" animationType="none" />
+        <section className="login-stage">
+          <div className="login-panel login-face">
+            <header className="login-header">
+              <Skeleton className="login-logo-badge" animationType="none" />
+              <Skeleton className="login-loading-title" animationType="none" />
+            </header>
+            <div className="login-body">
+              <div className="login-methods">
+                <div className="login-social-methods">
+                  <Skeleton className="login-loading-field" animationType="none" />
+                  <Skeleton className="login-loading-field" animationType="none" />
+                </div>
+                <div className="login-divider">
+                  <Skeleton className="login-loading-caption" animationType="none" />
+                </div>
+                <div className="login-fields">
+                  <Skeleton className="login-loading-field" animationType="none" />
+                  <Skeleton className="login-loading-field" animationType="none" />
+                </div>
+              </div>
+              <Skeleton className="login-loading-enterprise" animationType="none" />
+            </div>
+            <div className="login-agreement">
+              <Skeleton className="login-loading-agreement" animationType="none" />
+            </div>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }
