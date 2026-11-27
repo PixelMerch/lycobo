@@ -63,7 +63,7 @@ curl --fail-with-body https://lycobo.com/api/v1/enterprise/image-api/generations
 
 #### 定时任务的本地参考图
 
-- 在可持续访问本地文件的 Agent 里选一次目录并保存文件选择规则。每次运行通过技能脚本计算所选原文件的 SHA-256，调用 `prepare_reference_uploads` 批量查重，每次最多 100 个唯一指纹。请求不包含文件内容、路径或名称。仅复用当前工作区同一成员上传且可用的素材。
+- 在可持续访问本地文件的 Agent 里选一次目录并保存文件选择规则。每套先选最多五张。每次运行汇总各套所选文件，共用图片只准备一次，再通过技能脚本计算原文件的 SHA-256，调用 `prepare_reference_uploads` 批量查重，每次最多 100 个唯一指纹。请求不包含文件内容、路径或名称。仅复用当前工作区同一成员上传且可用的素材。
 - 命中返回 `assetId`，未命中返回上传地址和 10 分钟短期凭证。设备仅压缩未命中的文件，用该凭证作为 `Authorization: Bearer <uploadToken>`，以 `Content-Type: image/webp` 向 `/api/v1/enterprise/image-api/reference-uploads` 发起 PUT。响应的 `data.assetId` 为素材 UUID。上传继续使用账号上传限流，服务器验证静态 WebP、最长边 1600 像素及 1 MiB 硬上限。对象存储只写入压缩副本。长期 Key 继续存于连接器，短期凭证只授权对应参考图上传。
 - 生成时用 `referenceAssetIds` 提交最多五个可用素材 ID。单张与套图都使用同一字段，每套共用该组参考图。已被任务引用的素材沿用现有长期保留规则，尚未引用的素材沿用三天清理规则。重复提交同一生成任务时须复用原请求 UUID 和参考图参数。
 - 部署前先应用 `0059_automation_reference_fingerprints`。发布时启用 `consumer_first`，先更新图片消费者，再发布 API Worker 和技能包。需要验证真实设备定时任务可以读取授权目录，且后续同内容只查重、不发生重复上传。
