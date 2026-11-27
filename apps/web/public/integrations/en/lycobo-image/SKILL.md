@@ -45,7 +45,7 @@ Example `generate_image_set` arguments for a two-image set. Generate a fresh UUI
 
 ## Generation record
 
-After acceptance, immediately reply with the task number, aspect ratio, and a “Generation record” link. Use the exact `historyUrl` returned for each task. For multiple sets, list each title with its record link. The record opens in the browser for progress, images, and downloads. The generation record is the only image delivery link in the chat.
+After acceptance, immediately reply with the task number, aspect ratio, and a “Generation record” link. Use the exact `historyUrl` returned for each task. For multiple sets, list each title with its record link. The record opens in the browser for progress, images, and downloads. When users ask to view or download images, share only the generation record link in the chat. Images are displayed on the record page in the browser.
 
 - For an existing task, share its known `historyUrl`. If the user asks for status or the record URL is missing, call `get_image` with the short `publicId` or UUID `id` as `taskId`. If the tool wraps JSON in a text item inside `content`, read status and `historyUrl` from that item.
 - When the user explicitly asks to wait for completion, check at most three times in the current turn. For new tasks, follow `checkAtSeconds` or check at 40, 60, and 90 seconds after acceptance if omitted. For existing tasks, check once immediately and use `retryAfterSeconds` while the task is queued or running. Return the latest status and record link when the task ends or the wait limit is reached.
