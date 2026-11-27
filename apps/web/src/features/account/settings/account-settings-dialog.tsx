@@ -2,8 +2,8 @@ import { Button, Modal, Tabs } from "@heroui/react";
 import type { EnterpriseIdentity } from "@lycoboai/contracts";
 import {
   IconChartBar,
-  IconKey,
   IconLogout,
+  IconRobot,
   IconShieldLock,
   IconUserCircle,
   IconUsersGroup,
@@ -33,7 +33,7 @@ const sectionIcons: Record<SettingsSection, TablerIcon> = {
   account: IconUserCircle,
   plan: IconChartBar,
   security: IconShieldLock,
-  automation: IconKey,
+  automation: IconRobot,
   members: IconUsersGroup,
 };
 
@@ -85,7 +85,13 @@ function SectionContent({
 }) {
   if (id === "plan") return <AccountPlanUsage />;
   if (id === "security") return <AccountPasswordForm />;
-  if (id === "automation") return <AccountImageAutomation account={account} />;
+  if (id === "automation")
+    return (
+      <AccountImageAutomation
+        key={`${account.organizationId}:${account.userId}`}
+        account={account}
+      />
+    );
   if (id === "members") return <AccountSettingsMembers />;
   // 宽屏的身份与退出登录在左侧栏；手机没有左侧栏，放回账户分区。
   return <AccountSettingsProfile account={account} withIdentity={!wide} />;

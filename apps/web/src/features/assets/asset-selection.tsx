@@ -1,6 +1,6 @@
-import { Button, Toolbar } from "@heroui/react";
+import { Button, Toolbar, Tooltip } from "@heroui/react";
 import type { ImageAsset } from "@lycoboai/contracts";
-import { IconDownload, IconListCheck, IconX } from "@tabler/icons-react";
+import { IconDownload, IconListCheck, IconRefresh, IconX } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../components/ui-icon";
 import { useLocale } from "../../i18n/locale-store";
@@ -159,26 +159,63 @@ function AssetSelectionBar({
   );
 }
 
-/** 筛选行末尾的“多选”入口；进入多选后换成操作条。 */
+/** 筛选行右侧的刷新和多选入口，进入多选后显示批量操作。 */
 export function AssetSelectionControls({
   assets,
   selection,
+  refreshing,
+  onRefresh,
 }: {
   assets: ImageAsset[];
   selection: AssetSelection;
+  refreshing: boolean;
+  onRefresh: () => void;
 }) {
   const t = useMessages(assetsMessages);
+  const refreshIcon = useRef<HTMLSpanElement>(null);
+  function refresh() {
+    const icon = refreshIcon.current;
+    // 动画与请求各自结束，快速响应也有操作反馈，连点时让当前旋转自然完成。
+    if (
+      icon &&
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
+      !icon.getAnimations().length
+    )
+      icon.animate(
+        { transform: ["rotate(0deg)", "rotate(360deg)"] },
+        { duration: 240, easing: "linear" },
+      );
+    onRefresh();
+  }
   if (selection.selecting) return <AssetSelectionBar assets={assets} selection={selection} />;
   return (
-    <Button
-      size="sm"
-      variant="ghost"
-      className="asset-selection-start"
-      isDisabled={!assets.length}
-      onPress={() => selection.start()}
-    >
-      <UiIcon icon={IconListCheck} size="small" />
-      {t.select}
-    </Button>
+    <>
+      <Tooltip>
+        <Button
+          isIconOnly
+          size="sm"
+          variant="ghost"
+          className="asset-refresh"
+          aria-label={t.refreshAssets}
+          isPending={refreshing}
+          onPress={refresh}
+        >
+          <span className="asset-refresh-icon" ref={refreshIcon}>
+            <UiIcon icon={IconRefresh} size="small" />
+          </span>
+        </Button>
+        <Tooltip.Content placement="bottom">{t.refreshAssets}</Tooltip.Content>
+      </Tooltip>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="asset-selection-start"
+        isDisabled={!assets.length}
+        onPress={() => selection.start()}
+      >
+        <UiIcon icon={IconListCheck} size="small" />
+        {t.select}
+      </Button>
+    </>
   );
 }

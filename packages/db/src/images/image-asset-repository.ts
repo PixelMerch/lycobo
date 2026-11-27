@@ -10,10 +10,12 @@ import { imageQueryViews } from "./image-query-views";
 import { type AssetFilters, ImageRepositoryError } from "./image-repository-types";
 /** 按组织管理图片素材、工具来源与个人收藏。 */
 export function imageAssetRepository(sql: postgres.Sql) {
-  const { publicModelSql, toolMatchSql } = imageQueryViews(sql);
+  const { publicModelSql, toolMatchSql, variationSql } = imageQueryViews(sql);
   const toolSql = sql`case when j.id is null then null when j.input ? 'textileSet' then 'textile'
-    when j.input ? 'replica' then 'replica' when j.input ? 'variation' then 'variation' when j.input ? 'video' then 'video' else 'create' end`;
+    when j.input ? 'replica' then 'replica' when ${variationSql} then 'variation' when j.input ? 'video' then 'video' else 'create' end`;
   const visibleAssetSql = sql`(a.expires_at is null or a.expires_at>now()) and a.storage_deleted_at is null`;
+  const submissionSourceFilter = (source: AssetFilters["source"]) =>
+    source ? sql`and a.kind='output' and j.submission_source=${source}` : sql``;
   return {
     async addReference(scope: ImageScope, image: StoredImage) {
       await sql.begin(async (tx) => {
@@ -55,6 +57,7 @@ export function imageAssetRepository(sql: postgres.Sql) {
         ${kind ? sql`and a.kind=${kind}` : sql``}
         ${type ? sql`and a.media_type=${type}` : sql``}
         ${filters.tool ? sql`and j.id is not null and ${toolMatchSql(filters.tool)}` : sql``}
+        ${submissionSourceFilter(filters.source)}
         ${filters.since ? sql`and a.created_at>=${filters.since}::timestamptz` : sql``}
         ${filters.model ? sql`and ${publicModelSql}=${filters.model}` : sql``}
         ${filters.favorite ? sql`and ${favorite}` : sql``}

@@ -37,8 +37,11 @@ async function verifyPlanningAssets(
   );
 }
 
+/** 编排网页和分镜的规划模型调用，并保存可继续生成的方案。 */
 export function variationService(deps: {
-  repository: Pick<ImageRuntimeRepository, "variation" | "asset">;
+  repository: Pick<ImageRuntimeRepository, "asset"> & {
+    variation: Pick<ImageRuntimeRepository["variation"], "config" | "begin" | "finish" | "get">;
+  };
   modelSecret?: string | undefined;
   plannerKey?: string | undefined;
   plannerRequest?: typeof fetch | undefined;
@@ -82,7 +85,7 @@ export function variationService(deps: {
       const result = await deps.repository.variation.begin(scope, input, key);
       if (result.replayed) return result.plan;
       try {
-        // Keep ownership checks without reading or encoding image content for the planner.
+        // 规划前只校验素材归属，无需读取或编码图片内容。
         await verifyPlanningAssets(deps.repository, scope, input.referenceAssetIds, storyboard);
         const secret = await readPlannerKey(config.ciphertext);
         const webContext = await readPlanningContext(

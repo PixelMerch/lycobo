@@ -380,7 +380,7 @@ try {
   await verifyExhaustedWallet(repository, app, first, headers, key);
   await verifyImageFeatures(databaseUrl, repository, sql, store, png, app);
   await verifyBilling(repository, sql);
-  await verifyImageAutomation(repository, sql);
+  await verifyImageAutomation(repository, sql, app);
   await verifyImageAccountQueue(repository);
   await sql`update generation_api_keys set revoked_at=now() where id=${first.keyId}`;
   assert.equal((await app.request("/api/v1/image-models", { headers })).status, 401);

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import {
+  type ImageAutomationSetInput,
   type ImageScope,
   providerOriginSchema,
   type VariationPlanInput,
@@ -51,6 +52,24 @@ export function variationRepository(sql: postgres.Sql) {
     return { plan: view(prior), replayed: true };
   };
   return {
+    async saveAutomationPlan(scope: ImageScope, set: ImageAutomationSetInput, key: string) {
+      const input = variationPlanInputSchema.parse({
+        description: `${set.title}（MCP）`,
+        referenceAssetIds: [],
+      });
+      const items = set.images.map((image) => ({ ...image, id: crypto.randomUUID() }));
+      // 同一请求复用已保存的方案和图片 ID。豆包已提供逐图方案，无需调用规划模型。
+      const hash = createHash("sha256").update(JSON.stringify(set)).digest("hex");
+      const [inserted] =
+        await sql`insert into variation_plans(organization_id,user_id,idempotency_key,input_hash,input,items,status)
+        values(${scope.organizationId},${scope.userId},${key},${hash},${sql.json(input)},${sql.json(items)},'ready')
+        on conflict (organization_id,user_id,idempotency_key) do nothing returning *`;
+      if (inserted) return view(inserted);
+      const [prior] = await sql`select * from variation_plans
+        where organization_id=${scope.organizationId} and user_id=${scope.userId} and idempotency_key=${key}`;
+      if (!prior) throw new VariationError("STATE_CONFLICT");
+      return replayVariation(prior, hash).plan;
+    },
     async config() {
       const [row] = await sql`select p.origin,p.protocol,p.upstream_model,p.timeout_ms,c.ciphertext
         from model_planners p join model_providers m on m.id=p.provider_id join model_credentials c on c.id=m.credential_id

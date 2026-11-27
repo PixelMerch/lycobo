@@ -36,6 +36,7 @@ export type ImageApiDependencies = {
     ): Promise<{ status: string; image?: import("@lycoboai/contracts").StoredImage } | null>;
   };
   modelSecret?: string | undefined;
+  automationKeySecret?: string | undefined;
   plannerKey?: string | undefined;
   plannerRequest?: typeof fetch | undefined;
   standaloneKey?: string | undefined;

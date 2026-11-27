@@ -2,39 +2,34 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import {
   assetFavoriteLimit,
+  type ImageScope,
   imageGenerationInputSchema,
   imageUnitCredits,
 } from "@lycoboai/contracts";
 import { type ImageRepository, ImageRepositoryError } from "@lycoboai/db";
 import type postgres from "postgres";
 
-/** 在隔离数据库中验证素材筛选、分页、收藏幂等与成员归属。 */
-export async function verifyAssetLibrary(repository: ImageRepository, sql: postgres.Sql) {
-  const owner = await repository.provision(
-    `library-${randomUUID()}`,
-    "library-fixture",
-    3 * imageUnitCredits,
-  );
-  const outsider = await repository.provision(`library-out-${randomUUID()}`, "library-out", 0);
-  // 同组织成员共享可见素材，收藏状态按用户独立保存。
-  const [colleagueUser] =
-    await sql`insert into users (auth_subject) values (${`library-colleague-${randomUUID()}`}) returning id`;
-  await sql`insert into organization_members (organization_id,user_id,role)
-    values (${owner.organizationId},${String(colleagueUser?.id)},'member')`;
-  const colleague = { organizationId: owner.organizationId, userId: String(colleagueUser?.id) };
-  const image = (id: string) => ({
-    id,
-    objectKey: `fixtures/${id}.png`,
-    mimeType: "image/png" as const,
-    width: 4,
-    height: 3,
-    bytes: 10,
-    sha256: "c".repeat(64),
-  });
-  // 输出关联真实测试任务，功能从输入识别，模型按供应商变体归并。
-  const output = async (inputKey: "textileSet" | "variation" | null, model: string) => {
+/** 让生成素材关联实际测试任务，同时避免调用生成供应商。 */
+function libraryOutputFixture(repository: ImageRepository, sql: postgres.Sql, owner: ImageScope) {
+  return async (
+    inputKey: "textileSet" | "variation" | null,
+    model: string,
+    submissionSource?: "mcp",
+  ) => {
     const input = imageGenerationInputSchema.parse({ model: "gpt-image-2", prompt: "library" });
-    const job = await repository.create(owner, input, randomUUID());
+    const key = randomUUID();
+    const job = await repository.create(
+      owner,
+      { ...input, ...(submissionSource && { submissionSource }) },
+      key,
+    );
+    if (submissionSource) {
+      assert.deepEqual(await repository.replayImageSubmission(owner, input, key), {
+        id: job.id,
+        replayed: true,
+      });
+      assert.equal((await repository.create(owner, input, key)).id, job.id);
+    }
     const [item] = await sql`select id from generation_job_items where job_id=${job.id}`;
     const id = randomUUID();
     await sql`insert into media_assets (id,organization_id,user_id,kind,media_type,object_key,mime_type,width,height,bytes,sha256)
@@ -45,11 +40,38 @@ export async function verifyAssetLibrary(repository: ImageRepository, sql: postg
       where id=${job.id}`;
     return id;
   };
+}
+
+/** 在隔离数据库中验证素材筛选、分页、收藏幂等与成员归属。 */
+export async function verifyAssetLibrary(repository: ImageRepository, sql: postgres.Sql) {
+  const owner = await repository.provision(
+    `library-${randomUUID()}`,
+    "library-fixture",
+    4 * imageUnitCredits,
+  );
+  const outsider = await repository.provision(`library-out-${randomUUID()}`, "library-out", 0);
+  // 同组织成员共享可见素材，收藏状态按用户独立保存。
+  const [colleagueUser] =
+    await sql`insert into users (auth_subject) values (${`library-colleague-${randomUUID()}`}) returning id`;
+  await sql`insert into organization_members (organization_id,user_id,role)
+    values (${owner.organizationId},${String(colleagueUser?.id)},'member')`;
+  const colleague = { organizationId: owner.organizationId, userId: String(colleagueUser?.id) };
+  const upload = randomUUID();
+  await repository.addReference(owner, {
+    id: upload,
+    objectKey: `fixtures/${upload}.png`,
+    mimeType: "image/png",
+    width: 4,
+    height: 3,
+    bytes: 10,
+    sha256: "c".repeat(64),
+  });
+  const output = libraryOutputFixture(repository, sql, owner);
+  const mcp = await output(null, "gpt-image-2", "mcp");
+  await sql`update media_assets set created_at='2020-01-01T00:00:00Z' where id=${mcp}`;
   const created = await output(null, "gpt-image-2");
   const textile = await output("textileSet", "gpt-image-2.5-flare");
   const variation = await output("variation", "gpt-image-2");
-  const upload = randomUUID();
-  await repository.addReference(owner, image(upload));
 
   const ids = (rows: Array<Record<string, unknown>>) => rows.map((row) => String(row.id)).sort();
   const listed = await repository.listAssets(owner, 30);
@@ -58,17 +80,32 @@ export async function verifyAssetLibrary(repository: ImageRepository, sql: postg
   assert.equal(byId.get(textile)?.tool, "textile");
   assert.equal(byId.get(textile)?.model, "gpt-image-2.5");
   assert.equal(byId.get(variation)?.tool, "variation");
+  assert.equal(byId.get(mcp)?.tool, "variation");
   assert.equal(byId.get(upload)?.tool, null);
   assert.equal(byId.get(upload)?.favorite, false);
   const filtered = (filters: Parameters<ImageRepository["listAssets"]>[5]) =>
     repository.listAssets(owner, 30, undefined, undefined, undefined, filters);
   assert.deepEqual(ids(await filtered({ tool: "textile" })), [textile]);
-  assert.deepEqual(ids(await filtered({ tool: "variation" })), [variation]);
+  assert.deepEqual(ids(await filtered({ tool: "variation" })), [variation, mcp].sort());
   // 上传素材没有生成任务，不应命中生成工具筛选。
   assert.deepEqual(ids(await filtered({ tool: "create" })), [created]);
   assert.deepEqual(ids(await filtered({ model: "gpt-image-2.5" })), [textile]);
-  assert.deepEqual(ids(await filtered({ model: "gpt-image-2" })), [created, variation].sort());
+  assert.deepEqual(ids(await filtered({ model: "gpt-image-2" })), [created, variation, mcp].sort());
   assert.deepEqual(ids(await filtered({ tool: "textile", model: "gpt-image-2" })), []);
+  const mcpFilter = { source: "mcp" } as const;
+  assert.deepEqual(
+    ids(await repository.listAssets(owner, 1, undefined, undefined, "image", mcpFilter)),
+    [mcp],
+  );
+  assert.equal(
+    (await repository.listAssets(owner, 1, mcp, undefined, "image", mcpFilter)).length,
+    0,
+  );
+  assert.equal(
+    (await repository.listAssets(outsider, 1, undefined, undefined, "image", mcpFilter)).length,
+    0,
+  );
+  assert.equal((await filtered({ ...mcpFilter, favorite: true })).length, 0);
 
   // 先按时间边界过滤，再应用分页上限，避免混入范围外素材。
   await sql`update media_assets set created_at='2020-01-01T00:00:00Z' where id=${created}`;

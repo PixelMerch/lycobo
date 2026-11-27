@@ -65,6 +65,19 @@ describe("asset library filters", () => {
     expect(generated.get("since")).toBeTruthy();
   });
 
+  it("keeps the MCP source in the URL and combines it with time and favorites", () => {
+    const filters = filtersFromSearch(
+      new URLSearchParams("source=mcp&tool=create&time=7&favorite=1"),
+    );
+    expect(filtersToSearch(filters).toString()).toBe("source=mcp&time=7&favorite=1");
+    const query = libraryQuery(filters);
+    expect(query.get("source")).toBe("mcp");
+    expect(query.get("type")).toBe("image");
+    expect(query.has("tool")).toBe(false);
+    expect(query.get("favorite")).toBe("true");
+    expect(query.get("since")).toBeTruthy();
+  });
+
   it("starts a time range at local midnight and counts today in the range", () => {
     const now = new Date(2026, 10, 10, 15, 30);
     expect(timeRangeStart("today", now)).toEqual(new Date(2026, 10, 10));

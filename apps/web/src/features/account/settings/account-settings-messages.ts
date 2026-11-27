@@ -1,4 +1,5 @@
 import { defineMessages } from "../../../i18n/messages";
+import { accountMenuMessages } from "../menu/account-menu-messages";
 
 /** 账户设置分区的双语文案。 */
 export const accountSettingsMessages = defineMessages({
@@ -9,7 +10,7 @@ export const accountSettingsMessages = defineMessages({
       account: "账户",
       plan: "积分与账单",
       security: "登录与安全",
-      automation: "API 与技能",
+      automation: accountMenuMessages["zh-CN"].appConnections,
       members: "企业成员",
     },
     members: "企业成员",
@@ -80,7 +81,7 @@ export const accountSettingsMessages = defineMessages({
       plan: "Credits & billing",
       security: "Sign-in & security",
       members: "Team members",
-      automation: "API & skills",
+      automation: accountMenuMessages.en.appConnections,
     },
     members: "Team members",
     balance: "Credit balance",

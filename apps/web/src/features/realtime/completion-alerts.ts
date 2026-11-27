@@ -1,4 +1,4 @@
-import type { ImageJob } from "@lycoboai/contracts";
+import { type ImageJob, imageJobTool } from "@lycoboai/contracts";
 import { documentTitle } from "../../i18n/document-locale";
 import { currentMessages } from "../../i18n/messages";
 import { dashboardToolPaths } from "../../lib/dashboard-paths";
@@ -13,10 +13,7 @@ import { realtimeMessages } from "./realtime-messages";
 
 /** 只生成本站历史定位，不携带图片签名、任务输入或恢复草稿指令。 */
 export function completedResult(job: ImageJob): CompletedResult {
-  let path: string = dashboardToolPaths.create;
-  if (job.input?.textileSet) path = dashboardToolPaths.textile;
-  if (job.input?.replica) path = dashboardToolPaths.replica;
-  if (job.input?.variation) path = dashboardToolPaths.variation;
+  const path = dashboardToolPaths[imageJobTool(job)];
   return { id: job.id, path: `${path}?task=${job.id}`, label: completionReceiptLabel };
 }
 

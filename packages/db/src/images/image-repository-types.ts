@@ -13,13 +13,14 @@ export class ImageRepositoryError extends Error {
   }
 }
 export type ImagePrincipal = ImageScope & { role: "admin" | "member"; uid?: string };
-/** Asset library filters applied before pagination; favorites belong to the signed-in member. */
+/** 素材列表在分页前应用筛选，收藏仍按当前成员读取。 */
 export type AssetFilters = {
   includeVideo?: boolean | undefined;
   since?: string | undefined;
   tool?: AssetTool | undefined;
   model?: string | undefined;
   favorite?: boolean | undefined;
+  source?: "mcp";
 };
 export type ClaimedImage = {
   itemId: string;

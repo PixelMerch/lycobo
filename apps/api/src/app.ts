@@ -118,6 +118,11 @@ function requestSizeLimit(maxSize: number) {
   });
 }
 
+const requestBodyLimits: Readonly<Record<string, number>> = {
+  "/api/v1/video-storyboards": 64,
+  [`/api/v1${imageAutomationMcpPath}`]: 256,
+};
+
 /** 组装 API 路由、统一响应和可注入的业务服务。 */
 export function createApp(
   reportError?: ErrorReporter,
@@ -141,7 +146,7 @@ export function createApp(
       await next();
       return;
     }
-    const limit = (c.req.path === "/api/v1/video-storyboards" ? 64 : 32) * 1024;
+    const limit = (requestBodyLimits[c.req.path] ?? 32) * 1024;
     return requestSizeLimit(limit)(c, next);
   });
   app.route("/api/v1/auth", authRoutes(auth));

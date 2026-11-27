@@ -138,6 +138,10 @@ export function AssetBrowser({
   const downloadable = assets.filter((asset) => !unavailable.has(asset.id));
   const markUnavailable = (asset: ImageAsset) =>
     setUnavailable((current) => (current.has(asset.id) ? current : new Set(current).add(asset.id)));
+  const refresh = () =>
+    void (session.isError
+      ? session.refetch({ cancelRefetch: false })
+      : query.refetch({ cancelRefetch: false }));
   if (authenticationRequired)
     return (
       <Navigate
@@ -152,7 +156,14 @@ export function AssetBrowser({
         <AssetFilters
           filters={filters}
           currentTool={currentTool}
-          trailing={<AssetSelectionControls assets={downloadable} selection={selection} />}
+          trailing={
+            <AssetSelectionControls
+              assets={downloadable}
+              selection={selection}
+              refreshing={session.isFetching || query.isFetching}
+              onRefresh={refresh}
+            />
+          }
           onChange={(next) => {
             selection.exit();
             onChange(next);
@@ -170,7 +181,7 @@ export function AssetBrowser({
             onUnavailable={markUnavailable}
             query={query}
             failure={failure}
-            retry={() => void (session.isError ? session.refetch() : query.refetch())}
+            retry={refresh}
           />
         )}
       </div>

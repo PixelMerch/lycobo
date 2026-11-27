@@ -14,6 +14,7 @@ import { readWebhookConfig } from "./features/images/webhooks/provider-webhook";
 import { createCreemModerator } from "./features/moderation/creem-moderation";
 
 type OptionalBindings = {
+  IMAGE_AUTOMATION_KEY_SECRET?: string;
   SUPABASE_AUTH_PUBLISHABLE_KEY?: string;
   SUPABASE_EMAIL_TURNSTILE_SITE_KEY?: string;
   CREEM_API_KEY?: string;
@@ -132,6 +133,7 @@ export async function serveCloudflareApi(
           general: env.IMAGE_API_RATE_LIMIT,
         },
         auth,
+        automationKeySecret: env.IMAGE_AUTOMATION_KEY_SECRET,
         // 提示词优化与规划也会收费，必须受同一个生成开关约束。
         standaloneKey:
           env.CLOUDFLARE_GENERATION_ENABLED === "true" ? env.STANDALONE_IMAGE_API_KEY : undefined,

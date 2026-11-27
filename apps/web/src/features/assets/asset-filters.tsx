@@ -3,6 +3,7 @@ import type { AssetTool, ImageTool } from "@lycoboai/contracts";
 import {
   IconCalendar,
   IconLayoutGrid,
+  IconPlugConnected,
   IconSparkles,
   IconUpload,
   type TablerIcon,
@@ -30,22 +31,23 @@ export function assetToolName(tool: AssetTool, locale: Locale = currentLocale())
   return workspaceToolMessages[locale].tools[known.id].name;
 }
 
-// 来源菜单的一项：全部来源、我上传的、全部 AI 生成，或者 AI 生成里的某个功能。
+// 来源菜单同时接受来源和工作区图片工具。
 type SourceKey = AssetSource | ImageTool;
 const sourceIcons = {
   all: IconLayoutGrid,
   uploads: IconUpload,
   generated: IconSparkles,
+  mcp: IconPlugConnected,
 } satisfies Record<AssetSource, TablerIcon>;
 const sourceKeys: SourceKey[] = [
   "all",
   "uploads",
   "generated",
+  "mcp",
   ...visibleWorkspaceTools.map((tool) => tool.id),
 ];
 
-const isSource = (key: SourceKey): key is AssetSource =>
-  key === "all" || key === "uploads" || key === "generated";
+const isSource = (key: SourceKey): key is AssetSource => Object.hasOwn(sourceIcons, key);
 
 function sourceKey(filters: AssetLibraryFilters): SourceKey {
   return filters.source === "generated" && filters.tool !== "all" ? filters.tool : filters.source;
@@ -97,7 +99,7 @@ export function AssetFilters({
   );
 }
 
-/** 来源菜单：全部来源、我上传的，以及“AI 生成”分组（全部 AI 生成和各个功能，当前功能标“当前”）。 */
+/** 来源菜单可按上传、MCP 生成或工作区图片工具查找素材。 */
 function AssetSourceMenu({
   filters,
   currentTool,
@@ -142,6 +144,7 @@ function AssetSourceMenu({
           <ListBox.Section className="asset-filter-section">
             <Header className="asset-filter-heading">{t.sources.generated}</Header>
             {option("generated", t.allGenerated)}
+            {option("mcp", t.sources.mcp)}
             {visibleWorkspaceTools.map((tool) => option(tool.id, toolText[tool.id].name))}
           </ListBox.Section>
         </ListBox>

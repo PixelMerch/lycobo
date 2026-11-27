@@ -211,6 +211,7 @@ export const organizationMembers = pgTable(
     check("organization_members_role_check", sql`${t.role} in ('admin','member')`),
   ],
 );
+/** 保存鉴权摘要、可复制的 Key 密文和遮罩末四位。 */
 export const generationApiKeys = pgTable(
   "generation_api_keys",
   {
@@ -218,6 +219,8 @@ export const generationApiKeys = pgTable(
     organizationId: uuid("organization_id").notNull(),
     userId: uuid("user_id").notNull(),
     tokenHash: text("token_hash").notNull().unique(),
+    keyCiphertext: text("key_ciphertext"),
+    keySuffix: text("key_suffix"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     createdAt: createdAt(),
@@ -283,6 +286,7 @@ export const mediaAssets = pgTable(
     check("media_assets_media_type_check", sql`${t.mediaType} in ('image','video','audio')`),
   ],
 );
+/** 保存任务参数、提交来源与持久执行状态。 */
 export const generationJobs = pgTable(
   "generation_jobs",
   {
@@ -310,6 +314,7 @@ export const generationJobs = pgTable(
     providerSnapshot: jsonb("provider_snapshot"),
     prompt: text("prompt").notNull(),
     userPrompt: text("user_prompt"),
+    submissionSource: text("submission_source", { enum: ["mcp"] }),
     resolution: text("resolution").notNull(),
     aspectRatio: text("aspect_ratio").notNull(),
     requestedCount: integer("requested_count").notNull(),

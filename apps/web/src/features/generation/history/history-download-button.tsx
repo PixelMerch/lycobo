@@ -1,5 +1,5 @@
 import { Button, Tooltip } from "@heroui/react";
-import type { ImageJob } from "@lycoboai/contracts";
+import { type ImageJob, imageJobTool } from "@lycoboai/contracts";
 import { IconDownload } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
@@ -32,7 +32,7 @@ export function HistoryDownloadButton({ job }: { job: ImageJob }) {
   if (!entries.length) return null;
   const partial = entries.length < job.requested_count;
   const imageDownloadLabel = partial ? t.downloadGenerated : t.downloadAll;
-  const downloadLabel = job.input?.variation ? t.downloadSet : imageDownloadLabel;
+  const downloadLabel = imageJobTool(job) === "variation" ? t.downloadSet : imageDownloadLabel;
   const label = { idle: downloadLabel, downloading: t.downloading, packing: t.packing }[phase];
   const busy = phase !== "idle";
 

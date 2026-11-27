@@ -6,7 +6,17 @@ import { AccountImageAutomation } from "./account-image-automation";
 
 afterEach(() => vi.unstubAllGlobals());
 
-it("renders the Doubao desktop launch link in the current tab", () => {
+const language = vi.hoisted(() => ({ locale: "en" }));
+vi.mock("../../../i18n/locale-store", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../i18n/locale-store")>()),
+  useLocale: () => language.locale,
+}));
+
+it.each([
+  { locale: "zh-CN", label: "配置连接", filename: "lycobo-image.zip" },
+  { locale: "en", label: "Set up connection", filename: "lycobo-image-en.zip" },
+])("shows connection settings and downloads the $locale skill", ({ locale, label, filename }) => {
+  language.locale = locale;
   vi.stubGlobal("window", { location: { origin: "http://localhost" } });
   const html = renderToStaticMarkup(
     createElement(
@@ -23,7 +33,8 @@ it("renders the Doubao desktop launch link in the current tab", () => {
     ),
   );
 
-  const launchLink = html.match(/<a\b[^>]*\bhref="doubaoapp:\/\/active-chat"[^>]*>/)?.[0];
-  expect(launchLink).toBeDefined();
-  expect(launchLink).not.toMatch(/\btarget=/);
+  expect(html).toContain(label);
+  expect(html).toContain(`href="/integrations/${filename}"`);
+  expect(html).toContain(`download="${filename}"`);
+  expect(html).not.toMatch(/doubao(?:app)?:\/\//);
 });

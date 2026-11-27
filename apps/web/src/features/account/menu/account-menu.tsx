@@ -1,5 +1,5 @@
 import { Button, Popover, Separator } from "@heroui/react";
-import { IconLogout, IconPhoto, IconSettings } from "@tabler/icons-react";
+import { IconLogout, IconPhoto, IconRobot, IconSettings } from "@tabler/icons-react";
 import { useRef, useState } from "react";
 import { UiIcon } from "../../../components/ui-icon";
 import { useLocale } from "../../../i18n/locale-store";
@@ -32,7 +32,7 @@ export function HeaderLogin() {
 }
 
 /**
- * 点击头像或使用键盘打开账户菜单，进入设置、个人作品或退出登录。
+ * 点击头像或使用键盘打开账户菜单，企业用户可直达应用连接。
  * 桌面顶部栏只显示头像并向下展开；手机导航抽屉底部显示头像和昵称，向上展开。
  */
 export function AccountMenu({
@@ -124,6 +124,20 @@ export function AccountMenu({
             <UiIcon icon={IconSettings} />
             {t.settings}
           </Button>
+          {account.loginMethod !== "social" && (
+            <Button
+              className="account-menu-row"
+              size="sm"
+              variant="ghost"
+              onPress={() => {
+                setOpen(false);
+                openSettings("automation", triggerRef.current);
+              }}
+            >
+              <UiIcon icon={IconRobot} />
+              {t.appConnections}
+            </Button>
+          )}
           <Button
             className="account-menu-row"
             size="sm"

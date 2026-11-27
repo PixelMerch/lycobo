@@ -1,32 +1,76 @@
 @import "./account-settings-groups.css";
 @import "./account-plan-usage.css";
 
-/* 一次性 Key 在窄屏换行，复制操作保留在当前行。 */
-.settings-automation-value {
-  overflow-wrap: anywhere;
-  white-space: normal;
-  user-select: all;
-}
 .settings-automation-link {
-  min-height: 44px;
   align-items: center;
+  min-height: 36px;
+  white-space: nowrap;
 }
-.settings-automation-setup {
+.settings-app-connection + .settings-app-connection,
+.settings-row + .settings-image-credentials,
+.settings-connection-details {
   border-top: 1px solid var(--glass-card-edge);
 }
-.settings-automation-setup .disclosure__trigger {
-  width: 100%;
-  justify-content: space-between;
+.settings-app-identity,
+.settings-connection-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
-.settings-automation-setup .disclosure__trigger[data-focus-visible] {
-  outline-offset: -3px;
+.settings-app-identity {
+  flex: 1;
+  min-width: 0;
+}
+.settings-app-icon {
+  display: grid;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--fill-soft);
+  color: var(--foreground);
+}
+.settings-connection-heading {
+  margin: 0;
+  font: inherit;
+}
+.settings-connection-actions {
+  flex-wrap: wrap;
+  row-gap: var(--space-1);
+}
+.settings-connection-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
 }
 .settings-automation-hint {
   margin: 0;
-  padding: var(--space-2) var(--space-4);
   color: var(--muted);
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
+}
+.settings-masked-key {
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .settings-row.settings-app-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+  .settings-image-credentials > .settings-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-1) var(--space-2);
+  }
+  .settings-image-credentials .settings-row-action {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
 }
 
 /*

@@ -46,6 +46,8 @@ Docker 主站私有图片使用 `http://image-storage:8333`，宿主机使用 `h
 
 ## 本地数据库导出与恢复
 
+本地生图 Key 加密使用 `IMAGE_AUTOMATION_KEY_SECRET`。未显式配置时，本地 API 在 `IMAGE_DATA_DIR` 的上一级生成 `.env.image-automation-key`，Docker 默认在 `.local/`。文件权限为 `0600`。需要继续复制备份中已有的 Key 时，另行保留同一密钥文件或环境配置。
+
 仓库不附带业务数据备份。当前结构以 `packages/db/migrations/` 的 Drizzle 迁移链为准，新开发环境使用 `pnpm db:migrate` 初始化。
 
 ### 按需导出

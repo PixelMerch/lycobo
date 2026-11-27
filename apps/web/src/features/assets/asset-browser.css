@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-/* ---------- 筛选行：来源、时间、仅看收藏，最右是多选 ---------- */
+/* 筛选行右侧依次放刷新、多选。 */
 .asset-filters {
   display: flex;
   align-items: center;
@@ -15,6 +15,8 @@
 .asset-filters-end {
   display: flex;
   flex: none;
+  align-items: center;
+  gap: var(--space-2);
   margin-inline-start: auto;
 }
 .asset-filter {
@@ -97,18 +99,30 @@
   color: inherit;
   font: inherit;
 }
-.asset-selection-start.button {
-  gap: 6px;
+:is(.asset-refresh, .asset-selection-start).button {
   height: 36px;
   min-height: 36px;
-  padding: 0 14px 0 12px;
   border-radius: 999px;
   background: #ffffff0a;
   color: #ffffffcc;
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
 }
-.asset-selection-start.button:is(:hover, [data-hovered="true"]) {
+.asset-refresh.button {
+  width: 36px;
+  padding: 0;
+}
+.asset-refresh-icon {
+  display: inline-flex;
+}
+.asset-refresh.button[data-pending] .asset-refresh-icon {
+  opacity: 0.6;
+}
+.asset-selection-start.button {
+  gap: 6px;
+  padding: 0 14px 0 12px;
+}
+:is(.asset-refresh, .asset-selection-start).button:is(:hover, [data-hovered="true"]) {
   background: var(--interaction-active);
   color: var(--foreground);
 }

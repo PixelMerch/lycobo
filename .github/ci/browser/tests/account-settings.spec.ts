@@ -73,6 +73,77 @@ test("ordinary members do not see enterprise management", async ({ page }) => {
   await expect(settings.getByRole("button", { name: "添加子账号", exact: true })).toHaveCount(0);
 });
 
+test("Doubao copies the full authorization value on demand after reopening settings", async ({
+  page,
+}) => {
+  await setup(page);
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  const fixtureKey = `lcb_img_${"A".repeat(43)}`;
+  const expiresAt = new Date(Date.now() + 60_000).toISOString();
+  let issued = false;
+  let copyReads = 0;
+  await page.route("**/api/v1/enterprise/image-api/key", (route) => {
+    if (route.request().method() === "POST") {
+      issued = true;
+      return route.fulfill({ status: 201, json: apiFixture({ key: fixtureKey, expiresAt }) });
+    }
+    return route.fulfill({
+      json: apiFixture(
+        issued
+          ? { expiresAt, lastFour: fixtureKey.slice(-4), copyable: true }
+          : { expiresAt: null },
+      ),
+    });
+  });
+  await page.route("**/api/v1/enterprise/image-api/key/copy", (route) => {
+    copyReads++;
+    expect(route.request().method()).toBe("POST");
+    return route.fulfill({ json: apiFixture({ key: fixtureKey }) });
+  });
+  await page.goto("/zh-CN/dashboard/commerce/create");
+  const openConnections = async () => {
+    await page.getByRole("button", { name: "账户菜单：settings-fixture", exact: true }).click();
+    await page
+      .locator(".account-menu")
+      .getByRole("button", { name: "应用连接", exact: true })
+      .click();
+  };
+  await openConnections();
+  const settings = page.getByRole("dialog", { name: "账户设置", exact: true });
+  const apps = settings.locator('section[aria-label="应用"]');
+  const resources = settings.locator('section[aria-label="技能与密钥"]');
+  const manage = resources.getByRole("button", { name: "管理 Key", exact: true });
+  await expect(resources.getByRole("link", { name: "下载技能" })).toHaveAttribute(
+    "href",
+    "/integrations/lycobo-image.zip",
+  );
+  await settings.getByRole("button", { name: "配置连接", exact: true }).click();
+  await apps.getByRole("button", { name: "获取请求头值", exact: true }).click();
+  await expect(manage).toHaveAttribute("aria-expanded", "true");
+  await settings.getByRole("button", { name: "生成 Key", exact: true }).click();
+  const copy = apps.getByRole("button", { name: "复制请求头值", exact: true });
+  await copy.click();
+  await expect(manage).toHaveAttribute("aria-expanded", "false");
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe(`Bearer ${fixtureKey}`);
+  await expect(settings.getByText(fixtureKey, { exact: false })).toHaveCount(0);
+  await expect(resources.locator(".settings-masked-key")).toHaveText("lcb_img_********AAAA");
+
+  await settings.getByRole("button", { name: "关闭账户设置", exact: true }).click();
+  await expect(settings).toBeHidden();
+  await openConnections();
+  await settings.getByRole("button", { name: "配置连接", exact: true }).click();
+  await expect(resources.locator(".settings-masked-key")).toHaveText("lcb_img_********AAAA");
+  expect(copyReads).toBe(1);
+  await page.evaluate(() => navigator.clipboard.writeText("fixture placeholder"));
+  await copy.click();
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe(`Bearer ${fixtureKey}`);
+  expect(copyReads).toBe(2);
+});
+
 test("password validation and failed credentials never clear a working session", async ({
   page,
 }) => {

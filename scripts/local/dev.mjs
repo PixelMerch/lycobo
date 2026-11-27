@@ -17,6 +17,9 @@ const creemKey = configured.CREEM_API_KEY?.trim();
 // 本地子进程只接受测试密钥，浏览器和素材服务不继承账务配置。
 const apiEnv = {
   ...env,
+  ...(configured.IMAGE_AUTOMATION_KEY_SECRET
+    ? { IMAGE_AUTOMATION_KEY_SECRET: configured.IMAGE_AUTOMATION_KEY_SECRET }
+    : {}),
   ...(moderationEnabled ? { CREEM_MODERATION_ENABLED: moderationEnabled } : {}),
   ...(creemKey?.startsWith("creem_test_") ? { CREEM_API_KEY: creemKey } : {}),
   ...Object.fromEntries(

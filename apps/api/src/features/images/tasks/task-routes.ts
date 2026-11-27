@@ -175,6 +175,7 @@ export async function submitImageTask(
   deps: ImageApiDependencies,
   input: z.infer<typeof imageTaskSubmissionSchema>,
   key: string,
+  submissionSource?: "mcp",
 ) {
   if (!deps.enabled) return fail(c, "GENERATION_NOT_CONFIGURED", "生图服务尚未启用", 503);
   const { userPrompt, ...modelInput } = input;
@@ -195,7 +196,7 @@ export async function submitImageTask(
     return fail(c, "MODEL_CAPABILITY_UNVERIFIED", "当前模型暂不可用，请选择其他模型", 400);
   const result = await deps.repository.create(
     scope,
-    submitted,
+    { ...submitted, ...(submissionSource && { submissionSource }) },
     key,
     imageUnitCredits,
     deps.managedModelsOnly,

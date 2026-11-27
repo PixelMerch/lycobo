@@ -2,7 +2,7 @@ import type { ImageJob } from "@lycoboai/contracts";
 import { QueryClient } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useLocaleStore } from "../../i18n/locale-store";
-import { createCompletionAlerts } from "./completion-alerts";
+import { completedResult, createCompletionAlerts } from "./completion-alerts";
 import { observeCompletedJobs } from "./completion-observer";
 import { setDesktopNotifications } from "./desktop-notifications";
 
@@ -69,6 +69,12 @@ function controller() {
     open,
   };
 }
+it("links MCP single-image completions directly to the image set history", () => {
+  const result = job();
+  expect(completedResult({ ...result, submission_source: "mcp" }).path).toBe(
+    `/dashboard/commerce/smart-variation?task=${result.id}`,
+  );
+});
 it("counts background completions once, summarizes on return and only opens on explicit action", async () => {
   doc.visibilityState = "hidden";
   const { alerts, notify, open } = controller();

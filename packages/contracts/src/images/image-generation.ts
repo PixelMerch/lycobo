@@ -262,6 +262,7 @@ export const imageJobSchema = z.object({
   model: imageModelCodeSchema,
   prompt: z.string(),
   user_prompt: z.string().nullable().optional(),
+  submission_source: z.literal("mcp").nullable().optional(),
   resolution: imageResolutionSchema,
   aspect_ratio: z.string(),
   requested_count: z.number(),
@@ -303,6 +304,14 @@ export const imageToolSchema = z.enum(["create", "textile", "variation", "replic
 export const assetToolSchema = z.enum(["create", "textile", "variation", "replica", "video"]);
 export type AssetTool = z.infer<typeof assetToolSchema>;
 export type ImageTool = z.infer<typeof imageToolSchema>;
+
+/** 确定任务的历史入口，已记录来源的 MCP 单张也归入套图。 */
+export function imageJobTool(job: Pick<ImageJob, "input" | "submission_source">): ImageTool {
+  if (job.input?.replica) return "replica";
+  if (job.input?.textileSet) return "textile";
+  if (job.input?.variation || job.submission_source === "mcp") return "variation";
+  return "create";
+}
 /** Each member keeps at most this many favorites, so the favorite id list stays bounded. */
 export const assetFavoriteLimit = 1000;
 export const imageAssetSchema = z.object({

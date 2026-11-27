@@ -1,2 +1,5 @@
 # 已发出的验证码邮件沿用旧的图片地址，由新 C 标志提供图片内容。
 /brand/lycobo-reveal-icon-192.png /brand/lycobo-focus-icon-192.png 200
+# 已分享的豆包技能地址继续指向通用技能包。
+/integrations/doubao/lycobo-image.zip /integrations/lycobo-image.zip 302
+/integrations/doubao/lycobo-image/SKILL.md /integrations/lycobo-image/SKILL.md 302

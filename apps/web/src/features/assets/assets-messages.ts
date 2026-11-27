@@ -5,7 +5,7 @@ import { defineMessages } from "../../i18n/messages";
 export const assetsMessages = defineMessages({
   "zh-CN": {
     generatedFallback: "生成",
-    sources: { all: "全部来源", uploads: "我上传的", generated: "AI 生成" },
+    sources: { all: "全部来源", uploads: "我上传的", generated: "AI 生成", mcp: "MCP 生成" },
     allGenerated: "全部 AI 生成",
     times: {
       all: "全部时间",
@@ -48,6 +48,7 @@ export const assetsMessages = defineMessages({
     references: "参考图",
     downloadOriginal: "下载原图",
     download: "下载",
+    refreshAssets: "刷新素材",
     select: "多选",
     selectAsset: (name: string) => `选择图片：${name}`,
     selection: "多选操作",
@@ -68,7 +69,12 @@ export const assetsMessages = defineMessages({
   },
   en: {
     generatedFallback: "Generated",
-    sources: { all: "All sources", uploads: "My uploads", generated: "AI generated" },
+    sources: {
+      all: "All sources",
+      uploads: "My uploads",
+      generated: "AI generated",
+      mcp: "MCP generated",
+    },
     allGenerated: "All AI generated",
     times: {
       all: "All time",
@@ -111,6 +117,7 @@ export const assetsMessages = defineMessages({
     references: "References",
     downloadOriginal: "Download original",
     download: "Download",
+    refreshAssets: "Refresh assets",
     select: "Select",
     selectAsset: (name) => `Select image: ${name}`,
     selection: "Selection actions",
