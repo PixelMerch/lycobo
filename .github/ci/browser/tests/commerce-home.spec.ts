@@ -342,7 +342,7 @@ test("homepage tool menus stay anchored to their triggers while scrolling", asyn
   for (const [category, entry] of [
     ["商品图片", "商品主图"],
     ["家纺裂变", "家纺套图"],
-  ]) {
+  ] as const) {
     const trigger = page.getByRole("button", { name: category, exact: true });
     const item = page.getByRole("menuitem", { name: entry, exact: true });
     await trigger.hover();
