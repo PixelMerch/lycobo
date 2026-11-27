@@ -334,6 +334,34 @@ test("homepage Inspiration opens the matching public header with a fixed wordmar
   await expect(pill).not.toHaveCSS("clip-path", startingClip);
 });
 
+test("homepage tool menus stay anchored to their triggers while scrolling", async ({ page }) => {
+  await mockImageApi(page, { signedIn: false });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/zh-CN");
+
+  for (const [category, entry] of [
+    ["商品图片", "商品主图"],
+    ["家纺裂变", "家纺套图"],
+  ]) {
+    const trigger = page.getByRole("button", { name: category, exact: true });
+    const item = page.getByRole("menuitem", { name: entry, exact: true });
+    await trigger.hover();
+    await item.hover();
+    const start = await page.evaluate(() => window.scrollY);
+    await page.mouse.wheel(0, 400);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(start);
+    await expect(item).toBeInViewport();
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    const menu = page.getByRole("menu", { name: category, exact: true });
+    const menuSurface = page.locator(".topbar-menu").filter({ has: menu });
+    expect((await menuSurface.boundingBox())?.x).toBe((await trigger.boundingBox())?.x);
+    await expect(menuSurface).toHaveCSS("background-color", "rgba(36, 36, 36, 0.6)");
+    await expect(menuSurface).toHaveCSS("backdrop-filter", "blur(32px)");
+    await page.mouse.move(700, 300);
+    await expect(item).toBeHidden();
+  }
+});
+
 for (const width of [390, 1440]) {
   test(`the wordmark stays aligned when opening Main Image at ${width}px`, async ({ page }) => {
     await mockImageApi(page);
@@ -675,8 +703,8 @@ for (const width of [1440, 390]) {
     await expect(header).toHaveAttribute("data-scrolled", "true");
     await expect(header).toHaveCSS("border-bottom-width", "0px");
     await expect.poll(surface).toEqual({
-      background: "rgba(18, 18, 18, 0.84)",
-      blur: "blur(14px)",
+      background: "rgba(18, 18, 18, 0.55)",
+      blur: "blur(26px)",
     });
     expect(await height()).toBe(60);
     expect(await brandTop()).toBe(top);

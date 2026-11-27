@@ -1,6 +1,6 @@
 /* 站点顶栏与工作区共用品牌尺寸和交互配色。 */
 :root {
-  --public-site-header-gutter: clamp(20px, 2.5vw, 36px);
+  --public-site-header-gutter: var(--shell-inline-inset);
   --site-header-button-fill: var(--fill-medium, #ffffff14);
   --site-header-nav-hover-fill: #ffffff24;
   --workspace-tool-selected-fill: #303030;
@@ -17,7 +17,7 @@
   --site-brand-wordmark-offset: -3%;
 }
 .topbar.public-site-header {
-  padding-inline: 28px;
+  padding-inline: var(--public-site-header-gutter);
 }
 .workspace-site-brand {
   --site-brand-wordmark-offset: 0%;
@@ -44,9 +44,6 @@
   scale: var(--site-brand-wordmark-scale);
 }
 @media (max-width: 767px) {
-  .topbar.public-site-header {
-    padding-inline: 8px;
-  }
   :is(.public-site-brand, .workspace-site-brand).link {
     width: 72px;
     height: 36px;
@@ -56,9 +53,6 @@
   }
 }
 @media (max-width: 374px) {
-  .topbar.public-site-header {
-    padding-inline: 4px;
-  }
   :is(.public-site-brand, .workspace-site-brand).link {
     width: 66px;
   }

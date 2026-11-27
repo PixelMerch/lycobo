@@ -1,7 +1,16 @@
-/* 首页顶栏保持黑色半透明与毛砂，Logo 与控件为纯白，开始创作使用高对比白底黑字。 */
+/* 首页顶栏从页面取色，浮层与导航文字保持清晰。 */
+@supports (backdrop-filter: blur(1px)) {
+  @media not (prefers-reduced-transparency: reduce) {
+    :root:has(.public-site-header[data-landing-header]) {
+      --site-header-scroll-background: rgb(18 18 18 / 55%);
+      --site-header-scroll-blur: blur(26px);
+      --site-header-menu-background: rgb(36 36 36 / 60%);
+      --site-header-menu-blur: blur(32px);
+    }
+  }
+}
+
 :root:has(.public-site-header[data-landing-header]) {
-  --site-header-scroll-background: rgb(18 18 18 / 84%);
-  --site-header-scroll-blur: blur(14px);
   --site-header-button-fill: #ffffff0d;
 
   .public-site-header {
@@ -35,9 +44,8 @@
     --landing-control-hover-color: var(--landing-foreground);
   }
 
-  .public-site-header
-    .topbar-nav
-    .nav-row:where(:not(:hover, [data-hovered="true"], [aria-expanded="true"], :focus-visible)) {
+  .public-site-header .topbar-nav .nav-row,
+  .landing-control-popover :is(.menu-item, .account-menu-row, .account-menu-details > span) {
     color: var(--landing-foreground);
   }
 

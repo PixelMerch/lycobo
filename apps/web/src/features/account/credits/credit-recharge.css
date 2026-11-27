@@ -12,7 +12,7 @@
   overflow: hidden;
 }
 .credit-recharge-surface {
-  --credit-recharge-padding: var(--public-site-header-gutter);
+  --credit-recharge-padding: clamp(20px, 2.5vw, 36px);
   display: flex;
   flex-direction: column;
   width: 100%;
