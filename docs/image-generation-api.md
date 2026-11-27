@@ -41,7 +41,7 @@ REST 和 MCP 的 `generate_image` 接收单张图片请求。`generate_image_set
 
 所有已标记 MCP 来源的任务归入「套图计划」，素材仍支持「MCP 生成」筛选。MCP 提交回执和 `get_image` 提供任务 UUID `id`、可展示的短编号 `publicId`（例如 `WS8TZGMH5`）、任务实际采用的 `aspectRatio` 和网页任务地址 `historyUrl`。逐图方案由 Agent 提供，服务端按请求编号保存，复用套图生成流程。
 
-MCP 新任务回执的 `checkAtSeconds` 指定提交成功后的第 40、60、90 秒查询，依次等待 40、20、30 秒。Skill 最多查询三次，取得结果即返回每张图的预览和原图链接。已有任务直接查询，排队或运行中通过 `retryAfterSeconds` 建议等待 20 秒。REST 查询等待提示为 10 秒。
+Skill 提交后立即提供该任务的网页生成记录 `historyUrl`，用户可在浏览器查看进度和图片并下载。用户明确要求等待完成时，按 MCP 回执的 `checkAtSeconds` 在提交后的第 40、60、90 秒查询，最多三次。已有任务需要查状态时先直接查询，排队或运行中通过 `retryAfterSeconds` 建议等待 20 秒。REST 查询等待提示为 10 秒。
 
 `get_image` 和 `preview_image` 的 `taskId` 支持短编号或任务 UUID，均按组织和用户限定归属。`preview_image` 的可选 `imageIndex` 从 1 开始，按已有输出顺序，默认 1。验证归属后只读取一张已有的 WebP 缩略图，最大 256 KiB，返回 MCP `image` 内容。MCP `get_image` 返回每张图片的 `imageIndex`、缩略图 `previewUrl`、原图下载 `url` 和 `expiresAt`。链接用独立用途签名，有效期 15 分钟，可在 Agent 中直接打开且无需站内请求来源。失效时可按原任务再次查询。媒体桶保持私有，Agent 预览链接只读取已有缩略图。整套 ZIP 可通过 `historyUrl` 在网页下载。两个 MCP 工具复用现有账号通用限流。
 
