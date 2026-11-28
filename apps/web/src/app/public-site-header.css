@@ -77,9 +77,14 @@
 .public-site-category {
   position: relative;
 }
-/* 菜单滚动到边界时，滚轮可以继续滚动正文。 */
+/* 弹层挂在触发按钮内，宽度上限按视口计算。 */
 .public-site-category .topbar-menu {
-  overscroll-behavior-y: auto;
+  width: max-content;
+  max-width: calc(100svw - 2 * var(--public-site-header-gutter));
+  overscroll-behavior-y: auto; /* 滚轮到菜单边界时继续滚动正文。 */
+}
+.public-site-category .topbar-menu-item {
+  white-space: nowrap;
 }
 .public-site-header
   .public-site-desktop-nav
